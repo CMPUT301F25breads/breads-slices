@@ -1,11 +1,16 @@
 package com.example.slices;
 
+import java.util.Collection;
+
 //Prototype class for the entrant
 public class Entrant {
     private String name;
     private String email;
     private String phoneNumber;
     private int id;
+
+    private Collection<Integer> subEntrants;
+
     public Entrant() {
 
     }
@@ -40,5 +45,14 @@ public class Entrant {
     }
     public void setId(int id) {
         this.id = id;
+    }
+    public void addSubEntrant(int id) {
+        subEntrants.add(id);
+    }
+    public void removeSubEntrant(int id) {
+        subEntrants.remove(id);
+    }
+    public Collection<Integer> getSubEntrants() {
+        return subEntrants;
     }
 }

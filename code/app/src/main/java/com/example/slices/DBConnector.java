@@ -43,5 +43,23 @@ public class DBConnector {
 
     }
 
+    public boolean writeEntrant(Entrant entrant) {
+        try {
+            entrantRef.document(String.valueOf(entrant.getId())).set(entrant);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void deleteEntrant(String id) {
+        entrantRef.document(id).delete();
+    }
+
+    
+
+
+
+
 
 }

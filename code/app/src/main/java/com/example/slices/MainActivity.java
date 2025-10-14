@@ -20,6 +20,8 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        writeTester();
+        DBTester();
     }
 
     //Tester for database
@@ -37,4 +39,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    public void writeTester() {
+        DBConnector db = new DBConnector();
+        Entrant entrant = new Entrant("John Doe", "will.henry.harrison@example-pet-store.com", "123-456-7890", 12345);
+        if (db.writeEntrant(entrant)) {
+            System.out.println("Entrant written to database");
+        } else {
+            System.out.println("Error writing entrant to database");
+        }
+    }
+
+
 }
