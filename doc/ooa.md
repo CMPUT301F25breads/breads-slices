@@ -98,13 +98,16 @@
 - Entrant
 
 ## Class: Log
-### Description
-Probably an abstract for other log types
 ### Responsibilities
+-
+### Collaborators
+-
 
-### Class: LogItem
-### Description
-Probably an abstract for other log item types like the entrant log, notification log, etc
+## Class: LogItem
+### Responsibilities
+-
+### Collaborators
+-
 
 ## Class: Profile
 ### Responsibilities
