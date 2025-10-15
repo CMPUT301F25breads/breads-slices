@@ -62,7 +62,20 @@
 ### Responsibilities
 - 
 ### Collaborators
-- 
+-
+
+## Class: Waitlist
+### Responsibilities
+- Store entrants
+- Relate to an event
+- Viewed by Entrant
+- Viewed by Organizer
+- Be polled by lottery
+### Collaborators
+- Entrant
+- Event
+- Organizer
+- Lottery
 
 ## Class: Event
 ### Responsibilities
@@ -72,9 +85,26 @@
 
 ## Class: Notifier
 ### Responsibilities
+- Create notification object with passed parameters
 - 
 ### Collaborators
-- 
+
+
+## Class: Notification
+### Responsibilities
+- Represent single notification object
+### Collaborators
+- Notifier
+- Entrant
+
+## Class: Log
+### Description
+Probably an abstract for other log types
+### Responsibilities
+
+### Class: LogItem
+### Description
+Probably an abstract for other log item types like the entrant log, notification log, etc
 
 ## Class: Profile
 ### Responsibilities
