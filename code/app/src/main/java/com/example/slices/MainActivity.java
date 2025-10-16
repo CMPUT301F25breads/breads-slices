@@ -20,25 +20,11 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        writeTester();
-        DBTester();
+
     }
 
     //Tester for database
-    public void DBTester() {
-        DBConnector db = new DBConnector();
-        db.getEntrant("12345", new DBConnector.EntrantCallback() {
-            @Override
-            public void onSuccess(Entrant entrant) {
-                System.out.println("Entrant found: " + entrant.getName());
 
-            }
-            @Override
-            public void onFailure(Exception e) {
-                System.out.println("Error: " + e.getMessage());
-            }
-        });
-    }
     public void writeTester() {
         DBConnector db = new DBConnector();
         Entrant entrant = new Entrant("John Doe", "will.henry.harrison@example-pet-store.com", "123-456-7890", 12345);
