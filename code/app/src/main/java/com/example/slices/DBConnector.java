@@ -11,10 +11,10 @@ public class DBConnector {
     private CollectionReference authRef;
     private CollectionReference eventRef;
 
-    public interface EntrantCallback {
-        void onSuccess(Entrant entrant);
-        void onFailure(Exception e);
-    }
+
+
+
+
 
 
     public DBConnector() {
@@ -24,25 +24,28 @@ public class DBConnector {
         eventRef = db.collection("events");
     }
 
-    // Method to get a single entrant by their ID
-    public Entrant getEntrant(String id, final EntrantCallback callback) {
-        entrantRef.document(id).get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                DocumentSnapshot document = task.getResult();
-                if (document.exists()) {
-                    Entrant entrant = document.toObject(Entrant.class);
-                    callback.onSuccess(entrant);
-                } else {
-                    callback.onFailure(new EntrantNotFound("Entrant not found", id));
-                }
+    /**
+     * Gets an entrant from the database asynchronously
+     * @param id
+     *      Entrant ID to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getEntrant(int id, EntrantCallback callback) {
+        entrantRef.document(String.valueOf(id)).get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                Entrant entrant = documentSnapshot.toObject(Entrant.class);
+                callback.onSuccess(entrant);
             } else {
-                callback.onFailure(task.getException());
+                callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(id)));
             }
-        });
-        return null;
+            }).addOnFailureListener(e -> {
+                callback.onFailure(new DBOpFailed("Failed to get entrant"));
 
-    }
+            });
 
+
+        }
     public boolean writeEntrant(Entrant entrant) {
         try {
             entrantRef.document(String.valueOf(entrant.getId())).set(entrant);
