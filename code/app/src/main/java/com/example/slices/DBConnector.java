@@ -7,12 +7,17 @@ import androidx.annotation.Nullable;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DBConnector {
     private FirebaseFirestore db;
@@ -66,13 +71,45 @@ public class DBConnector {
 
         }
 
-    public boolean writeEntrant(Entrant entrant) {
-        try {
-            entrantRef.document(String.valueOf(entrant.getId())).set(entrant);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    public void getNewEntrantId(EntrantIDCallback callback) {
+        entrantRef
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            // Get the highest ID
+                            int highestId = 0;
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                int id = doc.getLong("id").intValue();
+                                if (id > highestId) {
+                                    highestId = id;
+                                }
+                            }
+                            // Return the next ID
+                            callback.onSuccess(highestId + 1);
+                        } else {
+                            callback.onSuccess(1);
+                        }
+                    }
+
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get next entrant ID"));
+                    }
+                });
+
+
+    }
+
+
+    public void writeEntrant(Entrant entrant, DBWriteCallback callback) {
+        entrantRef.document(String.valueOf(entrant.getId()))
+                .set(entrant)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
+
     }
 
     public void deleteEntrant(String id) {
@@ -117,10 +154,28 @@ public class DBConnector {
 
     public void writeEvent(Event event) {
         eventRef.document(String.valueOf(event.getId())).set(event);
+
     }
 
     public void deleteEvent(String id) {
         eventRef.document(id).delete();
+    }
+
+    public void clearEntrants(Runnable onComplete) {
+        entrantRef.get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Task<Void>> deleteTasks = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        deleteTasks.add(entrantRef.document(doc.getId()).delete());
+                    }
+                    // Wait for all deletes to finish
+                    Tasks.whenAll(deleteTasks)
+                            .addOnSuccessListener(aVoid -> onComplete.run());
+                })
+                .addOnFailureListener(e -> {
+                    System.out.println("Failed to clear entrants: " + e.getMessage());
+                    onComplete.run();
+                });
     }
 
 
