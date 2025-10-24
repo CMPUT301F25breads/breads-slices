@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph.xml"
+    app:startDestination="@id/MyEventsFragment">
+
+    <fragment
+        android:id="@+id/MyEventsFragment"
+        android:name="com.example.slices.fragments.MyEventsFragment"
+        android:label="My Events"
+        tools:layout="@layout/my_events_fragment">
+
+    </fragment>
+    <fragment
+        android:id="@+id/BrowseFragment"
+        android:name="com.example.slices.fragments.BrowseFragment"
+        android:label="Browse Events"
+        tools:layout="@layout/browse_fragment">
+
+    </fragment>
+    <fragment
+        android:id="@+id/NotifFragment"
+        android:name="com.example.slices.fragments.NotifFragment"
+        android:label="Notifications"
+        tools:layout="@layout/notif_fragment"
+        />
+    <fragment
+        android:id="@+id/MenuFragment"
+        android:name="com.example.slices.fragments.MenuFragment"
+        android:label="Menu"
+        tools:layout="@layout/menu_fragment"
+        />
+
+    <action
+        android:id="@+id/action_to_MyEventsFragment"
+        app:destination="@+id/MyEventsFragment"/>
+
+    <action
+        android:id="@+id/action_to_BrowseFragment"
+        app:destination="@+id/BrowseFragment"/>
+
+    <action
+        android:id="@+id/action_to_NotifFragment"
+        app:destination="@+id/NotifFragment"/>
+
+    <action
+        android:id="@+id/action_to_MenuFragment"
+        app:destination="@+id/MenuFragment"/>
+
+</navigation>

@@ -41,7 +41,8 @@ public class Event {
         this.currentEntrants = 0;
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist();
-        this.id = db.getNewEventId();
+        // Just commented out so it can run
+        // this.id = db.getNewEventId();
 
     }
     public int getId() {
