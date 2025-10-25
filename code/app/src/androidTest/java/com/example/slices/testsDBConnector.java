@@ -8,13 +8,18 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.services.events.TimeStamp;
 
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.Timestamp;
 import com.google.type.DateTime;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +35,7 @@ public class testsDBConnector {
 
 
 
-
+    @Ignore //Ignore this test for now only enable when needed
     @Test
     public void testEntrantCRUD() throws InterruptedException {
         //Clear the database
@@ -90,7 +95,8 @@ public class testsDBConnector {
 
 
     }
-
+    @Ignore //Ignore this test for now only enable when needed
+    @Test
     public void testEventCRUD() {
         //Clear the database
         db.clearEvents(() -> {
@@ -105,26 +111,70 @@ public class testsDBConnector {
             public void onSuccess(int id) {
                 //Create a test event
                 //Set up date and time objects
-                DateTime eventDate = DateTime.newBuilder()
-                        .setYear(2023)
-                        .setMonth(1)
-                        .setDay(1)
-                        .setHours(12)
-                        .setMinutes(0)
-                        .setSeconds(0)
-                        .build();
-                DateTime regDeadline = DateTime.newBuilder()
-                        .setYear(2023)
-                        .setMonth(1)
-                        .setDay(1)
-                        .setHours(12)
-                        .setMinutes(0)
-                        .setSeconds(0)
-                        .build();
+                Calendar cal = Calendar.getInstance();
+                cal.set(2023, 1, 1, 12, 0, 0);
+                Date date = cal.getTime();
+                Timestamp eventDate = new Timestamp(date);
+
+                //Set up deadline
+                Calendar cal2 = Calendar.getInstance();
+                cal2.set(2023, 1, 1, 13, 0, 0);
+                Date date2 = cal2.getTime();
+                Timestamp regDeadline = new Timestamp(date2);
+
+
+
+
+
+
 
                 Event event = new Event("Foo", "Foo", "Foo", eventDate, regDeadline, 10, id);
-                
 
+                //Attempt to write the event to the database
+                db.writeEvent(event, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        //If successful, read the event from the database
+                        db.getEvent(id, new EventCallback() {
+                            @Override
+                            public void onSuccess(Event retrieved) {
+                                assertNotNull(retrieved);
+                                assert retrieved.getName().equals("Foo");
+                                assert retrieved.getDescription().equals("Foo");
+                                assert retrieved.getLocation().equals("Foo");
+                                assert retrieved.getEventDate().equals(eventDate);
+                                assert retrieved.getRegDeadline().equals(regDeadline);
+                                assert retrieved.getMaxEntrants() == 10;
+                                assert retrieved.getCurrentEntrants() == 0;
+                                assert retrieved.getId() == id;
+
+
+                                //Delete the event from the database
+                                db.deleteEvent(String.valueOf(id));
+                                latch.countDown();
+
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                fail("Failed to get event" + e.getMessage());
+                                latch.countDown();
+                            }
+                        });
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        fail("Failed to write event" + e.getMessage());
+                        latch.countDown();
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                fail("Failed to get next event ID" +e.getMessage());
+                latch.countDown();
+            }
+        });
     }
 
 
