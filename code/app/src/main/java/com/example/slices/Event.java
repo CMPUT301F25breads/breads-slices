@@ -1,8 +1,15 @@
 package com.example.slices;
 
+import android.os.Build;
+import android.util.Log;
+
+import com.google.firebase.Timestamp;
 import com.google.type.DateTime;
 
+import java.sql.Time;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 /**
  * Class representing an entrant
@@ -17,8 +24,8 @@ public class Event {
 
     private ArrayList<Entrant> entrants; // Represents the entrants in the event
 
-    private DateTime eventDate;
-    private DateTime regDeadline;
+    private Timestamp eventDate;
+    private Timestamp regDeadline;
 
     private Waitlist waitlist;
 
@@ -28,10 +35,9 @@ public class Event {
 
     private int currentEntrants;
 
-    private DBConnector db = new DBConnector();
 
 
-    public Event(String name, String description, String location, DateTime eventDate, DateTime regDeadline, int maxEntrants) {
+    public Event(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants) {
         this.name = name;
         this.description = description;
         this.location = location;
@@ -41,11 +47,10 @@ public class Event {
         this.currentEntrants = 0;
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist();
-        // Just commented out so it can run
-        // this.id = db.getNewEventId();
+
 
     }
-    public Event(String name, String description, String location, DateTime eventDate, DateTime regDeadline, int maxEntrants, int id) {
+    public Event(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, int id) throws IllegalArgumentException {
         this.name = name;
         this.description = description;
         this.location = location;
@@ -56,6 +61,33 @@ public class Event {
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist();
         this.id = id;
+
+        //Check if the eventTime is in the past
+        //Get the current timestamp
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(System.currentTimeMillis());
+        Timestamp currentTime = new Timestamp(cal.getTime());
+
+        if (eventDate.compareTo(currentTime) < 0) {
+            //Throw exception
+            DebugLogger.d("Event", "Event time is in the past");
+            throw new IllegalArgumentException("Event time is in the past");
+        }
+
+        //Check if the registration deadline is in the past
+        if (regDeadline.compareTo(currentTime) < 0) {
+            //Throw exception
+            DebugLogger.d("Event", "Registration deadline is in the past");
+            throw new IllegalArgumentException("Registration deadline is in the past");
+        }
+
+        //Check if the registration deadline is after the event time
+        if (regDeadline.compareTo(eventDate) > 0) {
+            //Throw exception
+            DebugLogger.d("Event", "Registration deadline is after event time");
+            throw new IllegalArgumentException("Registration deadline is after event time");
+        }
+
     }
 
     public int getId() {
@@ -70,10 +102,10 @@ public class Event {
     public String getLocation() {
         return location;
     }
-    public DateTime getEventDate() {
+    public Timestamp getEventDate() {
         return eventDate;
     }
-    public DateTime getRegDeadline() {
+    public Timestamp getRegDeadline() {
         return regDeadline;
     }
     public int getMaxEntrants() {
@@ -98,11 +130,11 @@ public class Event {
     public void setLocation(String location) {
         this.location = location;
     }
-    public void setEventDate(DateTime eventDate) {
+    public void setEventDate(Timestamp eventDate) {
         //Validate that date has not already passed
         this.eventDate = eventDate;
     }
-    public void setRegDeadline(DateTime regDeadline) {
+    public void setRegDeadline(Timestamp regDeadline) {
         //Validate that deadline has not already passed
         this.regDeadline = regDeadline;
     }

@@ -19,6 +19,14 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class is used to interact with the Firebase Firestore database.
+ * It provides methods for getting, writing, and deleting data from the database.
+ * @author Ryan Haubrich
+ * @version 0.1
+ *
+ *
+ */
 public class DBConnector {
     private FirebaseFirestore db;
     private CollectionReference entrantRef;
@@ -26,10 +34,11 @@ public class DBConnector {
     private CollectionReference eventRef;
 
 
-
-
-
-
+    /**
+     * Constructor for the DBConnector class.
+     * Initializes the Firebase Firestore database and references to the different collections.
+     *
+     */
 
     public DBConnector() {
         db = FirebaseFirestore.getInstance();
@@ -71,6 +80,47 @@ public class DBConnector {
 
         }
 
+    /**
+     * Gets an event from the database asynchronously
+     * @param callback
+     *      Callback to call when the operation is complete
+     * @param id
+     *      Event ID to search for
+     */
+
+    public void getEvent(int id, EventCallback callback) {
+        eventRef
+                .whereEqualTo("id", id)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
+                            Event event = doc.toObject(Event.class);
+                            callback.onSuccess(event);
+                        } else {
+                            callback.onFailure(new EventNotFound("Event not found", String.valueOf(id)));
+
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get event"));
+                    }
+                });
+
+    }
+
+    /**
+     * Gets the next available entrant ID
+     * @return
+     *      The next available entrant ID
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public void getNewEntrantId(EntrantIDCallback callback) {
         entrantRef
                 .get()
@@ -103,7 +153,13 @@ public class DBConnector {
 
     }
 
-
+    /**
+     * Writes an entrant to the database asynchronously
+     * @param entrant
+     *      Entrant to write to the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public void writeEntrant(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(String.valueOf(entrant.getId()))
                 .set(entrant)
@@ -112,14 +168,35 @@ public class DBConnector {
 
     }
 
+    /**
+     * Writes an event to the database asynchronously
+     * @param event
+     *      Event to write to the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
+    public void writeEvent(Event event, DBWriteCallback callback) {
+        eventRef.document(String.valueOf(event.getId()))
+                .set(event)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write event")));
+
+    }
+
+    /**
+     * Deletes an entrant from the database asynchronously
+     * @param id
+     *      Entrant ID to delete
+     */
     public void deleteEntrant(String id) {
         entrantRef.document(id).delete();
     }
 
     /**
      * Gets the next available event ID
-     * @return
-     *      The next available event ID
+     * @param callback
+     *      Callback to call when the operation is complete
      */
     public void getNewEventId(EventIDCallback callback) {
         eventRef
@@ -152,15 +229,22 @@ public class DBConnector {
 
     }
 
-    public void writeEvent(Event event) {
-        eventRef.document(String.valueOf(event.getId())).set(event);
 
-    }
-
+    /**
+     * Deletes an event from the database asynchronously
+     * @param id
+     *      Event ID to delete
+     */
     public void deleteEvent(String id) {
         eventRef.document(id).delete();
     }
 
+    /**
+     * Clears all entrants from the database asynchronously: Used for testing
+     * @param onComplete
+     *      Callback to call when the operation is complete
+     *
+     */
     public void clearEntrants(Runnable onComplete) {
         entrantRef.get()
                 .addOnSuccessListener(querySnapshot -> {
@@ -178,6 +262,11 @@ public class DBConnector {
                 });
     }
 
+    /**
+     * Clears all events from the database asynchronously: Used for testing
+     * @param onComplete
+     *      Callback to call when the operation is complete
+     */
     public void clearEvents(Runnable onComplete) {
         eventRef.get()
                 .addOnSuccessListener(querySnapshot -> {
@@ -195,14 +284,4 @@ public class DBConnector {
                     onComplete.run();
                 });
     }
-
-
-
-
-    
-
-
-
-
-
 }
