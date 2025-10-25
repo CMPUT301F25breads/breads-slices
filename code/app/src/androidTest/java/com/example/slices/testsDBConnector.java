@@ -9,20 +9,16 @@ import android.util.Log;
 
 import androidx.test.core.app.ApplicationProvider;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.type.DateTime;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class TestsDBConnector {
+public class testsDBConnector {
     private DBConnector db;
 
     @Before
@@ -92,6 +88,42 @@ public class TestsDBConnector {
         assertTrue(completed);
         
 
+
+    }
+
+    public void testEventCRUD() {
+        //Clear the database
+        db.clearEvents(() -> {
+            Log.d("TestsDBConnector", "Events cleared");
+        });
+
+        //Create a test event
+        //First get the next available ID
+        CountDownLatch latch = new CountDownLatch(1);
+        db.getNewEventId(new EventIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                //Create a test event
+                //Set up date and time objects
+                DateTime eventDate = DateTime.newBuilder()
+                        .setYear(2023)
+                        .setMonth(1)
+                        .setDay(1)
+                        .setHours(12)
+                        .setMinutes(0)
+                        .setSeconds(0)
+                        .build();
+                DateTime regDeadline = DateTime.newBuilder()
+                        .setYear(2023)
+                        .setMonth(1)
+                        .setDay(1)
+                        .setHours(12)
+                        .setMinutes(0)
+                        .setSeconds(0)
+                        .build();
+
+                Event event = new Event("Foo", "Foo", "Foo", eventDate, regDeadline, 10, id);
+                
 
     }
 

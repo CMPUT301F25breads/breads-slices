@@ -178,6 +178,24 @@ public class DBConnector {
                 });
     }
 
+    public void clearEvents(Runnable onComplete) {
+        eventRef.get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Task<Void>> deleteTasks = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        deleteTasks.add(eventRef.document(doc.getId()).delete());
+                    }
+                    // Wait for all deletes to finish
+                    Tasks.whenAll(deleteTasks)
+                            .addOnSuccessListener(aVoid -> onComplete.run());
+
+                })
+                .addOnFailureListener(e -> {
+                    System.out.println("Failed to clear events: " + e.getMessage());
+                    onComplete.run();
+                });
+    }
+
 
 
 
