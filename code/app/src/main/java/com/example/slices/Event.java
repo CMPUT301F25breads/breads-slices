@@ -45,6 +45,19 @@ public class Event {
         // this.id = db.getNewEventId();
 
     }
+    public Event(String name, String description, String location, DateTime eventDate, DateTime regDeadline, int maxEntrants, int id) {
+        this.name = name;
+        this.description = description;
+        this.location = location;
+        this.eventDate = eventDate;
+        this.regDeadline = regDeadline;
+        this.maxEntrants = maxEntrants;
+        this.currentEntrants = 0;
+        this.entrants = new ArrayList<Entrant>();
+        this.waitlist = new Waitlist();
+        this.id = id;
+    }
+
     public int getId() {
         return id;
     }
