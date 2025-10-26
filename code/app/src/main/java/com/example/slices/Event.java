@@ -143,6 +143,57 @@ public class Event {
         this.maxEntrants = maxEntrants;
     }
 
+    public boolean addEntrant(Entrant entrant) {
+        //This should never be called directly from somewhere else in the code
+        //It only is used for testing and by the lottery
+        //Check if the event is full
+        if (currentEntrants >= maxEntrants) {
+            //Return false
+            return false;
+        }
+        //Check if the entrant is already in the event
+        if (entrants.contains(entrant)) {
+            //Return false
+            return false;
+        }
+        //Add the entrant to the event
+        entrants.add(entrant);
+        //Increment the current entrants
+        currentEntrants++;
+        eventModified();
+        //Return true
+        return true;
+    }
+
+    public void addWaitlist(Entrant entrant) {
+        //Add the entrant to the waitlist
+        if (waitlist.addEntrant(entrant)) {
+            eventModified();
+        } else {
+            DebugLogger.d("Event", "Entrant already in waitlist");
+            throw new IllegalArgumentException("Entrant already in waitlist");
+        }
+    }
+
+    private void eventModified() {
+        //Write to database
+        DebugLogger.d("Event", "Event modified");
+        DBConnector db = new DBConnector();
+        db.updateEvent(this, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                DebugLogger.d("Event", "Event modified successfully");
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                DebugLogger.d("Event", "Event modified failed");
+            }
+        });
+    }
+
+
+
 
 
 

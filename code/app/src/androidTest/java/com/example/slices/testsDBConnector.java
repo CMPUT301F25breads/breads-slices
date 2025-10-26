@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +34,37 @@ public class testsDBConnector {
         db = new DBConnector();
     }
 
+   private void createTestEntrants(int x) {
+        if (x > 0) {
+            db.getNewEntrantId(new EntrantIDCallback() {
+                @Override
+                public void onSuccess(int id) {
+                    Entrant entrant = new Entrant("Foo" + x, "Foo@Foo.Foo" + x, "780-678-1211" + x);
+                    entrant.setId(id);
+                    db.writeEntrant(entrant, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            createTestEntrants(x - 1);
+                        }
 
+                        @Override
+                        public void onFailure(Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+        else {
+            return;
+        }
+   }
 
     @Ignore //Ignore this test for now only enable when needed
     @Test
@@ -178,4 +209,69 @@ public class testsDBConnector {
     }
 
 
+
+    @Test
+    public void testGetAllEntrantsInEvent() {
+        db.clearEntrants(() -> {
+            Log.d("TestsDBConnector", "Entrants cleared");
+        });
+        db.clearEvents(() -> {
+            Log.d("TestsDBConnector", "Events cleared");
+        });
+        //Create a test event
+        //First get the next available ID
+        CountDownLatch latch = new CountDownLatch(1);
+        db.getNewEventId(new EventIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                //Create a test event
+                Calendar cal = Calendar.getInstance();
+                cal.set(2025, 1, 1, 12, 0, 0);
+                Date date = cal.getTime();
+                Timestamp eventDate = new Timestamp(date);
+                cal.set(2025, 1, 1, 13, 0, 0);
+                Date date2 = cal.getTime();
+                Timestamp regDeadline = new Timestamp(date2);
+                Event event = new Event("Foo", "Foo", "Foo", eventDate, regDeadline, 10, id);
+                //Attempt to write the event to the database
+                db.writeEvent(event, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        createTestEntrants(10);
+                        db.getEntrantsForEvent(id, new EntrantListCallback() {
+                            @Override
+                            public void onSuccess(List<Entrant> entrants) {
+                                assertNotNull(entrants);
+                                assert entrants.size() == 10;
+                                assert entrants.get(0).getName().equals("Foo1");
+                                assert entrants.get(9).getName().equals("Foo10");
+                                latch.countDown();
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                fail("Failed to get entrants" + e.getMessage());
+                                latch.countDown();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        fail("Failed to write event" + e.getMessage());
+                        latch.countDown();
+                    }
+
+
+                });
+
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                fail("Failed to get next event ID" + e.getMessage());
+                latch.countDown();
+            }
+        });
+    }
 }

@@ -19,21 +19,6 @@ public class Entrant {
 
     }
     public Entrant(String name, String email, String phoneNumber) {
-        //Connect to database
-        db.getNewEntrantId(new EntrantIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                //Set the ID
-                Entrant.this.id = id;
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                //Handle failure
-                //Will eventually throw an exception
-            }
-
-        });
         this.name = name;
         this.email = email;
         this.phoneNumber = phoneNumber;

@@ -184,6 +184,15 @@ public class DBConnector {
 
     }
 
+    public void updateEvent(Event event, DBWriteCallback callback) {
+        eventRef.document(String.valueOf(event.getId()))
+                .set(event)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write event")));
+
+    }
+
+
     /**
      * Deletes an entrant from the database asynchronously
      * @param id
