@@ -3,6 +3,7 @@ package com.example.slices;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 //Prototype class for the entrant
 public class Entrant {
@@ -13,27 +14,12 @@ public class Entrant {
 
     private List<Integer> subEntrants;
 
-    private DBConnector db = new DBConnector();
+
 
     public Entrant() {
 
     }
     public Entrant(String name, String email, String phoneNumber) {
-        //Connect to database
-        db.getNewEntrantId(new EntrantIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                //Set the ID
-                Entrant.this.id = id;
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                //Handle failure
-                //Will eventually throw an exception
-            }
-
-        });
         this.name = name;
         this.email = email;
         this.phoneNumber = phoneNumber;
@@ -81,13 +67,21 @@ public class Entrant {
         subEntrants.remove(id);
 
     }
-    public Collection<Integer> getSubEntrants() {
+    public List<Integer> getSubEntrants() {
         return subEntrants;
         }
-    public void delete() {
-        db.deleteEntrant(String.valueOf(id));
-        for (int subEntrant : subEntrants) {
-            db.deleteEntrant(String.valueOf(subEntrant));
-        }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Entrant entrant = (Entrant) o;
+        return id == entrant.id; // or whatever uniquely identifies an Entrant
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
 }
