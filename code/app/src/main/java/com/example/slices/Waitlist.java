@@ -13,6 +13,7 @@ public class Waitlist {
         // Initialize the waitlist with an empty list of entrants
         this.entrants = new ArrayList<>();
         this.currentEntrants = 0;
+        this.maxCapacity = 32768;
     }
     public Waitlist(int maxCapacity) {
         // Initialize the waitlist with an empty list of entrants
@@ -56,6 +57,17 @@ public class Waitlist {
     }
     public boolean isEmpty() {
         return entrants.isEmpty();
+    }
+    public Entrant getEntrant(Entrant entrant) {
+        return entrants.get(entrants.indexOf(entrant));
+    }
+    public Entrant getEntrant(int id) {
+        for (Entrant entrant : entrants) {
+            if (entrant.getId() == id) {
+                return entrant;
+            }
+        }
+        return null;
     }
 
 
