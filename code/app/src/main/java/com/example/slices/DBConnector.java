@@ -229,6 +229,41 @@ public class DBConnector {
 
     }
 
+    /**
+     * Gets all entrants or a specific event
+     * @param eventId
+     * @param callback
+     */
+    public void getEntrantsForEvent(int eventId, EntrantListCallback callback) {
+        eventRef
+                .whereEqualTo("id", eventId)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
+                            Event event = doc.toObject(Event.class);
+                            if (event != null && event.getEntrants() != null) {
+                                callback.onSuccess(event.getEntrants());
+                            } else {
+                                // Event exists but has no entrants
+                                callback.onSuccess(new ArrayList<Entrant>());
+                            }
+                        } else {
+                            callback.onFailure(new EventNotFound("Event not found", String.valueOf(eventId)));
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get entrants for event"));
+                    }
+                });
+    }
+
+
 
     /**
      * Deletes an event from the database asynchronously
