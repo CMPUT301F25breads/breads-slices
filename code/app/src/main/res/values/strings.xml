@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Slices</string>
+    <string name="view_label">View:</string>
+    <string name="waiting_list">Waiting List</string>
+    <string name="no_entrants">No entrants</string>
+    <string name="no_entrants_message">No entrants have joined this event yet.</string>
+    <string name="error_label">Error</string>
+    <string name="error_loading_entrants">An error occurred while loading entrants.</string>
+    <string name="my_events">My Events</string>
+    <string name="create_event">Create Event</string>
+    <string name="notifications">Notifications</string>
+    <string name="menu">Menu</string>
 </resources>
