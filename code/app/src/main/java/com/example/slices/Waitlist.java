@@ -9,11 +9,13 @@ public class Waitlist {
     private int currentEntrants;
 
 
+
     public Waitlist() {
         // Initialize the waitlist with an empty list of entrants
         this.entrants = new ArrayList<>();
         this.currentEntrants = 0;
         this.maxCapacity = 32768;
+
     }
     public Waitlist(int maxCapacity) {
         // Initialize the waitlist with an empty list of entrants
