@@ -22,14 +22,14 @@ public class Waitlist {
         this.currentEntrants = 0;
     }
 
-    public boolean addEntrant(Entrant entrant) {
+    public void addEntrant(Entrant entrant) {
         if (isFull()) {
-            return false;
+            throw new IllegalStateException("Waitlist is full");
         }
         // Add the entrant to the waitlist
         entrants.add(entrant);
         currentEntrants++;
-        return true;
+        return;
     }
 
     private boolean isFull() {

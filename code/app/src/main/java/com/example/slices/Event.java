@@ -13,6 +13,8 @@ import java.util.Calendar;
 
 /**
  * Class representing an entrant
+ * @author Ryan Haubrich
+ * @version 0.1
  *
  */
 public class Event {
@@ -166,12 +168,11 @@ public class Event {
     }
 
     public void addWaitlist(Entrant entrant) {
-        //Add the entrant to the waitlist
-        if (waitlist.addEntrant(entrant)) {
-            eventModified();
-        } else {
-            DebugLogger.d("Event", "Entrant already in waitlist");
-            throw new IllegalArgumentException("Entrant already in waitlist");
+        try {
+            waitlist.addEntrant(entrant);
+        } catch (Exception e) {
+            DebugLogger.d("Event", "Error adding entrant to waitlist");
+            throw e;
         }
     }
 
