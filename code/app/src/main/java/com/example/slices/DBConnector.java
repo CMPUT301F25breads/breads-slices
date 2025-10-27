@@ -192,6 +192,13 @@ public class DBConnector {
 
     }
 
+    public void updateEntrant(Entrant entrant, DBWriteCallback callback) {
+        entrantRef.document(String.valueOf(entrant.getId()))
+                .set(entrant)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
+    }
+
 
     /**
      * Deletes an entrant from the database asynchronously

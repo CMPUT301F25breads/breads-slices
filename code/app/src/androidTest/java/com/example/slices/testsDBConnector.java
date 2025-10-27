@@ -39,7 +39,7 @@ public class testsDBConnector {
             db.getNewEntrantId(new EntrantIDCallback() {
                 @Override
                 public void onSuccess(int id) {
-                    Entrant entrant = new Entrant("Foo" + x, "Foo@Foo.Foo" + x, "780-678-1211" + x);
+                    Entrant entrant = new Entrant("Foo" + x, "Foo" + x + "@Foo.Foo", "780-678-1211");
                     entrant.setId(id);
                     db.writeEntrant(entrant, new DBWriteCallback() {
                         @Override
