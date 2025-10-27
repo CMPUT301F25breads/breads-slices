@@ -18,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:layout_scrollFlags="scroll|enterAlways"
-            app:title="Event Entrants" />
+            app:title="Event Waiting List" />
 
         <!-- Event Info Card -->
         <com.google.android.material.card.MaterialCardView
