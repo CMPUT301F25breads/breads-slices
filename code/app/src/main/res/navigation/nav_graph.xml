@@ -20,6 +20,13 @@
 
     </fragment>
     <fragment
+        android:id="@+id/CreateFragment"
+        android:name="com.example.slices.fragments.CreateFragment"
+        android:label="Create Events"
+        tools:layout="@layout/create_fragment">
+
+    </fragment>
+    <fragment
         android:id="@+id/NotifFragment"
         android:name="com.example.slices.fragments.NotifFragment"
         android:label="Notifications"
@@ -47,5 +54,8 @@
     <action
         android:id="@+id/action_to_MenuFragment"
         app:destination="@+id/MenuFragment"/>
+    <action
+        android:id="@+id/action_to_CreateFragment"
+        app:destination="@+id/CreateFragment"/>
 
 </navigation>
