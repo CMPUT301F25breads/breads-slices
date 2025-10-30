@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.models;
 
 import java.util.ArrayList;
 import java.util.List;

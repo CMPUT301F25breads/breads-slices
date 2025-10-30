@@ -3,6 +3,8 @@ package com.example.slices;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import com.example.slices.controllers.DBConnector;
+import com.example.slices.interfaces.EventCallback;
 import com.google.firebase.Timestamp;
 
 import org.junit.Before;

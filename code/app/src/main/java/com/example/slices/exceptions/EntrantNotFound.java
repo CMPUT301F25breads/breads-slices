@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.exceptions;
 
 public class EntrantNotFound extends RuntimeException {
     private String id;

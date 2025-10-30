@@ -1,5 +1,7 @@
 package com.example.slices;
 
+import com.example.slices.models.Entrant;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -3,6 +3,10 @@ package com.example.slices;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EntrantListCallback;
+import com.example.slices.models.Entrant;
+
 import org.junit.Test;
 
 import java.util.List;

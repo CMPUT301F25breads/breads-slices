@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.testing;
 
 public class DebugLogger {
     private static final boolean HAS_ANDROID_LOG;

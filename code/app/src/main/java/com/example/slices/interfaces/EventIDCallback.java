@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.interfaces;
 
 public interface EventIDCallback {
     void onSuccess(int id);
