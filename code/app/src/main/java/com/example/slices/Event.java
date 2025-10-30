@@ -19,7 +19,7 @@ import java.util.List;
  * @version 0.1
  *
  */
-public class Event {
+public class Event implements Comparable<Event> {
     private String name;
 
     private String description; // Probably will be it's own thing later
@@ -38,6 +38,7 @@ public class Event {
     private int maxEntrants;
 
     private int currentEntrants;
+    private String imageUrl;
 
     private DBConnector db = new DBConnector();
 
@@ -143,6 +144,11 @@ public class Event {
 
     }
 
+    public Event(String name, String imageUrl) {
+        this.name = name;
+        this.imageUrl = imageUrl;
+    }
+
     public int getId() {
         return id;
     }
@@ -172,6 +178,9 @@ public class Event {
     }
     public Waitlist getWaitlist() {
         return waitlist;
+    }
+    public String getImageUrl() {
+        return imageUrl;
     }
 
     public void setName(String name) {
@@ -291,7 +300,10 @@ public class Event {
     }
 
 
-
+    @Override
+    public int compareTo(Event other) {
+        return this.eventDate.compareTo(other.eventDate);
+    }
 
 
 

@@ -47,7 +47,7 @@ public class NotificationManager {
 
         }
         //Create a new notification object
-        Notification notification = new Notification(title, body, largestId, recipientId, senderId;
+        Notification notification = new Notification(title, body, largestId, recipientId, senderId);
         //Write the notification to the database
         db.writeNotification(notification, new DBWriteCallback() {
             @Override
@@ -87,7 +87,7 @@ public class NotificationManager {
         //Create a new notification object
         Invitation invitation = new Invitation(title, body, largestId, recipientId, senderId, eventId);
         //Write the notification to the database
-        db.writeNotification(invitation
+        //db.writeNotification(invitation
 
     }
 
