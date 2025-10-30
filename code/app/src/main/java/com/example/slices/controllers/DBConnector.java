@@ -13,6 +13,7 @@ import com.example.slices.interfaces.EntrantIDCallback;
 import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
+import com.example.slices.interfaces.InvitationListCallback;
 import com.example.slices.interfaces.LogIDCallback;
 import com.example.slices.interfaces.LogListCallback;
 import com.example.slices.interfaces.NotificationCallback;
@@ -25,6 +26,7 @@ import com.example.slices.models.Log;
 import com.example.slices.models.LogType;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationLog;
+import com.example.slices.models.NotificationType;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -44,15 +46,33 @@ import java.util.List;
  * @version 0.1
  *
  *
+ *
  */
 public class DBConnector {
+    /**
+     * Firebase Firestore database instance
+     */
     private FirebaseFirestore db;
+
+    /**
+     * Collection reference for the entrant collection in the database
+     */
     private CollectionReference entrantRef;
+    /**
+     * Collection reference for the auth collection in the database
+     */
     private CollectionReference authRef;
+    /**
+     * Collection reference for the event collection in the database
+     */
     private CollectionReference eventRef;
-
+    /**
+     * Collection reference for the notification collection in the database
+     */
     private CollectionReference notificationRef;
-
+    /**
+     * Collection reference for the log collection in the database
+     */
     private CollectionReference logRef;
 
 
@@ -209,6 +229,14 @@ public class DBConnector {
 
     }
 
+    /**
+     * Updates an event in the database asynchronously
+     * @param event
+     *      Event to update in the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
     public void updateEvent(Event event, DBWriteCallback callback) {
         eventRef.document(String.valueOf(event.getId()))
                 .set(event)
@@ -216,6 +244,14 @@ public class DBConnector {
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write event")));
 
     }
+
+    /**
+     * Updates an entrant in the database asynchronously
+     * @param entrant
+     *      Entrant to update in the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
 
     public void updateEntrant(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(String.valueOf(entrant.getId()))
@@ -273,7 +309,9 @@ public class DBConnector {
     /**
      * Gets all entrants or a specific event
      * @param eventId
+     *      Event ID to search for
      * @param callback
+     *      Callback to call when the operation is complete
      */
     public void getEntrantsForEvent(int eventId, EntrantListCallback callback) {
         eventRef
@@ -361,6 +399,11 @@ public class DBConnector {
                 });
     }
 
+    /**
+     * Gets the next available notification ID
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public void getNotificationId(NotificationIDCallback callback) {
         notificationRef.get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
@@ -391,6 +434,12 @@ public class DBConnector {
 
     }
 
+    /**
+     * Gets all notifications from the database asynchronously
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
     public void getAllNotifications(NotificationListCallback callback) {
         notificationRef.get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
@@ -418,21 +467,54 @@ public class DBConnector {
                     }
                 });
     }
+
+    /**
+     * Deletes a notification from the database
+     * @param id
+     *      Notification ID to delete
+     */
+
     public void deleteNotification(String id) {
         notificationRef.document(id).delete();
     }
+
+    /**
+     * Writes a notification to the database
+     * @param notification
+     *      Notification to write to the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
     public void writeNotification(Notification notification, DBWriteCallback callback) {
         notificationRef.document(String.valueOf(notification.getId()))
                 .set(notification)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write notification")));
     }
+
+    /**
+     * Updates a notification in the database
+
+     * @param notification
+     *      Notification to update in the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public void updateNotification(Notification notification, DBWriteCallback callback) {
         notificationRef.document(String.valueOf(notification.getId()))
                 .set(notification)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write notification")));
     }
+
+    /**
+     * Clears all notifications from the database asynchronously: Used for testing
+
+     * @param onComplete
+     *      Callback to call when the operation is complete
+
+     */
 
     public void clearNotifications(Runnable onComplete) {
         notificationRef.get()
@@ -453,8 +535,17 @@ public class DBConnector {
 
     }
 
+    /**
+     * Gets a notification from the database asynchronously
+     * @param id
+     *      Notification ID to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
     public void getNotificationById(int id, NotificationCallback callback) {
         notificationRef.whereEqualTo("id", id)
+                .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -476,8 +567,17 @@ public class DBConnector {
                 });
     }
 
+    /**
+     * Gets all notifications for a single recipient from the database asynchronously
+     * @param recipientId
+     *      Recipient ID to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
     public void getNotificationByRecipientId(int recipientId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("recipientId", recipientId)
+                .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -501,9 +601,18 @@ public class DBConnector {
                     }
                 });
     }
+
+    /**
+     * Gets all notifications for a single sender from the database asynchronously
+     * @param senderId
+     *      ID of the sender to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
 
     public void getNotificationBySenderId(int senderId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("senderId", senderId)
+                .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -529,8 +638,17 @@ public class DBConnector {
                 });
     }
 
+    /**
+     * Gets a single invitation from the database asynchronously
+     * @param id
+     *      ID of the invitation to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
     public void getInvitationById(int id, NotificationCallback callback) {
-        notificationRef.whereEqualTo("id", id)
+        notificationRef.whereEqualTo("id", id )
+                .whereEqualTo("type", NotificationType.INVITATION)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -552,8 +670,116 @@ public class DBConnector {
                 });
     }
 
+    /**
+     * Gets all invitations for a single recipient from the database asynchronously
+     * @param recipientId
+     *      ID of the recipient to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getInvitationByRecipientId(int recipientId, NotificationListCallback callback) {
+        notificationRef.whereEqualTo("recipientId", recipientId)
+                .whereEqualTo("type", NotificationType.INVITATION)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Notification> notifications = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Invitation invitation = doc.toObject(Invitation.class);
+                                notifications.add(invitation);
+                            }
+                            callback.onSuccess(notifications);
+                        } else {
+                            callback.onSuccess(new ArrayList<Notification>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                    }
+                });
+    }
+
+    /**
+     * Gets all invitations for a single sender from the database asynchronously
+     * @param senderId
+     *      ID of the sender to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
+    public void getInvitationBySenderId(int senderId, NotificationListCallback callback) {
+        notificationRef.whereEqualTo("senderId", senderId)
+                .whereEqualTo("type", NotificationType.INVITATION)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Notification> notifications = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Invitation invitation = doc.toObject(Invitation.class);
+                                notifications.add(invitation);
+                            }
+                            callback.onSuccess(notifications);
+                        } else {
+                            callback.onSuccess(new ArrayList<Notification>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                    }
+                });
+    }
+
+    /**
+     * Gets all invitations for a single event from the database asynchronously
+     * @param eventId
+     *      ID of the event to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getInvitationByEventId(int eventId, NotificationListCallback callback) {
+        notificationRef.whereEqualTo("eventId", eventId)
+                .whereEqualTo("type", NotificationType.INVITATION)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Notification> notifications = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Invitation invitation = doc.toObject(Invitation.class);
+                                notifications.add(invitation);
+                            }
+                            callback.onSuccess(notifications);
+                        } else {
+                            callback.onSuccess(new ArrayList<Notification>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                    }
+                });
+
+    }
 
 
+    /**
+     * Gets the next available log ID
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
 
     public void getLogId(LogIDCallback callback) {
         logRef.get()
@@ -588,6 +814,14 @@ public class DBConnector {
                     });
 
     }
+
+    /**
+     * Writes a log to the database
+     * @param log
+     *      Log to write to the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public void writeLog(Log log, DBWriteCallback callback) {
         logRef.document(String.valueOf(log.getLogId()))
                 .set(log)
@@ -628,9 +862,21 @@ public class DBConnector {
                 });
     }
 
+    /**
+     * Deletes a log from the database
+     * @param id
+     *      ID of the log to delete
+     */
+
     public void deleteLog(String id) {
         logRef.document(id).delete();
     }
+
+    /**
+     * Gets all notification logs from the database asynchronously
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
 
     public void getNotificationLogs(LogListCallback callback) {
         logRef.whereEqualTo("type", LogType.NOTIFICATION)
@@ -658,6 +904,12 @@ public class DBConnector {
 
                 });
     }
+
+    /**
+     * Gets all invitation logs from the database asynchronously
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
 
     public void getInvitationLogs(LogListCallback callback) {
         logRef.whereEqualTo("type", LogType.INVITATION)

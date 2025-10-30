@@ -3,6 +3,7 @@ package com.example.slices.controllers;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.NotificationIDCallback;
 import com.example.slices.models.Invitation;
+import com.example.slices.models.LogType;
 import com.example.slices.models.Notification;
 
 public class NotificationManager {
@@ -47,7 +48,7 @@ public class NotificationManager {
 
         }
         //Create a new notification object
-        Notification notification = new Notification(title, body, largestId, recipientId, senderId;
+        Notification notification = new Notification(title, body, largestId, recipientId, senderId);
         //Write the notification to the database
         db.writeNotification(notification, new DBWriteCallback() {
             @Override
@@ -78,6 +79,7 @@ public class NotificationManager {
                     largestId = id;
                     sendInvitation(title, body, recipientId, senderId, eventId);
                 }
+
                 @Override
                 public void onFailure(Exception e) {
                     System.out.println("Failed to get notification ID: " + e.getMessage());
@@ -87,8 +89,18 @@ public class NotificationManager {
         //Create a new notification object
         Invitation invitation = new Invitation(title, body, largestId, recipientId, senderId, eventId);
         //Write the notification to the database
-        db.writeNotification(invitation
+        db.writeNotification(invitation, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                //Send a copy to the logger
+                Logger.log(invitation);
+            }
 
+            @Override
+            public void onFailure(Exception e) {
+                System.out.println("Failed to write notification: " + e.getMessage());
+            }
+        });
     }
 
 }
