@@ -1,4 +1,11 @@
-package com.example.slices;
+package com.example.slices.models;
+
+import com.example.slices.controllers.DBConnector;
+import com.example.slices.testing.DebugLogger;
+import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EntrantIDCallback;
+import com.example.slices.interfaces.EntrantListCallback;
 
 import java.util.ArrayList;
 import java.util.List;

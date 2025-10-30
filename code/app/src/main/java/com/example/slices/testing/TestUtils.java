@@ -1,4 +1,7 @@
-package com.example.slices;
+package com.example.slices.testing;
+
+import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.models.Entrant;
 
 import java.util.ArrayList;
 import java.util.Collections;

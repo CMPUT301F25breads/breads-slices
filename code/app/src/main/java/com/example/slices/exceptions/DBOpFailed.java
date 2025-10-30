@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.exceptions;
 
 public class DBOpFailed extends RuntimeException {
     public DBOpFailed(String message) {

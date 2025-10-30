@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.exceptions;
 
 public class EventNotFound extends RuntimeException {
     private String id;

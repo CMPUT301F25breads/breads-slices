@@ -1,13 +1,14 @@
 package com.example.slices;
 
-import android.os.Build;
-import android.util.Log;
-
+import com.example.slices.controllers.DBConnector;
+import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EventCallback;
+import com.example.slices.interfaces.EventIDCallback;
+import com.example.slices.models.Entrant;
+import com.example.slices.models.Waitlist;
+import com.example.slices.testing.DebugLogger;
 import com.google.firebase.Timestamp;
-import com.google.type.DateTime;
 
-import java.sql.Time;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;

@@ -5,9 +5,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.example.slices.controllers.DBConnector;
+import com.example.slices.models.Entrant;
+import com.example.slices.testing.TestUtils;
+
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class testLottery {

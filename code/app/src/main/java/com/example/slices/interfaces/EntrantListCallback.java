@@ -1,5 +1,7 @@
-package com.example.slices;
+package com.example.slices.interfaces;
 
+
+import com.example.slices.models.Entrant;
 
 import java.util.List;
 

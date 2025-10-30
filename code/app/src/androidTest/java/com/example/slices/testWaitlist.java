@@ -3,12 +3,15 @@ package com.example.slices;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import com.example.slices.controllers.DBConnector;
+import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.models.Entrant;
+import com.example.slices.models.Waitlist;
+import com.example.slices.testing.TestUtils;
+
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class testWaitlist {
     private DBConnector db = new DBConnector();
