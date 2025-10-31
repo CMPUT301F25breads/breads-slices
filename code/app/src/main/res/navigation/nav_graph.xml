@@ -20,6 +20,13 @@
 
     </fragment>
     <fragment
+        android:id="@+id/CreateFragment"
+        android:name="com.example.slices.fragments.CreateFragment"
+        android:label="Create Events"
+        tools:layout="@layout/create_fragment">
+
+    </fragment>
+    <fragment
         android:id="@+id/NotifFragment"
         android:name="com.example.slices.fragments.NotifFragment"
         android:label="Notifications"
@@ -31,6 +38,13 @@
         android:label="Menu"
         tools:layout="@layout/menu_fragment"
         />
+    <fragment
+        android:id="@+id/MyEventsOrgFragment"
+        android:name="com.example.slices.fragments.MyEventsOrgFragment"
+        android:label="My Events Organizer"
+        tools:layout="@layout/my_events_org_fragment">
+
+    </fragment>
 
     <action
         android:id="@+id/action_to_MyEventsFragment"
@@ -47,5 +61,11 @@
     <action
         android:id="@+id/action_to_MenuFragment"
         app:destination="@+id/MenuFragment"/>
+    <action
+        android:id="@+id/action_to_CreateFragment"
+        app:destination="@+id/CreateFragment"/>
+    <action
+        android:id="@+id/action_to_MyEventsOrgFragment"
+        app:destination="@+id/MyEventsOrgFragment"/>
 
 </navigation>
