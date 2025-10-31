@@ -27,6 +27,12 @@
             android:text="Switch"
             tools:ignore="UseSwitchCompatOrMaterialXml" />
 
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TextView" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <include
