@@ -44,6 +44,7 @@ public class Event implements Comparable<Event> {
 
 
 
+    public Event(){}
 
     public Event(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, EventCallback callback) throws IllegalArgumentException {
         //Check if the eventTime is in the past
