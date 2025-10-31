@@ -40,7 +40,6 @@ public class BrowseFragment extends Fragment {
         db.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                if (binding == null || !isAdded()) return;
                 EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
                 binding.browseEventList.setAdapter(eventAdapter);
             }
