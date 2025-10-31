@@ -11,12 +11,12 @@ import androidx.fragment.app.Fragment;
 import com.example.slices.Event;
 import com.example.slices.adapters.EventAdapter;
 import com.example.slices.databinding.MyEventsFragmentBinding;
+import com.example.slices.databinding.MyEventsOrgFragmentBinding;
 
 import java.util.ArrayList;
 
-public class MyEventsFragment extends Fragment {
-
-    private MyEventsFragmentBinding binding;
+public class MyEventsOrgFragment extends Fragment {
+    private MyEventsOrgFragmentBinding binding;
 
     @Override
     public View onCreateView(
@@ -24,21 +24,13 @@ public class MyEventsFragment extends Fragment {
             Bundle savedInstanceState
     ) {
 
-        binding = MyEventsFragmentBinding.inflate(inflater, container, false);
+        binding = MyEventsOrgFragmentBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        ArrayList<Event> events = new ArrayList<>();
-
-        // Testing
-        for(int i = 0; i < 10; i++)
-            events.add(new Event("Testing"));
-
-        EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
-        binding.myEventsList.setAdapter(eventAdapter);
     }
 
     @Override
@@ -46,5 +38,4 @@ public class MyEventsFragment extends Fragment {
         super.onDestroyView();
         binding = null;
     }
-
 }

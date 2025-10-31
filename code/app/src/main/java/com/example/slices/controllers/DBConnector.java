@@ -13,7 +13,7 @@ import com.example.slices.interfaces.EntrantIDCallback;
 import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
-import com.example.slices.interfaces.InvitationListCallback;
+import com.example.slices.interfaces.EventListCallback;
 import com.example.slices.interfaces.LogIDCallback;
 import com.example.slices.interfaces.LogListCallback;
 import com.example.slices.interfaces.NotificationCallback;
@@ -31,6 +31,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -432,6 +433,40 @@ public class DBConnector {
                     }
                 });
 
+    }
+
+    /**
+     * Gets all future events from the database asynchronously
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getAllFutureEvents(EventListCallback callback) {
+        eventRef.get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Event> events = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Event event = doc.toObject(Event.class);
+                                if(event.getEventDate().compareTo(Timestamp.now()) > 0)
+                                    events.add(event);
+                            }
+                            callback.onSuccess(events);
+
+
+                        }
+                        else {
+                            callback.onSuccess(new ArrayList<Event>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get Events"));
+                    }
+                });
     }
 
     /**

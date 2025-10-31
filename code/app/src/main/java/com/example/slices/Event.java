@@ -38,7 +38,7 @@ public class Event implements Comparable<Event> {
     private int maxEntrants;
 
     private int currentEntrants;
-    private String imageUrl;
+    private String imageUrl = "https://upload.wikimedia.org/wikipedia/commons/7/71/Black.png";
 
     private DBConnector db = new DBConnector();
 
@@ -144,9 +144,13 @@ public class Event implements Comparable<Event> {
 
     }
 
+    // Constructors for testing stuff
     public Event(String name, String imageUrl) {
         this.name = name;
         this.imageUrl = imageUrl;
+    }
+    public Event(String name) {
+        this.name = name;
     }
 
     public int getId() {

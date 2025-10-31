@@ -1,6 +1,8 @@
 package com.example.slices;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,16 +36,29 @@ public class MainActivity extends AppCompatActivity {
 
         // Set listeners for bottom navigation buttons
         binding.myEventsButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MyEventsFragment));
+        binding.myEventsOrgButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MyEventsOrgFragment));
         binding.browseButton.setOnClickListener(view -> navController.navigate(R.id.action_to_BrowseFragment));
         binding.notifButton.setOnClickListener(view -> navController.navigate(R.id.action_to_NotifFragment));
         binding.menuButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MenuFragment));
+        binding.createButton.setOnClickListener(view -> navController.navigate(R.id.action_to_CreateFragment));
 
-
+        // When ready to move to menu fragment this listener can be used and delete from here
+        //        binding.organizerSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        //            if (getActivity() != null) {
+        //                ((MainActivity) getActivity()).toggleButtons(isChecked);
+        //            }
+        //        });
+        binding.switch1.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            toggleButtons(isChecked);
+        });
     }
 
-
-
-
+    public void toggleButtons(boolean isChecked) {
+        binding.createButton.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        binding.myEventsOrgButton.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        binding.browseButton.setVisibility(isChecked ? View.GONE : View.VISIBLE);
+        binding.myEventsButton.setVisibility(isChecked ? View.GONE : View.VISIBLE);
+    }
 
 
 }
