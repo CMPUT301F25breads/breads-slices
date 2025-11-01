@@ -4,6 +4,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.slices.models.Entrant;
+
 import java.util.ArrayList;
 
 /**
@@ -11,17 +13,18 @@ import java.util.ArrayList;
  */
 public class SharedViewModel extends ViewModel {
 
-    private final MutableLiveData<ArrayList<String>> stuff = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<Entrant> user = new MutableLiveData<>(new Entrant());
 
-    public LiveData<ArrayList<String>> getStuff() {
-        return stuff;
+    public LiveData<Entrant> getUser() {
+        return user;
     }
 
-    public void addStuff(String a) {
-        ArrayList<String> updated = stuff.getValue();
+    /**public void setEntrant(Entrant entrant) {
+        user.setValue(entrant);
+        ArrayList<Entrant> updated = user.getValue();
         if(updated != null) {
             updated.add(a);
             stuff.setValue(updated);
         }
-    }
+    }*/
 }

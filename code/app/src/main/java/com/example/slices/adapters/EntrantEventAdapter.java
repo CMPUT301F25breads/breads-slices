@@ -44,6 +44,7 @@ public class EntrantEventAdapter extends EventAdapter {
         View view = super.getView(position, convertView, parent);
 
         Event event = getItem(position);
+
         if (event == null) return view;
 
         // join/leave button color & text color change logic (on the Browse screen, for now)

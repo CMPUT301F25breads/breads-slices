@@ -8,6 +8,7 @@ public class Notification {
     protected String body;
     protected int notificationId;
     protected int recipientId;
+    protected String recipientDeviceId;
 
     protected int senderId;
 
@@ -31,9 +32,18 @@ public class Notification {
         this.read = false;
         this.timestamp = Timestamp.now();
         this.type = NotificationType.NOTIFICATION;
-
-
     }
+
+    public Notification(String title, String body, int notificationId, String deviceId, int senderId) {
+        this.title = title;
+        this.body = body;
+        this.notificationId = notificationId;
+        this.recipientDeviceId = deviceId;
+        this.read = false;
+        this.timestamp = Timestamp.now();
+        this.type = NotificationType.NOTIFICATION;
+    }
+
 
     public String getTitle() {
         return title;
@@ -53,6 +63,10 @@ public class Notification {
 
     public int getSenderId() {
         return senderId;
+    }
+
+    public String getRecipientDeviceId() {
+        return recipientDeviceId;
     }
 
 
@@ -78,6 +92,10 @@ public class Notification {
 
     public void setRecipientId(int recipientId) {
         this.recipientId = recipientId;
+    }
+
+    public void setRecipientDeviceId(String deviceId) {
+        this.recipientDeviceId = deviceId;
     }
 
     public void setRead(boolean read) {
