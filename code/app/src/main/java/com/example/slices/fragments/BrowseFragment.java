@@ -12,9 +12,11 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.example.slices.Event;
+import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.adapters.EventAdapter;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.BrowseFragmentBinding;
+import com.example.slices.interfaces.EventActions;
 import com.example.slices.interfaces.EventListCallback;
 
 import java.util.ArrayList;
@@ -41,8 +43,24 @@ public class BrowseFragment extends Fragment {
         db.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
-                binding.browseEventList.setAdapter(eventAdapter);
+                /**
+                 * Changed the onSuccess function to use EntrantEventAdapter. Added the join/leave
+                 * button logic (somewhat) but need the DB logic before moving forward
+                 * - Raj
+                 */
+                EntrantEventAdapter entrantAdapter = new EntrantEventAdapter(requireContext(), events);
+                entrantAdapter.setActions(new EventActions() {
+                    @Override
+                    public void onJoinClicked(@NonNull Event e) {
+                        // TODO: later call the DB to join waitlist for e.getId()
+                    }
+
+                    @Override
+                    public void onLeaveClicked(@NonNull Event e) {
+                        // TODO: later call DB to leave waitlist for e.getid()
+                    }
+                });
+                binding.browseEventList.setAdapter(entrantAdapter);
             }
 
             @Override
