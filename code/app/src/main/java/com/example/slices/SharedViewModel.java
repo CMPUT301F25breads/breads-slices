@@ -14,17 +14,21 @@ import java.util.ArrayList;
 public class SharedViewModel extends ViewModel {
 
     private final MutableLiveData<Entrant> user = new MutableLiveData<>(new Entrant());
+    private final MutableLiveData<ArrayList<Event>> events = new MutableLiveData<>(new ArrayList<>());
 
     public LiveData<Entrant> getUser() {
         return user;
     }
+    public LiveData<ArrayList<Event>> getEvents() {
+        return events;
+    }
 
-    /**public void setEntrant(Entrant entrant) {
-        user.setValue(entrant);
-        ArrayList<Entrant> updated = user.getValue();
-        if(updated != null) {
-            updated.add(a);
-            stuff.setValue(updated);
-        }
-    }*/
+    public void setUser(Entrant user) {
+        this.user.setValue(user);
+    }
+
+    public void setEvents(ArrayList<Event> events) {
+        this.events.setValue(events);
+    }
+
 }

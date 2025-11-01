@@ -1,7 +1,6 @@
 package com.example.slices;
 
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.View;
 import android.widget.Toast;
 
