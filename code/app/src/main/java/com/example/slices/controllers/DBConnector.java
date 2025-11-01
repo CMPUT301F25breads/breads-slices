@@ -141,12 +141,19 @@ public class DBConnector {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         if (!queryDocumentSnapshots.isEmpty()) {
-                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
-                            Entrant entrant = doc.toObject(Entrant.class);
-                            callback.onSuccess(entrant);
-                        } else {
+                            for(DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()){
+                                //Object id = doc.get("deviceId");
+                                Entrant entrant = doc.toObject(Entrant.class);
+                                if(entrant != null) {
+                                    callback.onSuccess(entrant);
+                                }
+                                else {
+                                    callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
+                                }
+                            }
+                        }
+                        else{
                             callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
-
                         }
                     }
                 })
@@ -241,6 +248,21 @@ public class DBConnector {
      */
     public void writeEntrant(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(String.valueOf(entrant.getId()))
+                .set(entrant)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
+
+    }
+
+    /**
+     * Writes an entrant to the database asynchronously
+     * @param entrant
+     *      Entrant to write to the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
+        entrantRef.document(entrant.getDeviceId())
                 .set(entrant)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
@@ -479,7 +501,7 @@ public class DBConnector {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Event> events = new ArrayList<>();
+                            ArrayList<Event> events = new ArrayList<>();
                             for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                                 Event event = doc.toObject(Event.class);
                                 if(event.getEventDate().compareTo(Timestamp.now()) > 0)

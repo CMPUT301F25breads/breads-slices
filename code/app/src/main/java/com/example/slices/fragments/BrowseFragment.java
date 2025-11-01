@@ -22,6 +22,7 @@ import java.util.List;
 
 public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
+    private ArrayList<Event> eventList = new ArrayList<>();
 
     @Override
     public View onCreateView(
@@ -41,8 +42,14 @@ public class BrowseFragment extends Fragment {
         db.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
+                eventList.clear();
+                eventList.addAll(events);
+                //EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+                EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
                 binding.browseEventList.setAdapter(eventAdapter);
+                //binding.browseEventList.setAdapter(new EventAdapter(requireContext(), events));
+                //EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
+                //binding.browseEventList.setAdapter(eventAdapter);
             }
 
             @Override
@@ -50,6 +57,9 @@ public class BrowseFragment extends Fragment {
                 Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+
+        //EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+        //binding.browseEventList.setAdapter(eventAdapter);
 
         //binding.browseEventList.setOnItemClickListener();
 
