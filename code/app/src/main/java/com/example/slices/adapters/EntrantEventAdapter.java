@@ -46,7 +46,7 @@ public class EntrantEventAdapter extends EventAdapter {
         Event event = getItem(position);
         if (event == null) return view;
 
-        // join/leave button color & text color change logic
+        // join/leave button color & text color change logic (on the Browse screen, for now)
         View buttonView = view.findViewById(R.id.btn_event_action);
         if (buttonView instanceof Button) {
             Button actionBtn = (Button) buttonView;
