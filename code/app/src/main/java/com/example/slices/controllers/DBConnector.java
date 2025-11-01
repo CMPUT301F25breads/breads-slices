@@ -127,6 +127,39 @@ public class DBConnector {
         }
 
     /**
+     * Gets an entrant from the database asynchronously
+     * @param deviceId
+     *      Entrant device ID to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getEntrantByDeviceId(String deviceId, EntrantCallback callback) {
+        entrantRef
+                .whereEqualTo("deviceId", deviceId)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
+                            Entrant entrant = doc.toObject(Entrant.class);
+                            callback.onSuccess(entrant);
+                        } else {
+                            callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
+
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get entrant"));
+                    }
+                });
+
+    }
+
+    /**
      * Gets an event from the database asynchronously
      * @param callback
      *      Callback to call when the operation is complete
