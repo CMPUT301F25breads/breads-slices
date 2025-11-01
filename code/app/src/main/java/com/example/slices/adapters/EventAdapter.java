@@ -37,7 +37,6 @@ public class EventAdapter extends ArrayAdapter<Event> {
         title.setText(event.getName());
         ImageView image = view.findViewById(R.id.image);
         Glide.with(this.getContext()).load(event.getImageUrl()).into(image);
-
         return view;
     }
 }
