@@ -16,11 +16,12 @@ public class SharedViewModel extends ViewModel {
     private final MutableLiveData<Entrant> user = new MutableLiveData<>(new Entrant());
     private final MutableLiveData<ArrayList<Event>> events = new MutableLiveData<>(new ArrayList<>());
 
-    public LiveData<Entrant> getUser() {
-        return user;
+    public Entrant getUser() {
+        return user.getValue();
     }
-    public LiveData<ArrayList<Event>> getEvents() {
-        return events;
+
+    public ArrayList<Event> getEvents() {
+        return events.getValue();
     }
 
     public void setUser(Entrant user) {
