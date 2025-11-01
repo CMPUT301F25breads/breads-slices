@@ -63,7 +63,7 @@ public class Waitlist {
     public Entrant getEntrant(Entrant entrant) {
         return entrants.get(entrants.indexOf(entrant));
     }
-    public Entrant getEntrant(int id) {
+    public Entrant getEntrant(String id) {
         for (Entrant entrant : entrants) {
             if (entrant.getId() == id) {
                 return entrant;
@@ -71,6 +71,14 @@ public class Waitlist {
         }
         return null;
     }
+//    public Entrant getEntrant(String id) {
+//        for (Entrant entrant : entrants) {
+//            if (entrant.getId() == id) {
+//                return entrant;
+//            }
+//        }
+//        return null;
+//}
 
 
 

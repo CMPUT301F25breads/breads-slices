@@ -19,7 +19,7 @@ public class testWaitlist {
 
 
     private Entrant createEntrant(EntrantCallback callback) {
-        Entrant e = new Entrant("Entrant", "Email@example.com", "Phone", callback);
+        Entrant e = new Entrant("Entrant", "Email@example.com", "Phone");
         return e;
     }
 

@@ -17,8 +17,8 @@ public class Entrant {
     private String name;
     private String email;
     private String phoneNumber;
-    private int id;
-    private String deviceId;
+    //private int id;
+    private String id;
     private List<Event> confirmedEvents;
     private List<Event> waitlistedEvents;
 
@@ -31,8 +31,8 @@ public class Entrant {
 
     public Entrant() {}
 
-    public Entrant(String deviceId, EntrantCallback callback) {
-        this.deviceId = deviceId;
+    public Entrant(String id, EntrantCallback callback) {
+        this.id = id;
 
         db.writeEntrant(Entrant.this, new DBWriteCallback() {
             @Override
@@ -47,7 +47,6 @@ public class Entrant {
                 callback.onFailure(e);
             }
         });
-
     }
 
     /**
@@ -67,33 +66,25 @@ public class Entrant {
         this.subEntrants = new ArrayList<Integer>();
 
     }
-    public Entrant(String name, String email, String phoneNumber, EntrantCallback callback) {
+
+    // Testing constructor
+    public Entrant(String name, String email, String phoneNumber, String id, EntrantCallback callback) {
         this.name = name;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.id = id;
         this.subEntrants = new ArrayList<Integer>();
-        db.getNewEntrantId(new EntrantIDCallback() {
+        db.writeEntrant(Entrant.this, new DBWriteCallback() {
             @Override
-            public void onSuccess(int id) {
-                Entrant.this.id = id;
-                db.writeEntrant(Entrant.this, new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        DebugLogger.d("Entrant", "Entrant created successfully");
-                        callback.onSuccess(Entrant.this);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        DebugLogger.d("Entrant", "Entrant creation failed");
-                        callback.onFailure(e);
-                    }
-                });
+            public void onSuccess() {
+                DebugLogger.d("Entrant", "Entrant created successfully");
+                callback.onSuccess(Entrant.this);
             }
 
             @Override
             public void onFailure(Exception e) {
                 DebugLogger.d("Entrant", "Entrant creation failed");
+                callback.onFailure(e);
             }
         });
     }
@@ -110,7 +101,7 @@ public class Entrant {
      * @param parent
      *      Parent of the entrant
      */
-    public Entrant(String name, String email, String phoneNumber, Entrant parent, EntrantCallback callback) {
+    /**public Entrant(String name, String email, String phoneNumber, Entrant parent, EntrantCallback callback) {
         if (parent.parent != 0 ) {
             throw new IllegalArgumentException("Cant have parent with parent");
         }
@@ -156,11 +147,11 @@ public class Entrant {
             }
         });
 
-    }
+    }*/
 
-    public String getDeviceId() {
+    /**public String getDeviceId() {
         return deviceId;
-    }
+    }*/
     public String getName() {
         return name;
     }
@@ -171,9 +162,10 @@ public class Entrant {
         return phoneNumber;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
+
     public void setName(String name) {
         this.name = name;
 
@@ -186,19 +178,19 @@ public class Entrant {
         this.phoneNumber = phoneNumber;
 
     }
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
 
     }
 
 
-    public void addSubEntrant(Entrant child) {
+    /*public void addSubEntrant(Entrant child) {
         subEntrants.add(child.getId());
-    }
+    }*/
 
 
 
-    public void getSubEntrants(EntrantListCallback callback) {
+    /*public void getSubEntrants(EntrantListCallback callback) {
         List<Entrant> retSubEntrants = new ArrayList<>();
         for (int i = 0; i < this.subEntrants.size(); i++) {
             int idToGet = this.subEntrants.get(i);
@@ -219,9 +211,9 @@ public class Entrant {
             });
         }
 
-    }
+    }*/
 
-    public void getParent(EntrantCallback callback) {
+    /*public void getParent(EntrantCallback callback) {
         //Get the parent of the entrant
         db.getEntrant(this.parent, new EntrantCallback() {
             @Override
@@ -235,11 +227,18 @@ public class Entrant {
             }
         });
 
-    }
+    }*/
 
 
 
 
+    /**@Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Entrant entrant = (Entrant) o;
+        return id == entrant.id; // or whatever uniquely identifies an Entrant
+    }*/
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -248,10 +247,10 @@ public class Entrant {
         return id == entrant.id; // or whatever uniquely identifies an Entrant
     }
 
-    @Override
+    /*@Override
     public int hashCode() {
         return Objects.hash(id);
-    }
+    }*/
 
 
 

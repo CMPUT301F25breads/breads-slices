@@ -17,6 +17,9 @@ import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
+import com.example.slices.testing.TestUtils;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -57,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
         binding.switch1.setOnCheckedChangeListener((buttonView, isChecked) -> {
             toggleBar(isChecked);
         });
+
+
     }
 
     /**
@@ -81,11 +86,11 @@ public class MainActivity extends AppCompatActivity {
     public void initializeUser() {
         String deviceId = InstanceUtil.getDeviceId(this);
         DBConnector db = new DBConnector();
-        db.getEntrantByDeviceId(deviceId, new EntrantCallback() {
+        db.getEntrant(deviceId, new EntrantCallback() {
             @Override
             public void onSuccess(Entrant entrant) {
                 user = entrant;
-                Toast.makeText(MainActivity.this, String.format("Hello %s", user.getDeviceId()), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, String.format("Hello %s", user.getId()), Toast.LENGTH_SHORT).show();
             }
 
             @Override

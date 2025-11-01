@@ -100,7 +100,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getEntrant(int id, EntrantCallback callback) {
+    /**public void getEntrant(int id, EntrantCallback callback) {
         entrantRef
                 .whereEqualTo("id", id)
                 .get()
@@ -124,7 +124,7 @@ public class DBConnector {
                     }
                 });
 
-        }
+        }*/
 
     /**
      * Gets an entrant from the database asynchronously
@@ -133,7 +133,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getEntrantByDeviceId(String deviceId, EntrantCallback callback) {
+    public void getEntrant(String deviceId, EntrantCallback callback) {
         entrantRef
                 .whereEqualTo("deviceId", deviceId)
                 .get()
@@ -247,7 +247,7 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
     public void writeEntrant(Entrant entrant, DBWriteCallback callback) {
-        entrantRef.document(String.valueOf(entrant.getId()))
+        entrantRef.document(entrant.getId())
                 .set(entrant)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
@@ -261,13 +261,13 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
+    /**public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(entrant.getDeviceId())
                 .set(entrant)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
 
-    }
+    }*/
 
     /**
      * Writes an event to the database asynchronously
@@ -664,7 +664,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getNotificationByRecipientId(int recipientId, NotificationListCallback callback) {
+    public void getNotificationByRecipientId(String recipientId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("recipientId", recipientId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
@@ -733,7 +733,7 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
 
-    public void getNotificationBySenderId(int senderId, NotificationListCallback callback) {
+    public void getNotificationBySenderId(String senderId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("senderId", senderId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
@@ -800,7 +800,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getInvitationByRecipientId(int recipientId, NotificationListCallback callback) {
+    public void getInvitationByRecipientId(String recipientId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("recipientId", recipientId)
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()
@@ -835,7 +835,7 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
 
-    public void getInvitationBySenderId(int senderId, NotificationListCallback callback) {
+    public void getInvitationBySenderId(String senderId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("senderId", senderId)
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()

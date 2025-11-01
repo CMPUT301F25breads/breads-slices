@@ -24,7 +24,7 @@ public class NotificationManager {
         return instance;
     }
 
-    public static void sendNotification(String title, String body, int recipientId, int senderId, DBWriteCallback callback) {
+    public static void sendNotification(String title, String body, String recipientId, String senderId, DBWriteCallback callback) {
         //Check if largestID is greater than 0
         if (largestId > 0) {
             //Increment largestID by 1
@@ -67,7 +67,7 @@ public class NotificationManager {
         });
     }
 
-    public void sendInvitation(String title, String body, int recipientId, int senderId, int eventId) {
+    public void sendInvitation(String title, String body, String recipientId, String senderId, int eventId) {
         //Check if largestID is greater than 0
         if (largestId > 0) {
             //Increment largestID by 1

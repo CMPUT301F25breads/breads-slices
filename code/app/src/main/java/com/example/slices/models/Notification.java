@@ -7,10 +7,10 @@ public class Notification {
     protected String title;
     protected String body;
     protected int notificationId;
-    protected int recipientId;
+    protected String recipientId;
     protected String recipientDeviceId;
 
-    protected int senderId;
+    protected String senderId;
 
     protected boolean read;
 
@@ -24,7 +24,7 @@ public class Notification {
     public Notification() {
     }
 
-    public Notification(String title, String body, int notificationId, int recipientId, int senderId) {
+    public Notification(String title, String body, int notificationId, String recipientId, String senderId) {
         this.title = title;
         this.body = body;
         this.notificationId = notificationId;
@@ -34,7 +34,7 @@ public class Notification {
         this.type = NotificationType.NOTIFICATION;
     }
 
-    public Notification(String title, String body, int notificationId, String deviceId, int senderId) {
+    /**public Notification(String title, String body, int notificationId, String deviceId, int senderId) {
         this.title = title;
         this.body = body;
         this.notificationId = notificationId;
@@ -42,7 +42,7 @@ public class Notification {
         this.read = false;
         this.timestamp = Timestamp.now();
         this.type = NotificationType.NOTIFICATION;
-    }
+    }*/
 
 
     public String getTitle() {
@@ -57,16 +57,12 @@ public class Notification {
         return notificationId;
     }
 
-    public int getRecipientId() {
+    public String getRecipientId() {
         return recipientId;
     }
 
-    public int getSenderId() {
+    public String getSenderId() {
         return senderId;
-    }
-
-    public String getRecipientDeviceId() {
-        return recipientDeviceId;
     }
 
 
@@ -90,7 +86,7 @@ public class Notification {
         this.notificationId = notificationId;
     }
 
-    public void setRecipientId(int recipientId) {
+    public void setRecipientId(String recipientId) {
         this.recipientId = recipientId;
     }
 
@@ -102,7 +98,7 @@ public class Notification {
         this.read = read;
     }
 
-    public void setSenderId(int senderId) {
+    public void setSenderId(String senderId) {
         this.senderId = senderId;
     }
     public Timestamp getTimestamp() {
