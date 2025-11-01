@@ -66,6 +66,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         }
         // inflate the view first, then grab the event + null guard
         Event event = getItem(position);
+
         if (event == null) return view;
 
         // binding core card views, same as EventAdapter behaviour

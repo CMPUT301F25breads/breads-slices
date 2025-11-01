@@ -12,11 +12,9 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.example.slices.Event;
-import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.adapters.EventAdapter;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.BrowseFragmentBinding;
-import com.example.slices.interfaces.EventActions;
 import com.example.slices.interfaces.EventListCallback;
 
 import java.util.ArrayList;
@@ -24,6 +22,7 @@ import java.util.List;
 
 public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
+    private ArrayList<Event> eventList = new ArrayList<>();
 
     @Override
     public View onCreateView(
@@ -43,24 +42,14 @@ public class BrowseFragment extends Fragment {
         db.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                /**
-                 * Changed the onSuccess function to use EntrantEventAdapter. Added the join/leave
-                 * button logic (somewhat) but need the DB logic before moving forward
-                 * - Raj
-                 */
-                EntrantEventAdapter entrantAdapter = new EntrantEventAdapter(requireContext(), events);
-                entrantAdapter.setActions(new EventActions() {
-                    @Override
-                    public void onJoinClicked(@NonNull Event e) {
-                        // TODO: later call the DB to join waitlist for e.getId()
-                    }
-
-                    @Override
-                    public void onLeaveClicked(@NonNull Event e) {
-                        // TODO: later call DB to leave waitlist for e.getid()
-                    }
-                });
-                binding.browseEventList.setAdapter(entrantAdapter);
+                eventList.clear();
+                eventList.addAll(events);
+                //EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+                EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+                binding.browseEventList.setAdapter(eventAdapter);
+                //binding.browseEventList.setAdapter(new EventAdapter(requireContext(), events));
+                //EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
+                //binding.browseEventList.setAdapter(eventAdapter);
             }
 
             @Override
@@ -68,6 +57,11 @@ public class BrowseFragment extends Fragment {
                 Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+
+        //EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+        //binding.browseEventList.setAdapter(eventAdapter);
+
+        //binding.browseEventList.setOnItemClickListener();
 
         // Testing
 //        for(int i = 0; i < 10; i++)

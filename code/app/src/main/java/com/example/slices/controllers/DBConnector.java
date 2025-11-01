@@ -127,6 +127,46 @@ public class DBConnector {
         }
 
     /**
+     * Gets an entrant from the database asynchronously
+     * @param deviceId
+     *      Entrant device ID to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getEntrantByDeviceId(String deviceId, EntrantCallback callback) {
+        entrantRef
+                .whereEqualTo("deviceId", deviceId)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            for(DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()){
+                                //Object id = doc.get("deviceId");
+                                Entrant entrant = doc.toObject(Entrant.class);
+                                if(entrant != null) {
+                                    callback.onSuccess(entrant);
+                                }
+                                else {
+                                    callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
+                                }
+                            }
+                        }
+                        else{
+                            callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get entrant"));
+                    }
+                });
+
+    }
+
+    /**
      * Gets an event from the database asynchronously
      * @param callback
      *      Callback to call when the operation is complete
@@ -208,6 +248,21 @@ public class DBConnector {
      */
     public void writeEntrant(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(String.valueOf(entrant.getId()))
+                .set(entrant)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
+
+    }
+
+    /**
+     * Writes an entrant to the database asynchronously
+     * @param entrant
+     *      Entrant to write to the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
+        entrantRef.document(entrant.getDeviceId())
                 .set(entrant)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
@@ -446,7 +501,7 @@ public class DBConnector {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Event> events = new ArrayList<>();
+                            ArrayList<Event> events = new ArrayList<>();
                             for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                                 Event event = doc.toObject(Event.class);
                                 if(event.getEventDate().compareTo(Timestamp.now()) > 0)
@@ -609,9 +664,42 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-
     public void getNotificationByRecipientId(int recipientId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("recipientId", recipientId)
+                .whereEqualTo("type", NotificationType.NOTIFICATION)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Notification> notifications = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Notification notification = doc.toObject(Notification.class);
+                                notifications.add(notification);
+                            }
+                            callback.onSuccess(notifications);
+                        } else {
+                            callback.onSuccess(new ArrayList<Notification>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                    }
+                });
+    }
+
+    /**
+     * Gets all notifications for a single recipient from the database asynchronously
+     * @param deviceId
+     *      Recipient device ID to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getNotificationByDeviceId(String deviceId, NotificationListCallback callback) {
+        notificationRef.whereEqualTo("deviceId", deviceId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
