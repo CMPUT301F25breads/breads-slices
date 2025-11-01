@@ -9,6 +9,7 @@ import com.example.slices.exceptions.EventNotFound;
 import com.example.slices.exceptions.NotificationNotFound;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EntrantEventCallback;
 import com.example.slices.interfaces.EntrantIDCallback;
 import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.interfaces.EventCallback;
@@ -398,7 +399,47 @@ public class DBConnector {
                 });
     }
 
-
+    /**
+     * Gets all events for a given entrant
+     * @param id
+     *      user device id to find events for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getEventsForEntrant(String id, EntrantEventCallback callback) {
+        eventRef
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Event> events = new ArrayList<>();
+                            List<Event> waitEvents = new ArrayList<>();
+                            for(DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Event event = doc.toObject(Event.class);
+                                if(event.getEntrants().contains(id))
+                                    events.add(event);
+                                else if(event.getWaitlist().getEntrants().contains(id))
+                                    waitEvents.add(event);
+                            }
+                            if (events != null) {
+                                callback.onSuccess(events, waitEvents);
+                            } else {
+                                // Event exists but has no entrants
+                                callback.onSuccess(new ArrayList<Event>(), new ArrayList<>());
+                            }
+                        } else {
+                            callback.onFailure(new EventNotFound("No events found for ", id));
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get events for an entrant"));
+                    }
+                });
+    }
 
     /**
      * Deletes an event from the database asynchronously

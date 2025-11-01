@@ -44,12 +44,9 @@ public class BrowseFragment extends Fragment {
             public void onSuccess(List<Event> events) {
                 eventList.clear();
                 eventList.addAll(events);
-                //EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+
                 EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
                 binding.browseEventList.setAdapter(eventAdapter);
-                //binding.browseEventList.setAdapter(new EventAdapter(requireContext(), events));
-                //EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
-                //binding.browseEventList.setAdapter(eventAdapter);
             }
 
             @Override

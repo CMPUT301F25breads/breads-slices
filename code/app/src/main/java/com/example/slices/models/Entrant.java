@@ -19,8 +19,6 @@ public class Entrant {
     private String phoneNumber;
     //private int id;
     private String id;
-    private List<Event> confirmedEvents;
-    private List<Event> waitlistedEvents;
 
     private int parent = 0;
 

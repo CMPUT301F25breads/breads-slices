@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
     private Entrant user;
+    private SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
         binding.switch1.setOnCheckedChangeListener((buttonView, isChecked) -> {
             toggleBar(isChecked);
         });
-
 
     }
 
@@ -99,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                     new Entrant(deviceId, new EntrantCallback() {
                         @Override
                         public void onSuccess(Entrant entrant) {
-                            user = entrant;
+                            sharedViewModel.setUser(entrant);
                         }
 
                         @Override
@@ -110,10 +111,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    public Entrant getUser() {
-        return user;
     }
 
 }

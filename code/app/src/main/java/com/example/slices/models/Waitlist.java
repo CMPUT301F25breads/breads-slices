@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Waitlist {
-    private List<Entrant> entrants;
+    private List<String> entrants;
     private int maxCapacity;
     private int currentEntrants;
 
@@ -24,7 +24,7 @@ public class Waitlist {
         this.currentEntrants = 0;
     }
 
-    public void addEntrant(Entrant entrant) {
+    public void addEntrant(String entrant) {
         if (isFull()) {
             throw new IllegalStateException("Waitlist is full");
         }
@@ -38,10 +38,10 @@ public class Waitlist {
         return currentEntrants >= maxCapacity;
     }
 
-    public List<Entrant> getEntrants() {
+    public List<String> getEntrants() {
         return entrants;
     }
-    public void removeEntrant(Entrant entrant) {
+    public void removeEntrant(String entrant) {
         entrants.remove(entrant);
     }
     public int getCurrentEntrants() {
@@ -60,11 +60,11 @@ public class Waitlist {
     public boolean isEmpty() {
         return entrants.isEmpty();
     }
-    public Entrant getEntrant(Entrant entrant) {
+    public Entrant getEntrant(String entrant) {
         return entrants.get(entrants.indexOf(entrant));
     }
     public Entrant getEntrant(String id) {
-        for (Entrant entrant : entrants) {
+        for (String entrant : entrants) {
             if (entrant.getId() == id) {
                 return entrant;
             }
