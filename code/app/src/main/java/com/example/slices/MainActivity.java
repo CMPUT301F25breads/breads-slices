@@ -1,7 +1,6 @@
 package com.example.slices;
 
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.View;
 import android.widget.Toast;
 
@@ -16,6 +15,7 @@ import com.example.slices.databinding.ActivityMainBinding;
 import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.models.Entrant;
+import com.example.slices.models.InstanceUtil;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,10 +31,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
-
-        // Remove soon
-        String android_id = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-        binding.textView.setText(android_id);
 
         initializeUser();
 
@@ -82,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
      * deviceId
      */
     public void initializeUser() {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        String deviceId = InstanceUtil.getDeviceId(this);
         DBConnector db = new DBConnector();
         db.getEntrantByDeviceId(deviceId, new EntrantCallback() {
             @Override
@@ -108,6 +104,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    public Entrant getUser() {
+        return user;
     }
 
 }

@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat;
 import com.example.slices.Event;
 import com.example.slices.R;
 import com.example.slices.interfaces.EventActions;
+import com.example.slices.SharedViewModel;
 
 import android.view.LayoutInflater;
 import android.widget.ImageView;
@@ -21,7 +22,11 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.example.slices.models.Waitlist;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+
 /** EntrantEventAdapter
  * This adpater is for entrants (users) joining or leaving events
  * This adapter is used when an event is clicked to join or to leave the event. It changes the text
@@ -36,15 +41,28 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
     @Nullable
     private EventActions actions;
 
-    /* TODO (Waitlist Status): Local caching of event IDs the user is waitlisted on will go here
-    /* Example:
-    * private final string Set<String> waitlistedEventIds = new HashSet<>();
-    * then call the hosting fragment after it loads the IDs (from DB or local)
-    * public void setWaitlisted Ids(@NonNull Collection<Strings> ids) {
-    * waitlisted EventIds.clear();
-    * waitlistedEventIds.addAll(ids);
-    * notifyDataSetChanged(); }
-     */
+    @Nullable
+    private SharedViewModel vm;
+
+    public void setViewModel(@Nullable SharedViewModel vm) {
+        this.vm = vm;
+        notifyDataSetChanged();
+    }
+
+    // localized caching for per event waitlist state (by int eventId)
+    private final Map<Integer, Boolean> waitlisted = new HashMap<>();
+
+    // set/override state for a single event id
+    public void setWaitlisted(int eventId, boolean on) {
+        waitlisted.put(eventId, on);
+        notifyDataSetChanged();
+    }
+
+    // read current state -> defaults to false (not on waitlist)
+    private boolean isWaitlisted(int eventId) {
+        return Boolean.TRUE.equals(waitlisted.get(eventId));
+    }
+
 
     public EntrantEventAdapter(Context context, List<Event> events) {
         super(context, 0, events);
@@ -67,7 +85,13 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         // inflate the view first, then grab the event + null guard
         Event event = getItem(position);
 
-        if (event == null) return view;
+        if (event == null){
+            return view;
+        }
+        final int eventId = event.getId(); // ID from firestore DB
+        final String eventIdStr = String.valueOf(eventId); // then make it string
+        // then, isOn can check truth value
+        boolean isOn = (vm != null && vm.isWaitlisted(eventIdStr)) || isWaitlisted(eventId);
 
         // binding core card views, same as EventAdapter behaviour
         TextView title = view.findViewById(R.id.event_title);
@@ -84,15 +108,19 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         if (buttonView instanceof Button) {
             Button actionBtn = (Button) buttonView;
 
-            // set the button text and tag the button as "join" AS DEFAULT (TO BE CHANGED:
-            // TODO(Waitlist Status): Before applying default join state, check local IDs list
-            actionBtn.setText("Join");
-            actionBtn.setBackgroundTintList(ColorStateList.valueOf(
-                    ContextCompat.getColor(getContext(), R.color.button_purple)));
-            actionBtn.setTextColor(ContextCompat.getColor(getContext(), android.R.color.white));
-            actionBtn.setTag("join");
-            // TODO: (Waitlist Status): remove eventID from local IDs list here (if present)
-            // eg., waitlistedEventIds.remove(eventId); notifyDataSetChanged();
+            if (isOn) {
+                actionBtn.setText("Leave");
+                actionBtn.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.
+                        getColor(getContext(), android.R.color.white)));
+                actionBtn.setTextColor(ContextCompat.getColor(getContext(), R.color.button_purple));
+                actionBtn.setTag("leave");
+            } else {
+                actionBtn.setText("Join");
+                actionBtn.setBackgroundTintList(ColorStateList.valueOf(
+                        ContextCompat.getColor(getContext(), R.color.button_purple)));
+                actionBtn.setTextColor(ContextCompat.getColor(getContext(), android.R.color.white));
+                actionBtn.setTag("join");
+            }
 
             // toggle color/text on click, notify optional callbacks
             actionBtn.setOnClickListener(v -> {
@@ -104,9 +132,14 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                     actionBtn.setBackgroundTintList(ColorStateList.valueOf(
                             ContextCompat.getColor(getContext(), R.color.button_purple)));
                     // set text color
-                    actionBtn.setTextColor(ContextCompat.getColor(getContext(), android.R.color.white));
+                    actionBtn.setTextColor(ContextCompat.getColor(getContext(),
+                            android.R.color.white));
                     actionBtn.setTag("join");
-                    if (actions != null) actions.onLeaveClicked(event);
+
+                    waitlisted.put(eventId, false);
+                    if (actions != null) {
+                        actions.onLeaveClicked(event);
+                    }
                 } else {
                     // switch to "Leave"
                     actionBtn.setText("Leave");
@@ -114,9 +147,11 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                             ContextCompat.getColor(getContext(), android.R.color.white)));
                     actionBtn.setTextColor(ContextCompat.getColor(getContext(), R.color.button_purple));
                     actionBtn.setTag("leave");
-                    // TODO(Waitlist Status): add eventId to local IDs list here too
-                    // e.g., waitlistedEventIds.add(eventId); notifydatasetchanged();
-                    if (actions != null) actions.onJoinClicked(event);
+                    waitlisted.put(eventId, true);
+
+                    if (actions != null) {
+                        actions.onJoinClicked(event);
+                    }
                 }
             });
         }
