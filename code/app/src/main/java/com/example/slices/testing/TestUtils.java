@@ -127,6 +127,12 @@ public class TestUtils {
         }
     }
 
+    //Warn in log for methods that should not be called directly outside of firebase calls
+    public static void directCallWarn() {
+        DebugLogger.d("TestUtils", "This method should not be called directly outside of firebase calls");
+
+    }
+
 
 
 
