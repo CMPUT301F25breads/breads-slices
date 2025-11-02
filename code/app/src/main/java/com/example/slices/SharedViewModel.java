@@ -51,16 +51,6 @@ public class SharedViewModel extends ViewModel {
         return list != null && list.contains(eventId);
     }
 
-    // completely replaces the ENTIRE list of waitlisted events
-    // should be used when you load up the user's waitlist from Firestore for the first time btw
-    // since it resets waitlistedEventIds to the given IDs -Raj
-    public void replaceWaitlistedIds(ArrayList<String> ids) {
-        if (ids == null) {
-            waitlistedEventIds.setValue(new ArrayList<>());
-        } else {
-            waitlistedEventIds.setValue(new ArrayList<>(ids));
-        }
-    }
 
     /** adds a single eventId to the waitlist if its not already there -Raj */
     public void addWaitlistedId(String eventId) {
