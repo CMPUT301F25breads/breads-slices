@@ -36,12 +36,15 @@ public class WaitlistController {
                 .collection("waitlist").document(userid);
     }
 
-    private static DocumentReference userWaitlistRef(@NonNull String userid,
-                                                     @NonNull String eventId) {
-        // this will create a "waitlist" field on the Firebase DB on first run
-        return db().collection("entrants").document(userid)
-                .collection("waitlist").document(eventId);
-    }
+//    Commented this one out because creating a new "waitlist" collection in firebase might be a
+//    little weird - possibly causing issues later down the path
+//
+//    private static DocumentReference userWaitlistRef(@NonNull String userid,
+//                                                     @NonNull String eventId) {
+//        // this will create a "waitlist" field on the Firebase DB on first run
+//        return db().collection("entrants").document(userid)
+//                .collection("waitlist").document(eventId);
+//    }
 
     //  mirror docs under both paths in a single batch
     public static void join(@NonNull String eventId,
@@ -53,7 +56,6 @@ public class WaitlistController {
         batch.set(db().collection("entrants").document(userid), new HashMap<>(),
                 SetOptions.merge());
         batch.set(eventWaitlistRef(eventId, userid), marker);
-        batch.set(userWaitlistRef(userid, eventId), marker);
         batch.commit().addOnSuccessListener(v -> onOk.run())
                 .addOnFailureListener(onErr::accept);
     }
@@ -65,16 +67,16 @@ public class WaitlistController {
                              @NonNull Consumer<Exception> onErr) {
         WriteBatch batch = db().batch();
         batch.delete(eventWaitlistRef(eventId, userid));
-        batch.delete(userWaitlistRef(userid, eventId));
         batch.commit().addOnSuccessListener(v -> onOk.run())
                 .addOnFailureListener(onErr::accept);
     }
 
-    // check to see if a specific userid is on the waitlist for a given eventID
+    // check to see if a specific userid is on the waitlist for a given eventID just in case
+    // that user decides to leave the waitlist at the exact moment they may receive an invite
     public static void isOnWaitlist(@NonNull String eventId,
                                     @NonNull String userid,
                                     @NonNull Consumer<Boolean> cb) {
-        Task<DocumentSnapshot> t = userWaitlistRef(userid, eventId).get();
+        Task<DocumentSnapshot> t = eventWaitlistRef(userid, eventId).get();
         t.addOnSuccessListener(snap -> cb.accept(snap.exists()))
          .addOnFailureListener(e -> cb.accept(false));
     }
