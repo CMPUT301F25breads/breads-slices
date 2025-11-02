@@ -314,7 +314,7 @@ public class DBConnector {
         eventRef.document(String.valueOf(eventId))
                 .update("waitlist.entrants", FieldValue.arrayRemove(entrantId))
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to remove Entrant to waitlist")));
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to remove Entrant from waitlist")));
     }
 
     /**
