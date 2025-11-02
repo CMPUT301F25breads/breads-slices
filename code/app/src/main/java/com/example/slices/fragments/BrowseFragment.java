@@ -1,10 +1,12 @@
 package com.example.slices.fragments;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -21,6 +23,7 @@ import java.util.List;
 
 public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
+    private ArrayList<Event> eventList = new ArrayList<>();
 
     @Override
     public View onCreateView(
@@ -40,22 +43,27 @@ public class BrowseFragment extends Fragment {
         db.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
-                binding.browseEventList.setAdapter(eventAdapter);
+                try {
+                    eventList.clear();
+                    eventList.addAll(events);
+                    EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+                    binding.browseEventList.setAdapter(eventAdapter);
+                } catch (Exception e) {
+                    Log.e("BrowseFragment", "Error setting adapter", e);
+                    Toast.makeText(requireContext(), "Error displaying events", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onFailure(Exception e) {
-                Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("BrowseFragment", "Error fetching events", e);
+
+                Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
+
+                EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+                binding.browseEventList.setAdapter(eventAdapter);
             }
         });
-
-        // Testing
-//        for(int i = 0; i < 10; i++)
-//            events.add(new Event("Testing", "https://letsenhance.io/static/73136da51c245e80edc6ccfe44888a99/396e9/MainBefore.jpg"));
-//
-//        EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
-//        binding.browseEventList.setAdapter(eventAdapter);
 
     }
 

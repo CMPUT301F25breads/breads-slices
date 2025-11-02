@@ -1,5 +1,6 @@
 package com.example.slices.models;
 
+import com.example.slices.Event;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.testing.DebugLogger;
 import com.example.slices.interfaces.DBWriteCallback;
@@ -17,6 +18,9 @@ public class Entrant {
     private String email;
     private String phoneNumber;
     private int id;
+    private String deviceId;
+    private List<Event> confirmedEvents;
+    private List<Event> waitlistedEvents;
 
     private int parent = 0;
 
@@ -25,12 +29,38 @@ public class Entrant {
 
     private List<Integer> subEntrants;
 
-    public Entrant() {
-        this.name = "";
-        this.email = "";
-        this.phoneNumber = "";
-        this.subEntrants = new ArrayList<Integer>();
+    public Entrant() {}
+
+    public Entrant(String deviceId, EntrantCallback callback) {
+        this.deviceId = deviceId;
+
+        db.getNewEntrantId(new EntrantIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                Entrant.this.id = id;
+                db.writeEntrant(Entrant.this, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        DebugLogger.d("Entrant", "Entrant created successfully");
+                        callback.onSuccess(Entrant.this);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        DebugLogger.d("Entrant", "Entrant creation failed");
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                DebugLogger.d("Entrant", "Entrant creation failed");
+            }
+        });
+
     }
+
     /**
      * Constructor for the Entrant class for creating a primary entrant
      * @param name
@@ -40,9 +70,6 @@ public class Entrant {
      * @param phoneNumber
      *      Phone number of the entrant
      */
-
-
-
     public Entrant(String name, String email, String phoneNumber)
     {
         this.name = name;
@@ -142,6 +169,9 @@ public class Entrant {
 
     }
 
+    public String getDeviceId() {
+        return deviceId;
+    }
     public String getName() {
         return name;
     }

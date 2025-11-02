@@ -43,7 +43,9 @@ public class Event implements Comparable<Event> {
     private DBConnector db = new DBConnector();
 
 
-
+    /**
+     * No argument Event constructor
+     */
     public Event(){}
 
     public Event(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, EventCallback callback) throws IllegalArgumentException {
@@ -240,6 +242,14 @@ public class Event implements Comparable<Event> {
         eventModified(callback);
     }
 
+    public void removeEntrantFromWaitlist(Entrant entrant, DBWriteCallback callback) {
+        //Remove the entrant from the waitlist
+        waitlist.removeEntrant(entrant);
+        //Decrement the current entrants
+        currentEntrants--;
+        eventModified(callback);
+    }
+
     /**
      * Method that does the lottery
      * May have issues with robustness specifically in restoring the lists in the event of a failure
@@ -305,6 +315,13 @@ public class Event implements Comparable<Event> {
     }
 
 
+    /**
+     * Comparison method so events can be sorted by the earliest date first
+     * @param other
+     *      other Event to compare to
+     * @return
+     *      returns <1, 0, or >1 if other event is before, same time, or after the current event
+     */
     @Override
     public int compareTo(Event other) {
         return this.eventDate.compareTo(other.eventDate);
