@@ -9,7 +9,7 @@ public class Invitation extends Notification {
     private boolean declined;
 
 
-    public Invitation(String title, String body, int notificationId, int recipientId, int senderId, int eventId) {
+    public Invitation(String title, String body, int notificationId, String recipientId, String senderId, int eventId) {
         this.title = title;
         this.body = body;
         this.notificationId = notificationId;

@@ -1,14 +1,20 @@
 package com.example.slices.fragments;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
+import com.example.slices.MainActivity;
+import com.example.slices.SharedViewModel;
 import com.example.slices.databinding.MenuFragmentBinding;
+import com.example.slices.models.Entrant;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 
 public class  MenuFragment extends Fragment {
     private MenuFragmentBinding binding;
@@ -30,10 +36,12 @@ public class  MenuFragment extends Fragment {
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        SharedViewModel vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        Entrant user = vm.getUser();
 
-        name = "Donald Smith";
-        email = "Donald@gmail.com";
-        phoneNumber = "911";
+        name = user.getName();
+        email = user.getEmail();
+        phoneNumber = user.getPhoneNumber();
         notifications = true;
 
         binding.nameTextfield.setText(name);
@@ -84,6 +92,20 @@ public class  MenuFragment extends Fragment {
             binding.profileEditButton.setVisibility(View.VISIBLE);
             binding.profileCancelButton.setVisibility(View.GONE);
             binding.profileSaveButton.setVisibility(View.GONE);
+        });
+
+        binding.appModeButtonGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (isChecked) {
+                if (checkedId == binding.organizerModeButton.getId()) {
+                    // Organizer mode selected
+                    Log.d("ModeToggle", "Organizer mode selected");
+                    ((MainActivity) getActivity()).switchToOrganizer();
+                } else if (checkedId == binding.userModeButton.getId()) {
+                    // User mode selected
+                    Log.d("ModeToggle", "User mode selected");
+                    ((MainActivity) getActivity()).switchToUser();
+                }
+            }
         });
 
     }
