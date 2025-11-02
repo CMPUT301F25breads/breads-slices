@@ -34,17 +34,28 @@ public class Entrant {
     public Entrant(String deviceId, EntrantCallback callback) {
         this.deviceId = deviceId;
 
-        db.writeEntrant(Entrant.this, new DBWriteCallback() {
+        db.getNewEntrantId(new EntrantIDCallback() {
             @Override
-            public void onSuccess() {
-                DebugLogger.d("Entrant", "Entrant created successfully");
-                callback.onSuccess(Entrant.this);
+            public void onSuccess(int id) {
+                Entrant.this.id = id;
+                db.writeEntrant(Entrant.this, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        DebugLogger.d("Entrant", "Entrant created successfully");
+                        callback.onSuccess(Entrant.this);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        DebugLogger.d("Entrant", "Entrant creation failed");
+                        callback.onFailure(e);
+                    }
+                });
             }
 
             @Override
             public void onFailure(Exception e) {
                 DebugLogger.d("Entrant", "Entrant creation failed");
-                callback.onFailure(e);
             }
         });
 
