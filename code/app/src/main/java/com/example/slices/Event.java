@@ -1,14 +1,13 @@
 package com.example.slices;
 
-import com.example.slices.controllers.DBConnector;
-import com.example.slices.interfaces.DBWriteCallback;
-import com.example.slices.interfaces.EventCallback;
-import com.example.slices.interfaces.EventIDCallback;
-import com.example.slices.models.Entrant;
-import com.example.slices.models.Waitlist;
-import com.example.slices.testing.DebugLogger;
-import com.google.firebase.Timestamp;
+import android.os.Build;
+import android.util.Log;
 
+import com.google.firebase.Timestamp;
+import com.google.type.DateTime;
+
+import java.sql.Time;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -19,14 +18,14 @@ import java.util.List;
  * @version 0.1
  *
  */
-public class Event implements Comparable<Event> {
+public class Event {
     private String name;
 
     private String description; // Probably will be it's own thing later
 
     private String location; // Will be geolocation object later
 
-    private List<String> entrants; // Represents the entrants in the event
+    private List<Entrant> entrants; // Represents the entrants in the event
 
     private Timestamp eventDate;
     private Timestamp regDeadline;
@@ -38,15 +37,11 @@ public class Event implements Comparable<Event> {
     private int maxEntrants;
 
     private int currentEntrants;
-    private String imageUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
     private DBConnector db = new DBConnector();
 
 
-    /**
-     * No argument Event constructor
-     */
-    public Event(){}
+
 
     public Event(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, EventCallback callback) throws IllegalArgumentException {
         //Check if the eventTime is in the past
@@ -81,7 +76,7 @@ public class Event implements Comparable<Event> {
         this.regDeadline = regDeadline;
         this.maxEntrants = maxEntrants;
         this.currentEntrants = 0;
-        this.entrants = new ArrayList<String>();
+        this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist();
 
         db.getNewEventId(new EventIDCallback() {
@@ -115,7 +110,7 @@ public class Event implements Comparable<Event> {
         this.regDeadline = regDeadline;
         this.maxEntrants = maxEntrants;
         this.currentEntrants = 0;
-        this.entrants = new ArrayList<String>();
+        this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist();
         this.id = id;
 
@@ -147,15 +142,6 @@ public class Event implements Comparable<Event> {
 
     }
 
-    // Constructors for testing stuff
-    public Event(String name, String imageUrl) {
-        this.name = name;
-        this.imageUrl = imageUrl;
-    }
-    public Event(String name) {
-        this.name = name;
-    }
-
     public int getId() {
         return id;
     }
@@ -180,14 +166,11 @@ public class Event implements Comparable<Event> {
     public int getCurrentEntrants() {
         return currentEntrants;
     }
-    public List<String> getEntrants() {
+    public List<Entrant> getEntrants() {
         return entrants;
     }
     public Waitlist getWaitlist() {
         return waitlist;
-    }
-    public String getImageUrl() {
-        return imageUrl;
     }
 
     public void setName(String name) {
@@ -212,7 +195,7 @@ public class Event implements Comparable<Event> {
         this.maxEntrants = maxEntrants;
     }
 
-    public boolean addEntrant(String entrant, DBWriteCallback callback) {
+    public boolean addEntrant(Entrant entrant, DBWriteCallback callback) {
         //This should never be called directly from somewhere else in the code
         //It only is used for testing and by the lottery
         //Check if the event is full
@@ -234,7 +217,7 @@ public class Event implements Comparable<Event> {
         return true;
     }
 
-    public void addEntrantToWaitlist(String entrant, DBWriteCallback callback) {
+    public void addEntrantToWaitlist(Entrant entrant, DBWriteCallback callback) {
         //Add the entrant to the waitlist
         waitlist.addEntrant(entrant);
         //Increment the current entrants
@@ -253,7 +236,7 @@ public class Event implements Comparable<Event> {
         //Create a lottery object
         Lottery lottery = new Lottery();
         //Get the winners
-        List<String> winners = lottery.getWinners(waitlist.getEntrants(), this.maxEntrants);
+        List<Entrant> winners = lottery.getWinners(waitlist.getEntrants(), this.maxEntrants);
         //Add the winners to the event
         if (winners.isEmpty()) {
             DebugLogger.d("Event", "No winners");
@@ -261,7 +244,7 @@ public class Event implements Comparable<Event> {
         }
         final int[] completedCount = {0};
         final int totalWinners = winners.size();
-        for (String winner : winners) {
+        for (Entrant winner : winners) {
             addEntrant(winner, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
@@ -307,17 +290,7 @@ public class Event implements Comparable<Event> {
     }
 
 
-    /**
-     * Comparison method so events can be sorted by the earliest date first
-     * @param other
-     *      other Event to compare to
-     * @return
-     *      returns <1, 0, or >1 if other event is before, same time, or after the current event
-     */
-    @Override
-    public int compareTo(Event other) {
-        return this.eventDate.compareTo(other.eventDate);
-    }
+
 
 
 

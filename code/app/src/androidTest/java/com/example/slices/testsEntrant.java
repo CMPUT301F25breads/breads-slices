@@ -3,10 +3,6 @@ package com.example.slices;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.example.slices.interfaces.EntrantCallback;
-import com.example.slices.interfaces.EntrantListCallback;
-import com.example.slices.models.Entrant;
-
 import org.junit.Test;
 
 import java.util.List;
@@ -18,7 +14,7 @@ public class testsEntrant {
     @Test
     public void testEntrant() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        Entrant e = new Entrant("Foo", "Foo@Foo.Foo", "780-678-1211","12345", new EntrantCallback() {
+        Entrant e = new Entrant("Foo", "Foo@Foo.Foo", "780-678-1211", new EntrantCallback() {
             @Override
             public void onSuccess(Entrant entrant) {
                 latch.countDown();
@@ -34,10 +30,10 @@ public class testsEntrant {
         assertTrue(e.getName().equals("Foo"));
         assertTrue(e.getEmail().equals("Foo@Foo.Foo"));
         assertTrue(e.getPhoneNumber().equals("780-678-1211"));
-        assertTrue(e.getId().equals("12345"));
+        assertTrue(e.getId() > 0);
     }
 
-    /*@Test
+    @Test
     public void testEntrantWithParent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         Entrant parent = new Entrant("Foo2", "Foo@Foo.Foo", "780-678-1211", new EntrantCallback() {
@@ -106,6 +102,6 @@ public class testsEntrant {
             });
         completed = latch4.await(15000, TimeUnit.MILLISECONDS);
         assertTrue(completed);
-    }*/
+    }
 }
 
