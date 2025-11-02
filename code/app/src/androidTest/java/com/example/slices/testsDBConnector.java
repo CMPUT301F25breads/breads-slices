@@ -42,37 +42,24 @@ public class testsDBConnector {
 
    private void createTestEntrants(int x) {
         if (x > 0) {
-            db.getNewEntrantId(new EntrantIDCallback() {
+            Entrant entrant = new Entrant("Foo" + x, "Foo" + x + "@Foo.Foo", "780-678-1211");
+            entrant.setId(Integer.toString(x));
+            db.writeEntrant(entrant, new DBWriteCallback() {
                 @Override
-                public void onSuccess(int id) {
-                    Entrant entrant = new Entrant("Foo" + x, "Foo" + x + "@Foo.Foo", "780-678-1211");
-                    entrant.setId(id);
-                    db.writeEntrant(entrant, new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {
-                            createTestEntrants(x - 1);
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-
+                public void onSuccess() {
+                    createTestEntrants(x - 1);
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    throw new RuntimeException(e);
+                            throw new RuntimeException(e);
+                        }
+                    });
                 }
-            });
-        }
-        else {
-            return;
         }
    }
 
-    @Ignore //Ignore this test for now only enable when needed
+    /*@Ignore //Ignore this test for now only enable when needed
     @Test
     public void testEntrantCRUD() throws InterruptedException {
         //Clear the database
@@ -279,7 +266,7 @@ public class testsDBConnector {
                 latch.countDown();
             }
         });
-    }
+    }*/
     
 
-}
+

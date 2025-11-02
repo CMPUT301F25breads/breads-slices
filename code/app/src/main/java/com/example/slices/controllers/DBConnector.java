@@ -9,6 +9,7 @@ import com.example.slices.exceptions.EventNotFound;
 import com.example.slices.exceptions.NotificationNotFound;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EntrantEventCallback;
 import com.example.slices.interfaces.EntrantIDCallback;
 import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.interfaces.EventCallback;
@@ -34,6 +35,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -100,7 +102,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getEntrant(int id, EntrantCallback callback) {
+    /**public void getEntrant(int id, EntrantCallback callback) {
         entrantRef
                 .whereEqualTo("id", id)
                 .get()
@@ -124,18 +126,18 @@ public class DBConnector {
                     }
                 });
 
-        }
+        }*/
 
     /**
      * Gets an entrant from the database asynchronously
-     * @param deviceId
+     * @param id
      *      Entrant device ID to search for
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getEntrantByDeviceId(String deviceId, EntrantCallback callback) {
+    public void getEntrant(String id, EntrantCallback callback) {
         entrantRef
-                .whereEqualTo("deviceId", deviceId)
+                .whereEqualTo("id", id)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -148,12 +150,12 @@ public class DBConnector {
                                     callback.onSuccess(entrant);
                                 }
                                 else {
-                                    callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
+                                    callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(id)));
                                 }
                             }
                         }
                         else{
-                            callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
+                            callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(id)));
                         }
                     }
                 })
@@ -247,7 +249,7 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
     public void writeEntrant(Entrant entrant, DBWriteCallback callback) {
-        entrantRef.document(String.valueOf(entrant.getId()))
+        entrantRef.document(entrant.getId())
                 .set(entrant)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
@@ -261,13 +263,13 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
+    /**public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(entrant.getDeviceId())
                 .set(entrant)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
 
-    }
+    }*/
 
     /**
      * Writes an event to the database asynchronously
@@ -292,13 +294,27 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-
     public void updateEvent(Event event, DBWriteCallback callback) {
         eventRef.document(String.valueOf(event.getId()))
                 .set(event)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write event")));
 
+    }
+
+    public void waitlistEntrant(int eventId, String entrantId, DBWriteCallback callback) {
+        eventRef.document(String.valueOf(eventId))
+                .update("waitlist.entrants", FieldValue.arrayUnion(entrantId))
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to add Entrant to waitlist")));
+    }
+
+
+    public void leaveWaitlistEntrant(int eventId, String entrantId, DBWriteCallback callback) {
+        eventRef.document(String.valueOf(eventId))
+                .update("waitlist.entrants", FieldValue.arrayRemove(entrantId))
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to remove Entrant from waitlist")));
     }
 
     /**
@@ -383,7 +399,7 @@ public class DBConnector {
                                 callback.onSuccess(event.getEntrants());
                             } else {
                                 // Event exists but has no entrants
-                                callback.onSuccess(new ArrayList<Entrant>());
+                                callback.onSuccess(new ArrayList<String>());
                             }
                         } else {
                             callback.onFailure(new EventNotFound("Event not found", String.valueOf(eventId)));
@@ -398,7 +414,47 @@ public class DBConnector {
                 });
     }
 
-
+    /**
+     * Gets all events for a given entrant
+     * @param id
+     *      user device id to find events for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getEventsForEntrant(String id, EntrantEventCallback callback) {
+        eventRef
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Event> events = new ArrayList<>();
+                            List<Event> waitEvents = new ArrayList<>();
+                            for(DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Event event = doc.toObject(Event.class);
+                                if(event.getEntrants().contains(id))
+                                    events.add(event);
+                                else if(event.getWaitlist().getEntrants().contains(id))
+                                    waitEvents.add(event);
+                            }
+                            if (events != null) {
+                                callback.onSuccess(events, waitEvents);
+                            } else {
+                                // Event exists but has no entrants
+                                callback.onSuccess(new ArrayList<Event>(), new ArrayList<>());
+                            }
+                        } else {
+                            callback.onFailure(new EventNotFound("No events found for ", id));
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get events for an entrant"));
+                    }
+                });
+    }
 
     /**
      * Deletes an event from the database asynchronously
@@ -664,7 +720,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getNotificationByRecipientId(int recipientId, NotificationListCallback callback) {
+    public void getNotificationByRecipientId(String recipientId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("recipientId", recipientId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
@@ -733,7 +789,7 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
 
-    public void getNotificationBySenderId(int senderId, NotificationListCallback callback) {
+    public void getNotificationBySenderId(String senderId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("senderId", senderId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
@@ -800,7 +856,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getInvitationByRecipientId(int recipientId, NotificationListCallback callback) {
+    public void getInvitationByRecipientId(String recipientId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("recipientId", recipientId)
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()
@@ -835,7 +891,7 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
 
-    public void getInvitationBySenderId(int senderId, NotificationListCallback callback) {
+    public void getInvitationBySenderId(String senderId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("senderId", senderId)
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()

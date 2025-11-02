@@ -2,8 +2,8 @@ package com.example.slices.models;
 
 public class InvitationLog extends Log {
     private int notificationId;
-    private int senderId;
-    private int recipientId;
+    private String senderId;
+    private String recipientId;
 
     private int eventId;
 

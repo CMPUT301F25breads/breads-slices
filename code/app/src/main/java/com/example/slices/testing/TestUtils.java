@@ -38,8 +38,9 @@ public class TestUtils {
             String name = "Entrant" + i;
             String email = "entrant" + i + "@test.com";
             String phone = "780-000-000" + i;
+            String id = "1" + i;
 
-            new Entrant(name, email, phone, new EntrantCallback() {
+            new Entrant(name, email, phone, id, new EntrantCallback() {
                 @Override
                 public void onSuccess(Entrant entrant) {
                     entrants.add(entrant);

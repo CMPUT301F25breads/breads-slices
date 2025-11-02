@@ -10,9 +10,12 @@ import android.content.res.ColorStateList;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.slices.Event;
 import com.example.slices.R;
+import com.example.slices.controllers.DBConnector;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventActions;
 import com.example.slices.SharedViewModel;
 
@@ -84,6 +87,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         }
         // inflate the view first, then grab the event + null guard
         Event event = getItem(position);
+        DBConnector db = new DBConnector();
 
         if (event == null){
             return view;
@@ -137,6 +141,19 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                     actionBtn.setTag("join");
 
                     waitlisted.put(eventId, false);
+
+                    db.leaveWaitlistEntrant(eventId, vm.getUser().getId(), new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                        }
+                    });
+
                     if (actions != null) {
                         actions.onLeaveClicked(event);
                     }
@@ -148,6 +165,17 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                     actionBtn.setTextColor(ContextCompat.getColor(getContext(), R.color.button_purple));
                     actionBtn.setTag("leave");
                     waitlisted.put(eventId, true);
+                    db.waitlistEntrant(eventId, vm.getUser().getId(), new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+
+                        }
+                    });
 
                     if (actions != null) {
                         actions.onJoinClicked(event);

@@ -13,7 +13,6 @@
         android:title="Profiles" />
     <item
         android:id="@+id/nav_settings"
-        android:checkable="false"
         android:icon="@drawable/ic_settings"
         android:title="Settings" />
 </menu>

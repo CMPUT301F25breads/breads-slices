@@ -35,9 +35,9 @@ public class Lottery {
      * @return
      *      List of winners
      */
-    public List<Entrant> getWinners(List<Entrant> entrants, int numberOfWinners) {
+    public List<String> getWinners(List<String> entrants, int numberOfWinners) {
         //Select winners from list of entrants
-        List<Entrant> winners = new ArrayList<Entrant>();
+        List<String> winners = new ArrayList<>();
         for (int i = 0; i < numberOfWinners; i++) {
             int randomIndex = (int) (Math.random() * entrants.size());
             winners.add(entrants.get(randomIndex));
