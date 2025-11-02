@@ -17,6 +17,9 @@ public class Notification {
     protected Timestamp timestamp;
     
     protected NotificationType type;
+    protected int eventId;
+    protected Entrant recipient;
+    protected Entrant sender;
 
 
 
@@ -34,11 +37,11 @@ public class Notification {
         this.type = NotificationType.NOTIFICATION;
     }
 
-    public Notification(String title, String body, int notificationId, String deviceId, int senderId) {
+    public Notification(String title, String body, int notificationId, Entrant recipient, Entrant sender) {
         this.title = title;
         this.body = body;
         this.notificationId = notificationId;
-        this.recipientDeviceId = deviceId;
+        this.recipient = recipient;
         this.read = false;
         this.timestamp = Timestamp.now();
         this.type = NotificationType.NOTIFICATION;
@@ -47,6 +50,14 @@ public class Notification {
 
     public String getTitle() {
         return title;
+    }
+
+    public Entrant getRecipient() {
+        return recipient;
+    }
+
+    public Entrant getSender() {
+        return sender;
     }
 
     public String getBody() {
@@ -104,6 +115,12 @@ public class Notification {
 
     public void setSenderId(int senderId) {
         this.senderId = senderId;
+    }
+    public void setSender(Entrant Sender) {
+        this.sender = sender;
+    }
+    public void setRecipient(Entrant recipient) {
+        this.recipient = recipient;
     }
     public Timestamp getTimestamp() {
         return timestamp;
