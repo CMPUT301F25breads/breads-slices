@@ -61,6 +61,6 @@
         android:background="@color/white"
         app:itemIconTint="@color/nav_item_selector"
         app:itemTextColor="@color/nav_item_selector"
-        app:menu="@layout/admin_botnav" />
+        app:menu="@menu/admin_botnav" />
 
 </LinearLayout>
