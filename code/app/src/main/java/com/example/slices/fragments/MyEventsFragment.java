@@ -65,6 +65,7 @@ public class MyEventsFragment extends Fragment {
                 sharedViewModel.setEvents(events);
                 sharedViewModel.setWaitlistedEvents(waitEvents);
                 binding.myEventsList.setAdapter(new EventAdapter(requireContext(), events));
+                binding.myEventsListWait.setAdapter(new EventAdapter(requireContext(), waitEvents));
             }
 
             @Override

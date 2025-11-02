@@ -10,12 +10,17 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.slices.Event;
+import com.example.slices.SharedViewModel;
+import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.adapters.EventAdapter;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.BrowseFragmentBinding;
+import com.example.slices.interfaces.EventActions;
 import com.example.slices.interfaces.EventListCallback;
+import com.example.slices.models.Entrant;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +42,7 @@ public class BrowseFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        SharedViewModel vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         DBConnector db = new DBConnector();
 
         db.getAllFutureEvents(new EventListCallback() {
@@ -45,8 +51,12 @@ public class BrowseFragment extends Fragment {
                 eventList.clear();
                 eventList.addAll(events);
 
-                EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
-                binding.browseEventList.setAdapter(eventAdapter);
+                // implementation of entrant adapter w/ Join/Leave UI for button
+                final EntrantEventAdapter entrantAdapter = new EntrantEventAdapter
+                        (requireContext(), eventList);
+                entrantAdapter.setViewModel(vm); // gives adapter power to read/write waitlist
+
+                binding.browseEventList.setAdapter(entrantAdapter);
             }
 
             @Override
@@ -55,17 +65,7 @@ public class BrowseFragment extends Fragment {
             }
         });
 
-        //EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
-        //binding.browseEventList.setAdapter(eventAdapter);
-
-        //binding.browseEventList.setOnItemClickListener();
-
-        // Testing
-//        for(int i = 0; i < 10; i++)
-//            events.add(new Event("Testing", "https://letsenhance.io/static/73136da51c245e80edc6ccfe44888a99/396e9/MainBefore.jpg"));
-//
-//        EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
-//        binding.browseEventList.setAdapter(eventAdapter);
+        //Button joinButton =
 
     }
 

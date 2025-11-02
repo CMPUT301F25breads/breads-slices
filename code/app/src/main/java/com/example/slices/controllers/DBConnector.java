@@ -35,6 +35,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -293,13 +294,27 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-
     public void updateEvent(Event event, DBWriteCallback callback) {
         eventRef.document(String.valueOf(event.getId()))
                 .set(event)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write event")));
 
+    }
+
+    public void waitlistEntrant(int eventId, String entrantId, DBWriteCallback callback) {
+        eventRef.document(String.valueOf(eventId))
+                .update("waitlist.entrants", FieldValue.arrayUnion(entrantId))
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to add Entrant to waitlist")));
+    }
+
+
+    public void leaveWaitlistEntrant(int eventId, String entrantId, DBWriteCallback callback) {
+        eventRef.document(String.valueOf(eventId))
+                .update("waitlist.entrants", FieldValue.arrayRemove(entrantId))
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to remove Entrant to waitlist")));
     }
 
     /**
