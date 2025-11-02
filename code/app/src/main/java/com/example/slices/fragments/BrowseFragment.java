@@ -42,7 +42,7 @@ public class BrowseFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        SharedViewModel vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        final SharedViewModel vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         DBConnector db = new DBConnector();
 
         db.getAllFutureEvents(new EventListCallback() {
@@ -64,8 +64,6 @@ public class BrowseFragment extends Fragment {
                 Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-
-        //Button joinButton =
 
     }
 
