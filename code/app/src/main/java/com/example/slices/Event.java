@@ -242,6 +242,14 @@ public class Event implements Comparable<Event> {
         eventModified(callback);
     }
 
+    public void removeEntrantFromWaitlist(Entrant entrant, DBWriteCallback callback) {
+        //Remove the entrant from the waitlist
+        waitlist.removeEntrant(entrant);
+        //Decrement the current entrants
+        currentEntrants--;
+        eventModified(callback);
+    }
+
     /**
      * Method that does the lottery
      * May have issues with robustness specifically in restoring the lists in the event of a failure
