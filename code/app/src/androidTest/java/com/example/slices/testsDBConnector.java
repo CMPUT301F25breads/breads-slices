@@ -72,7 +72,7 @@ public class testsDBConnector {
         }
    }
 
-    @Ignore //Ignore this test for now only enable when needed
+    //Ignore this test for now only enable when needed
     @Test
     public void testEntrantCRUD() throws InterruptedException {
         //Clear the database
@@ -132,7 +132,7 @@ public class testsDBConnector {
 
 
     }
-    @Ignore //Ignore this test for now only enable when needed
+     //Ignore this test for now only enable when needed
     @Test
     public void testEventCRUD() {
         //Clear the database
@@ -149,13 +149,13 @@ public class testsDBConnector {
                 //Create a test event
                 //Set up date and time objects
                 Calendar cal = Calendar.getInstance();
-                cal.set(2023, 1, 1, 12, 0, 0);
+                cal.set(2026, 1, 1, 12, 0, 0);
                 Date date = cal.getTime();
                 Timestamp eventDate = new Timestamp(date);
 
                 //Set up deadline
                 Calendar cal2 = Calendar.getInstance();
-                cal2.set(2023, 1, 1, 13, 0, 0);
+                cal2.set(2026, 1, 1, 13, 0, 0);
                 Date date2 = cal2.getTime();
                 Timestamp regDeadline = new Timestamp(date2);
 
@@ -232,10 +232,10 @@ public class testsDBConnector {
             public void onSuccess(int id) {
                 //Create a test event
                 Calendar cal = Calendar.getInstance();
-                cal.set(2025, 1, 1, 12, 0, 0);
+                cal.set(2026, 1, 1, 12, 0, 0);
                 Date date = cal.getTime();
                 Timestamp eventDate = new Timestamp(date);
-                cal.set(2025, 1, 1, 13, 0, 0);
+                cal.set(2026, 1, 1, 11, 0, 0);
                 Date date2 = cal.getTime();
                 Timestamp regDeadline = new Timestamp(date2);
                 Event event = new Event("Foo", "Foo", "Foo", eventDate, regDeadline, 10, id);

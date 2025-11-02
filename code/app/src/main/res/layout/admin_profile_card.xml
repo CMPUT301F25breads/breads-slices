@@ -21,7 +21,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:src="@drawable/ic_person"
-            android:background="@drawable/circle_bg"
+            android:background="@drawable/circle_background"
             android:padding="8dp" />
 
         <!-- Text info -->

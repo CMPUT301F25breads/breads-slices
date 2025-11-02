@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.example.slices.models.Entrant;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Shared model to facilitate communication of data between fragments
@@ -14,29 +15,34 @@ import java.util.ArrayList;
 public class SharedViewModel extends ViewModel {
 
     private final MutableLiveData<Entrant> user = new MutableLiveData<>(new Entrant());
-    private final MutableLiveData<ArrayList<Event>> events = new MutableLiveData<>(new ArrayList<>());
-
-    // use a simple list of Event IDs to make life easier!
-    // this (should) track which events the entrant has joined/waitlisted for
-    // -Raj
-    private final MutableLiveData<ArrayList<String>> waitlistedEventIds = new
-            MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<List<Event>> events = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<Event> selectedEvent = new MutableLiveData<>(new Event());
+    private final MutableLiveData<List<Event>> waitlistedEvents = new MutableLiveData<>(new ArrayList<>());
 
     public Entrant getUser() {
         return user.getValue();
     }
 
-    public ArrayList<Event> getEvents() {
+    public List<Event> getEvents() {
         return events.getValue();
+    }
+    public List<Event> getWaitlistedEvents() {
+        return waitlistedEvents.getValue();
     }
 
     public void setUser(Entrant user) {
         this.user.setValue(user);
     }
 
-    public void setEvents(ArrayList<Event> events) {
+    public void setEvents(List<Event> events) {
         this.events.setValue(events);
     }
+    public void setWaitlistedEvents(List<Event> waitlistedEvents) {
+        this.waitlistedEvents.setValue(waitlistedEvents);
+    }
+
+    private final MutableLiveData<ArrayList<String>> waitlistedEventIds = new
+            MutableLiveData<>(new ArrayList<>());
 
     // ---------   WAITLIST HANDLING ---------  -Raj
     // this will return the read-only of the list of specific events the specific entrant has joined
