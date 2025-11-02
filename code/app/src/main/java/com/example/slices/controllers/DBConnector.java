@@ -384,7 +384,7 @@ public class DBConnector {
                                 callback.onSuccess(event.getEntrants());
                             } else {
                                 // Event exists but has no entrants
-                                callback.onSuccess(new ArrayList<Entrant>());
+                                callback.onSuccess(new ArrayList<String>());
                             }
                         } else {
                             callback.onFailure(new EventNotFound("Event not found", String.valueOf(eventId)));

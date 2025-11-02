@@ -234,7 +234,7 @@ public class Event implements Comparable<Event> {
         return true;
     }
 
-    public void addEntrantToWaitlist(Entrant entrant, DBWriteCallback callback) {
+    public void addEntrantToWaitlist(String entrant, DBWriteCallback callback) {
         //Add the entrant to the waitlist
         waitlist.addEntrant(entrant);
         //Increment the current entrants
@@ -253,7 +253,7 @@ public class Event implements Comparable<Event> {
         //Create a lottery object
         Lottery lottery = new Lottery();
         //Get the winners
-        List<Entrant> winners = lottery.getWinners(waitlist.getEntrants(), this.maxEntrants);
+        List<String> winners = lottery.getWinners(waitlist.getEntrants(), this.maxEntrants);
         //Add the winners to the event
         if (winners.isEmpty()) {
             DebugLogger.d("Event", "No winners");

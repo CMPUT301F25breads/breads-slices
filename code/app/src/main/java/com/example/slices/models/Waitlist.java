@@ -60,17 +60,17 @@ public class Waitlist {
     public boolean isEmpty() {
         return entrants.isEmpty();
     }
-    public Entrant getEntrant(String entrant) {
+    /*public Entrant getEntrant(String entrant) {
         return entrants.get(entrants.indexOf(entrant));
-    }
-    public Entrant getEntrant(String id) {
+    }*/
+    /*public Entrant getEntrant(String id) {
         for (String entrant : entrants) {
-            if (entrant.getId() == id) {
+            if (entrant == id) {
                 return entrant;
             }
         }
         return null;
-    }
+    }*/
 //    public Entrant getEntrant(String id) {
 //        for (Entrant entrant : entrants) {
 //            if (entrant.getId() == id) {

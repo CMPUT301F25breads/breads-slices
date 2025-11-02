@@ -18,16 +18,13 @@ import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
-import com.example.slices.testing.TestUtils;
-
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
     private Entrant user;
-    private SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+    private SharedViewModel sharedViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
         setSupportActionBar(binding.toolbar);
 
