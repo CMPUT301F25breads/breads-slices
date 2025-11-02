@@ -33,6 +33,7 @@ public class Entrant {
 
     public Entrant(String deviceId, EntrantCallback callback) {
         this.deviceId = deviceId;
+        this.subEntrants = new ArrayList<Integer>();
 
         db.getNewEntrantId(new EntrantIDCallback() {
             @Override
@@ -76,8 +77,8 @@ public class Entrant {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.subEntrants = new ArrayList<Integer>();
-
     }
+
     public Entrant(String name, String email, String phoneNumber, EntrantCallback callback) {
         this.name = name;
         this.email = email;
@@ -129,6 +130,62 @@ public class Entrant {
         this.name = name;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.subEntrants = null;
+        db.getNewEntrantId(new EntrantIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                Entrant.this.id = id;
+                db.writeEntrant(Entrant.this, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        DebugLogger.d("Entrant", "Entrant created successfully");
+                        parent.addSubEntrant(Entrant.this);
+                        db.updateEntrant(parent, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                DebugLogger.d("Entrant", "Parent updated successfully");
+                                Entrant.this.parent = parent.getId();
+                                callback.onSuccess(Entrant.this);
+
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                DebugLogger.d("Entrant", "Parent update failed");
+                            }
+                        });
+
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        DebugLogger.d("Entrant", "Entrant write failed");
+                    }
+                });
+            }
+            public void onFailure(Exception e) {
+                DebugLogger.d("Entrant", "Entrant creation failed");
+            }
+        });
+
+    }
+
+    /**
+     * Constructor for the Entrant class for creating a secondary entrant without using phone number
+     * @param name
+     *      Name of the entrant
+     * @param email
+     *      Email of the entrant
+     * @param parent
+     *      Parent of the entrant
+     */
+    public Entrant(String name, String email, Entrant parent, EntrantCallback callback) {
+        if (parent.parent != 0 ) {
+            throw new IllegalArgumentException("Cant have parent with parent");
+        }
+
+        this.name = name;
+        this.email = email;
         this.subEntrants = null;
         db.getNewEntrantId(new EntrantIDCallback() {
             @Override
