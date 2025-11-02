@@ -1,34 +1,34 @@
 package com.example.slices.models;
 
-import com.example.slices.Event;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.testing.DebugLogger;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
-import com.example.slices.interfaces.EntrantIDCallback;
-import com.example.slices.interfaces.EntrantListCallback;
+import com.example.slices.testing.TestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 //Prototype class for the entrant
 public class Entrant {
-    private String name;
-    private String email;
-    private String phoneNumber;
-    //private int id;
     private String id;
-
-    private int parent = 0;
-
 
     private DBConnector db = new DBConnector();
 
-    private List<Integer> subEntrants;
+    private List<Profile> profiles;
 
     public Entrant() {}
 
+    /**
+     * Constructor for the Entrant class for creating a primary entrant
+     * @param id
+     *      ID of the entrant
+     * @param callback
+     *      Callback to call when the entrant is created
+     *
+     * @deprecated
+     *
+     */
     public Entrant(String id, EntrantCallback callback) {
         this.id = id;
 
@@ -47,31 +47,14 @@ public class Entrant {
         });
     }
 
-    /**
-     * Constructor for the Entrant class for creating a primary entrant
-     * @param name
-     *      Name of the entrant
-     * @param email
-     *      Email of the entrant
-     * @param phoneNumber
-     *      Phone number of the entrant
-     */
-    public Entrant(String name, String email, String phoneNumber)
-    {
-        this.name = name;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.subEntrants = new ArrayList<Integer>();
 
-    }
 
     // Testing constructor
     public Entrant(String name, String email, String phoneNumber, String id, EntrantCallback callback) {
-        this.name = name;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.id = id;
-        this.subEntrants = new ArrayList<Integer>();
+
+        this.profiles = new ArrayList<Profile>();
+        this.profiles.add(new Profile(name, email, phoneNumber, 0));
+
         db.writeEntrant(Entrant.this, new DBWriteCallback() {
             @Override
             public void onSuccess() {
@@ -88,76 +71,31 @@ public class Entrant {
     }
 
 
-    /**
-     * Constructor for the Entrant class for creating a secondary entrant
-     * @param name
-     *      Name of the entrant
-     * @param email
-     *      Email of the entrant
-     * @param phoneNumber
-     *      Phone number of the entrant
-     * @param parent
-     *      Parent of the entrant
-     */
-    /**public Entrant(String name, String email, String phoneNumber, Entrant parent, EntrantCallback callback) {
-        if (parent.parent != 0 ) {
-            throw new IllegalArgumentException("Cant have parent with parent");
-        }
+    public void updateProfile(String name, String email, String phoneNumber, DBWriteCallback callback) {
+        profiles.get(0).setName(name);
+        profiles.get(0).setEmail(email);
+        profiles.get(0).setPhoneNumber(phoneNumber);
+        db.updateEntrant(Entrant.this, callback);
 
-        this.name = name;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.subEntrants = null;
-        db.getNewEntrantId(new EntrantIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                Entrant.this.id = id;
-                db.writeEntrant(Entrant.this, new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        DebugLogger.d("Entrant", "Entrant created successfully");
-                        parent.addSubEntrant(Entrant.this);
-                        db.updateEntrant(parent, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                DebugLogger.d("Entrant", "Parent updated successfully");
-                                Entrant.this.parent = parent.getId();
-                                callback.onSuccess(Entrant.this);
+    }
 
-                            }
+    public void updateProfile(int index, String name, String email, String phoneNumber, DBWriteCallback callback) {
+        profiles.get(index).setName(name);
+        profiles.get(index).setEmail(email);
+        profiles.get(index).setPhoneNumber(phoneNumber);
+        db.updateEntrant(Entrant.this, callback);
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                DebugLogger.d("Entrant", "Parent update failed");
-                            }
-                        });
+    }
 
-                    }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        DebugLogger.d("Entrant", "Entrant write failed");
-                    }
-                });
-            }
-            public void onFailure(Exception e) {
-                DebugLogger.d("Entrant", "Entrant creation failed");
-            }
-        });
-
-    }*/
-
-    /**public String getDeviceId() {
-        return deviceId;
-    }*/
     public String getName() {
-        return name;
+        return profiles.get(0).getName();
     }
     public String getEmail() {
-        return email;
+        return profiles.get(0).getEmail();
     }
     public String getPhoneNumber() {
-        return phoneNumber;
+        return profiles.get(0).getPhoneNumber();
     }
 
     public String getId() {
@@ -165,78 +103,49 @@ public class Entrant {
     }
 
     public void setName(String name) {
-        this.name = name;
-
+        profiles.get(0).setName(name);
+        TestUtils.directCallWarn();
     }
     public void setEmail(String email) {
-        this.email = email;
+        profiles.get(0).setEmail(email);
+        TestUtils.directCallWarn();
+
 
     }
     public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+        profiles.get(0).setPhoneNumber(phoneNumber);
+        TestUtils.directCallWarn();
 
     }
     public void setId(String id) {
         this.id = id;
+        TestUtils.directCallWarn();
 
     }
 
 
-    /*public void addSubEntrant(Entrant child) {
-        subEntrants.add(child.getId());
-    }*/
+    public void addProfile(String name, String email, String phoneNumber, DBWriteCallback callback) {
+        profiles.add(new Profile(name, email, phoneNumber, profiles.size()));
+        db.updateEntrant(Entrant.this, callback);
+    }
 
 
+    public void removeProfile(int index, DBWriteCallback callback) {
+        profiles.remove(index);
+        db.updateEntrant(Entrant.this, callback);
+    }
 
-    /*public void getSubEntrants(EntrantListCallback callback) {
-        List<Entrant> retSubEntrants = new ArrayList<>();
-        for (int i = 0; i < this.subEntrants.size(); i++) {
-            int idToGet = this.subEntrants.get(i);
-            db.getEntrant(idToGet, new EntrantCallback() {
-                @Override
-                public void onSuccess(Entrant entrant) {
-                    retSubEntrants.add(entrant);
+    public List<Profile> getProfiles() {
+        return profiles;
+    }
 
-                    if (retSubEntrants.size() == Entrant.this.subEntrants.size()) {
-                        callback.onSuccess(retSubEntrants);
-                    }
-                }
+    public void setProfiles(List<Profile> profiles) {
+        this.profiles = profiles;
+        TestUtils.directCallWarn();
 
-                @Override
-                public void onFailure(Exception e) {
-                    callback.onFailure(e);
-                }
-            });
-        }
+    }
+    
 
-    }*/
-
-    /*public void getParent(EntrantCallback callback) {
-        //Get the parent of the entrant
-        db.getEntrant(this.parent, new EntrantCallback() {
-            @Override
-            public void onSuccess(Entrant entrant) {
-                callback.onSuccess(entrant);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                callback.onFailure(e);
-            }
-        });
-
-    }*/
-
-
-
-
-    /**@Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Entrant entrant = (Entrant) o;
-        return id == entrant.id; // or whatever uniquely identifies an Entrant
-    }*/
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -245,10 +154,7 @@ public class Entrant {
         return id == entrant.id; // or whatever uniquely identifies an Entrant
     }
 
-    /*@Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }*/
+
 
 
 
