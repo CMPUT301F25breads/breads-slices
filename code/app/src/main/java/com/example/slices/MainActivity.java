@@ -5,6 +5,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -21,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
-    private Entrant user;
+    private SharedViewModel sharedViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
+
+        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
         initializeUser();
 
@@ -72,6 +75,19 @@ public class MainActivity extends AppCompatActivity {
         binding.myEventsButton.setVisibility(isChecked ? View.GONE : View.VISIBLE);
     }
 
+    public void switchToUser() {
+        binding.createButton.setVisibility(View.GONE);
+        binding.myEventsOrgButton.setVisibility(View.GONE);
+        binding.browseButton.setVisibility(View.VISIBLE);
+        binding.myEventsButton.setVisibility(View.VISIBLE);
+    }
+    public void switchToOrganizer() {
+        binding.createButton.setVisibility(View.VISIBLE);
+        binding.myEventsOrgButton.setVisibility(View.VISIBLE);
+        binding.browseButton.setVisibility(View.GONE);
+        binding.myEventsButton.setVisibility(View.GONE);
+    }
+
     /**
      * Initialize the user information, either obtain entrant from firebase
      * if the deviceId exists, or create a new Entrant in firebase with the
@@ -83,8 +99,8 @@ public class MainActivity extends AppCompatActivity {
         db.getEntrantByDeviceId(deviceId, new EntrantCallback() {
             @Override
             public void onSuccess(Entrant entrant) {
-                user = entrant;
-                Toast.makeText(MainActivity.this, String.format("Hello %s", user.getDeviceId()), Toast.LENGTH_SHORT).show();
+                sharedViewModel.setUser(entrant);
+                Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getName()), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -93,7 +109,9 @@ public class MainActivity extends AppCompatActivity {
                     new Entrant(deviceId, new EntrantCallback() {
                         @Override
                         public void onSuccess(Entrant entrant) {
-                            user = entrant;
+                            sharedViewModel.setUser(entrant);
+                            NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
+                            navController.navigate(R.id.action_to_MenuFragment);
                         }
 
                         @Override
@@ -104,10 +122,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    public Entrant getUser() {
-        return user;
     }
 
 }
