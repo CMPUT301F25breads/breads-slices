@@ -130,14 +130,14 @@ public class DBConnector {
 
     /**
      * Gets an entrant from the database asynchronously
-     * @param deviceId
+     * @param id
      *      Entrant device ID to search for
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getEntrant(String deviceId, EntrantCallback callback) {
+    public void getEntrant(String id, EntrantCallback callback) {
         entrantRef
-                .whereEqualTo("deviceId", deviceId)
+                .whereEqualTo("id", id)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -150,12 +150,12 @@ public class DBConnector {
                                     callback.onSuccess(entrant);
                                 }
                                 else {
-                                    callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
+                                    callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(id)));
                                 }
                             }
                         }
                         else{
-                            callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(deviceId)));
+                            callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(id)));
                         }
                     }
                 })
