@@ -72,7 +72,7 @@ public class testsDBConnector {
         }
    }
 
-    @Ignore //Ignore this test for now only enable when needed
+    //@Ignore //Ignore this test for now only enable when needed
     @Test
     public void testEntrantCRUD() throws InterruptedException {
         //Clear the database
@@ -132,7 +132,7 @@ public class testsDBConnector {
 
 
     }
-    @Ignore //Ignore this test for now only enable when needed
+    //@Ignore //Ignore this test for now only enable when needed
     @Test
     public void testEventCRUD() {
         //Clear the database
