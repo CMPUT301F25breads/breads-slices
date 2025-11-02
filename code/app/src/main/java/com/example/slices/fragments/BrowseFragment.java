@@ -12,9 +12,11 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.example.slices.Event;
+import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.adapters.EventAdapter;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.BrowseFragmentBinding;
+import com.example.slices.interfaces.EventActions;
 import com.example.slices.interfaces.EventListCallback;
 
 import java.util.ArrayList;
