@@ -23,7 +23,7 @@ import android.view.LayoutInflater;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
-import com.example.slices.models.Waitlist;
+import com.example.slices.controllers.WaitlistController;
 
 import java.util.Map;
 import java.util.HashMap;

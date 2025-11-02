@@ -20,7 +20,7 @@ import java.util.function.Consumer;
  * format on firebase looks like this:
  *   events/{eventId}/waitlist/{entrantid}
  *   entrants/{userid}/{id}
- *
+ * @Author Raj Prasad
  *   Note: I don't know what I'm doing with the DB, so feel free to jump in! -Raj
  *   Note 2: I like hashmaps and dictionaries. -Raj
  */
