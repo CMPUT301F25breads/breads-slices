@@ -10,10 +10,10 @@
 
     <!-- Toolbar -->
     <TextView
-        android:id="@+id/title_profiles"
+        android:id="@+id/admin_org"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Profiles"
+        android:text="Organizers"
         android:textStyle="bold"
         android:textSize="28sp"
         android:textColor="@color/black"
@@ -27,7 +27,6 @@
         android:layout_marginBottom="8dp"
         android:padding="8dp"
         android:orientation="horizontal"
-        android:background="@drawable/search_bg"
         android:gravity="center_vertical">
 
         <ImageView
@@ -37,10 +36,10 @@
             android:src="@drawable/ic_person" />
 
         <EditText
-            android:id="@+id/searchBarProfiles"
+            android:id="@+id/searchBarOrganizers"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Filter Profiles"
+            android:hint="Filter Organizers"
             android:background="@android:color/transparent"
             android:paddingStart="4dp"
             android:inputType="text" />
@@ -48,7 +47,7 @@
 
     <!-- RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewProfiles"
+        android:id="@+id/recyclerViewOrganizers"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
