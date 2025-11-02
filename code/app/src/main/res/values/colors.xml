@@ -2,4 +2,10 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="light_primary">#454545</color>
+    <color name="red">#FF0000</color>
+    <color name="dark_gray">#525252</color>
+    <color name="nav_item_selector">#000000</color>
+    <color name="button_purple">#673AB7</color>
+    <color name="dark_grey">#434343</color>
 </resources>

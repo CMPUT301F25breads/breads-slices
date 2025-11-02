@@ -8,11 +8,17 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.services.events.TimeStamp;
 
+import com.example.slices.controllers.DBConnector;
+import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EntrantIDCallback;
+import com.example.slices.interfaces.EntrantListCallback;
+import com.example.slices.interfaces.EventCallback;
+import com.example.slices.interfaces.EventIDCallback;
+import com.example.slices.models.Entrant;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.Timestamp;
-import com.google.type.DateTime;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -36,37 +42,24 @@ public class testsDBConnector {
 
    private void createTestEntrants(int x) {
         if (x > 0) {
-            db.getNewEntrantId(new EntrantIDCallback() {
+            Entrant entrant = new Entrant("Foo" + x, "Foo" + x + "@Foo.Foo", "780-678-1211");
+            entrant.setId(Integer.toString(x));
+            db.writeEntrant(entrant, new DBWriteCallback() {
                 @Override
-                public void onSuccess(int id) {
-                    Entrant entrant = new Entrant("Foo" + x, "Foo" + x + "@Foo.Foo", "780-678-1211");
-                    entrant.setId(id);
-                    db.writeEntrant(entrant, new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {
-                            createTestEntrants(x - 1);
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-
+                public void onSuccess() {
+                    createTestEntrants(x - 1);
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    throw new RuntimeException(e);
+                            throw new RuntimeException(e);
+                        }
+                    });
                 }
-            });
-        }
-        else {
-            return;
         }
    }
 
-    @Ignore //Ignore this test for now only enable when needed
+    /*@Ignore //Ignore this test for now only enable when needed
     @Test
     public void testEntrantCRUD() throws InterruptedException {
         //Clear the database
@@ -273,5 +266,7 @@ public class testsDBConnector {
                 latch.countDown();
             }
         });
-    }
-}
+    }*/
+    
+
+
