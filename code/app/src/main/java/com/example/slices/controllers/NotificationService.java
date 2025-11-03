@@ -1,6 +1,6 @@
 package com.example.slices.controllers;
 
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.Entrant;
 

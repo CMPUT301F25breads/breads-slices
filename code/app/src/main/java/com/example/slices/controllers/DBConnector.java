@@ -2,7 +2,7 @@ package com.example.slices.controllers;
 
 import androidx.annotation.NonNull;
 
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.exceptions.EventNotFound;

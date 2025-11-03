@@ -1,11 +1,9 @@
-package com.example.slices;
+package com.example.slices.models;
 
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
-import com.example.slices.models.Entrant;
-import com.example.slices.models.Waitlist;
 import com.example.slices.testing.DebugLogger;
 import com.google.firebase.Timestamp;
 
@@ -20,27 +18,54 @@ import java.util.List;
  *
  */
 public class Event implements Comparable<Event> {
+    /**
+     * Name of the event
+     */
     private String name;
-
+    /**
+     * Description of the event
+     */
     private String description; // Probably will be it's own thing later
-
+    /**
+     * Location of the event
+     */
     private String location; // Will be geolocation object later
-
+    /**
+     * List of entrants in the event
+     */
     private List<Entrant> entrants; // Represents the entrants in the event
-
+    /**
+     * Date of the event
+     */
     private Timestamp eventDate;
+    /**
+     * Deadline for registering for the event
+     */
     private Timestamp regDeadline;
-
+    /**
+     * Waitlist for the event
+     */
     private Waitlist waitlist;
-
+    /**
+     * ID of the event
+     */
     private int id;
-
+    /**
+     * Maximum number of entrants in the event
+     */
     private int maxEntrants;
-
+    /**
+     * Current number of entrants in the event
+     */
     private int currentEntrants;
+    /**
+     * Image URL of the event
+     */
     private String imageUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
-
-    private DBConnector db = new DBConnector();
+    /**
+     * Database connector object
+     */
+    private final DBConnector db = new DBConnector();
 
 
     /**
@@ -107,45 +132,7 @@ public class Event implements Comparable<Event> {
             }
         });
     }
-    public Event(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, int id) throws IllegalArgumentException {
-        this.name = name;
-        this.description = description;
-        this.location = location;
-        this.eventDate = eventDate;
-        this.regDeadline = regDeadline;
-        this.maxEntrants = maxEntrants;
-        this.currentEntrants = 0;
-        this.entrants = new ArrayList<Entrant>();
-        this.waitlist = new Waitlist();
-        this.id = id;
 
-        //Check if the eventTime is in the past
-        //Get the current timestamp
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(System.currentTimeMillis());
-        Timestamp currentTime = new Timestamp(cal.getTime());
-
-        if (eventDate.compareTo(currentTime) < 0) {
-            //Throw exception
-            DebugLogger.d("Event", "Event time is in the past");
-            throw new IllegalArgumentException("Event time is in the past");
-        }
-
-        //Check if the registration deadline is in the past
-        if (regDeadline.compareTo(currentTime) < 0) {
-            //Throw exception
-            DebugLogger.d("Event", "Registration deadline is in the past");
-            throw new IllegalArgumentException("Registration deadline is in the past");
-        }
-
-        //Check if the registration deadline is after the event time
-        if (regDeadline.compareTo(eventDate) > 0) {
-            //Throw exception
-            DebugLogger.d("Event", "Registration deadline is after event time");
-            throw new IllegalArgumentException("Registration deadline is after event time");
-        }
-
-    }
 
     // Constructors for testing stuff
     public Event(String name, String imageUrl) {

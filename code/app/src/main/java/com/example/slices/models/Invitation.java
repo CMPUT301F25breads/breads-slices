@@ -1,9 +1,7 @@
 package com.example.slices.models;
 
-import com.example.slices.Event;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.interfaces.DBWriteCallback;
-import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.google.firebase.Timestamp;
 
