@@ -1,6 +1,6 @@
 package com.example.slices.testing;
 
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 import com.example.slices.controllers.NotificationManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
@@ -73,7 +73,7 @@ public class TestUtils {
             String description = "Description" + i;
             String location = "Location" + i;
             Calendar cal = Calendar.getInstance();
-            cal.set(2025, 12, 12, 12, 0, 0);
+            cal.set(2025, 12, 12, 15, 0, 0);
             Date date = cal.getTime();
             Timestamp eventDate = new Timestamp(date);
             cal.set(2025, 12, 12, 13, 0, 0);
@@ -104,6 +104,15 @@ public class TestUtils {
         return events;
 
     }
+
+    public static List<Entrant> createLocalTestEntrants(int count) {
+        List<Entrant> entrants = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            entrants.add(new Entrant("Entrant" + i, "entrant" + i + "@test.com", "780-000-000" + i, i));
+        }
+        return entrants;
+    }
+
 
     public static void createTestNotifications(int count, int timeoutSec) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(count);

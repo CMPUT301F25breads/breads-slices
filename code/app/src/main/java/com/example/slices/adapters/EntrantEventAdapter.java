@@ -10,9 +10,8 @@ import android.content.res.ColorStateList;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.ViewModelProvider;
 
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.interfaces.DBWriteCallback;
@@ -23,11 +22,9 @@ import android.view.LayoutInflater;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
-import com.example.slices.controllers.WaitlistController;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 /** EntrantEventAdapter

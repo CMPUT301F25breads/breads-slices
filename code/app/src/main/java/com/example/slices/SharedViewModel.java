@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.slices.models.Entrant;
+import com.example.slices.models.Event;
 
 import java.util.ArrayList;
 import java.util.List;

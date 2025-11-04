@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 import com.example.slices.adapters.EventAdapter;
 import com.example.slices.databinding.MyEventsFragmentBinding;
 

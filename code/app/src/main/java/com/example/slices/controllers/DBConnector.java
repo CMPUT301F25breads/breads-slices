@@ -2,7 +2,7 @@ package com.example.slices.controllers;
 
 import androidx.annotation.NonNull;
 
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.exceptions.EventNotFound;
@@ -21,11 +21,11 @@ import com.example.slices.interfaces.NotificationIDCallback;
 import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Invitation;
-import com.example.slices.models.InvitationLog;
-import com.example.slices.models.Log;
+import com.example.slices.models.InvitationLogEntry;
+import com.example.slices.models.LogEntry;
 import com.example.slices.models.LogType;
 import com.example.slices.models.Notification;
-import com.example.slices.models.NotificationLog;
+import com.example.slices.models.NotificationLogEntry;
 import com.example.slices.models.NotificationType;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -91,8 +91,12 @@ public class DBConnector {
         entrantRef = db.collection("entrants");
         authRef = db.collection("auth");
         eventRef = db.collection("events");
+        notificationRef = db.collection("notifications");
+        logRef = db.collection("logs");
     }
 
+
+    //----------ENTRANT---------------------------
     /**
      * Gets an entrant from the database asynchronously
      * @param id
@@ -167,40 +171,6 @@ public class DBConnector {
     }
 
     /**
-     * Gets an event from the database asynchronously
-     * @param callback
-     *      Callback to call when the operation is complete
-     * @param id
-     *      Event ID to search for
-     */
-
-    public void getEvent(int id, EventCallback callback) {
-        eventRef
-                .whereEqualTo("id", id)
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
-                            Event event = doc.toObject(Event.class);
-                            callback.onSuccess(event);
-                        } else {
-                            callback.onFailure(new EventNotFound("Event not found", String.valueOf(id)));
-
-                        }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get event"));
-                    }
-                });
-
-    }
-
-    /**
      * Gets the next available entrant ID
      * @return
      *      The next available entrant ID
@@ -238,7 +208,6 @@ public class DBConnector {
 
 
     }
-
     /**
      * Writes an entrant to the database asynchronously
      * @param entrant
@@ -262,10 +231,104 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
     public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
+        entrantRef.document(String.valueOf(entrant.getId()))
+                .set(entrant)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
+    }
+
+
+
+    /*public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(entrant.getDeviceId())
                 .set(entrant)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
+
+    }*/
+
+    /**
+     * Updates an entrant in the database asynchronously
+     * @param entrant
+     *      Entrant to update in the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
+    public void updateEntrant(Entrant entrant, DBWriteCallback callback) {
+        entrantRef.document(String.valueOf(entrant.getId()))
+                .set(entrant)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
+    }
+
+
+    /**
+     * Deletes an entrant from the database asynchronously
+     * @param id
+     *      Entrant ID to delete
+     */
+    public void deleteEntrant(String id) {
+        entrantRef.document(id).delete();
+    }
+
+    /**
+     * Clears all entrants from the database asynchronously: Used for testing
+     * @param onComplete
+     *      Callback to call when the operation is complete
+     *
+     */
+    public void clearEntrants(Runnable onComplete) {
+        entrantRef.get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Task<Void>> deleteTasks = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        deleteTasks.add(entrantRef.document(doc.getId()).delete());
+                    }
+                    // Wait for all deletes to finish
+                    Tasks.whenAll(deleteTasks)
+                            .addOnSuccessListener(aVoid -> onComplete.run());
+                })
+                .addOnFailureListener(e -> {
+                    System.out.println("Failed to clear entrants: " + e.getMessage());
+                    onComplete.run();
+                });
+    }
+
+
+    //----------EVENT-----------
+
+    /**
+     * Gets an event from the database asynchronously
+     * @param callback
+     *      Callback to call when the operation is complete
+     * @param id
+     *      Event ID to search for
+     */
+
+    public void getEvent(int id, EventCallback callback) {
+        eventRef
+                .whereEqualTo("id", id)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
+                            Event event = doc.toObject(Event.class);
+                            callback.onSuccess(event);
+                        } else {
+                            callback.onFailure(new EventNotFound("Event not found", String.valueOf(id)));
+
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get event"));
+                    }
+                });
 
     }
 
@@ -299,31 +362,6 @@ public class DBConnector {
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write event")));
 
-    }
-
-    /**
-     * Updates an entrant in the database asynchronously
-     * @param entrant
-     *      Entrant to update in the database
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
-
-    public void updateEntrant(Entrant entrant, DBWriteCallback callback) {
-        entrantRef.document(String.valueOf(entrant.getId()))
-                .set(entrant)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
-    }
-
-
-    /**
-     * Deletes an entrant from the database asynchronously
-     * @param id
-     *      Entrant ID to delete
-     */
-    public void deleteEntrant(String id) {
-        entrantRef.document(id).delete();
     }
 
     /**
@@ -409,28 +447,7 @@ public class DBConnector {
         eventRef.document(id).delete();
     }
 
-    /**
-     * Clears all entrants from the database asynchronously: Used for testing
-     * @param onComplete
-     *      Callback to call when the operation is complete
-     *
-     */
-    public void clearEntrants(Runnable onComplete) {
-        entrantRef.get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<Task<Void>> deleteTasks = new ArrayList<>();
-                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        deleteTasks.add(entrantRef.document(doc.getId()).delete());
-                    }
-                    // Wait for all deletes to finish
-                    Tasks.whenAll(deleteTasks)
-                            .addOnSuccessListener(aVoid -> onComplete.run());
-                })
-                .addOnFailureListener(e -> {
-                    System.out.println("Failed to clear entrants: " + e.getMessage());
-                    onComplete.run();
-                });
-    }
+
 
     /**
      * Clears all events from the database asynchronously: Used for testing
@@ -455,40 +472,7 @@ public class DBConnector {
                 });
     }
 
-    /**
-     * Gets the next available notification ID
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
-    public void getNotificationId(NotificationIDCallback callback) {
-        notificationRef.get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            // Get the highest ID
-                            int highestId = 0;
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                int id = doc.getLong("id").intValue();
-                                if (id > highestId) {
-                                    highestId = id;
-                                    callback.onSuccess(highestId + 1);
-                                } else {
-                                    callback.onSuccess(highestId + 1);
-                                }
-                            }
-                        }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get next notification ID"));
 
-                    }
-                });
-
-    }
 
     /**
      * Gets all future events from the database asynchronously
@@ -522,6 +506,42 @@ public class DBConnector {
                         callback.onFailure(new DBOpFailed("Failed to get Events"));
                     }
                 });
+    }
+
+    //----------NOTIFICATION---------------------------
+    /**
+     * Gets the next available notification ID
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getNotificationId(NotificationIDCallback callback) {
+        notificationRef.get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            // Get the highest ID
+                            int highestId = 0;
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                int id = doc.getLong("id").intValue();
+                                if (id > highestId) {
+                                    highestId = id;
+                                    callback.onSuccess(highestId + 1);
+                                } else {
+                                    callback.onSuccess(highestId + 1);
+                                }
+                            }
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get next notification ID"));
+
+                    }
+                });
+
     }
 
     /**
@@ -611,7 +631,7 @@ public class DBConnector {
                 .addOnSuccessListener(querySnapshot -> {
                     List<Task<Void>> deleteTasks = new ArrayList<>();
                     for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        deleteTasks.add(eventRef.document(doc.getId()).delete());
+                        deleteTasks.add(notificationRef.document(doc.getId()).delete());
                     }
                     // Wait for all deletes to finish
                     Tasks.whenAll(deleteTasks)
@@ -665,6 +685,12 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
     public void getNotificationByRecipientId(int recipientId, NotificationListCallback callback) {
+        notificationRef.get().addOnSuccessListener(querySnapshot -> {
+            for (DocumentSnapshot doc : querySnapshot) {
+                System.out.println(doc.getData());
+            }
+        });
+
         notificationRef.whereEqualTo("recipientId", recipientId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
@@ -690,7 +716,7 @@ public class DBConnector {
                     }
                 });
     }
-
+    /*
     /**
      * Gets all notifications for a single recipient from the database asynchronously
      * @param deviceId
@@ -698,7 +724,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void getNotificationByDeviceId(String deviceId, NotificationListCallback callback) {
+    /*public void getNotificationByDeviceId(String deviceId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("deviceId", deviceId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
@@ -723,7 +749,7 @@ public class DBConnector {
                         callback.onFailure(new DBOpFailed("Failed to get notifications"));
                     }
                 });
-    }
+    }*/
 
     /**
      * Gets all notifications for a single sender from the database asynchronously
@@ -733,7 +759,7 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
 
-    public void getNotificationBySenderId(int senderId, NotificationListCallback callback) {
+    public void getNotificationsBySenderId(int senderId, NotificationListCallback callback) {
         notificationRef.whereEqualTo("senderId", senderId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
@@ -760,6 +786,10 @@ public class DBConnector {
                     }
                 });
     }
+
+
+
+    //----------INVITATION---------------------------
 
     /**
      * Gets a single invitation from the database asynchronously
@@ -826,6 +856,13 @@ public class DBConnector {
                     }
                 });
     }
+    public void updateInvitation(Invitation invitation, DBWriteCallback callback) {
+        notificationRef.document(String.valueOf(invitation.getId()))
+                .set(invitation)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write invitation")));
+    }
+
 
     /**
      * Gets all invitations for a single sender from the database asynchronously
@@ -898,6 +935,8 @@ public class DBConnector {
     }
 
 
+    //----------LOG---------------------------
+
     /**
      * Gets the next available log ID
      * @param callback
@@ -945,7 +984,7 @@ public class DBConnector {
      * @param callback
      *      Callback to call when the operation is complete
      */
-    public void writeLog(Log log, DBWriteCallback callback) {
+    public void writeLog(LogEntry log, DBWriteCallback callback) {
         logRef.document(String.valueOf(log.getLogId()))
                 .set(log)
                 .addOnSuccessListener(aVoid -> callback.onSuccess())
@@ -958,20 +997,20 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
 
-    public void getAllLogs(LogListCallback callback) {
+    public void getAllNotificationLogs(LogListCallback callback) {
         logRef.get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Log> logs = new ArrayList<>();
+                            List<LogEntry> logs = new ArrayList<>();
                             for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Log log = doc.toObject(Log.class);
+                                NotificationLogEntry log = doc.toObject(NotificationLogEntry.class);
                                 logs.add(log);
                             }
                             callback.onSuccess(logs);
                         } else {
-                            callback.onSuccess(new ArrayList<Log>());
+                            callback.onSuccess(new ArrayList<LogEntry>());
                         }
                     }
                 })
@@ -995,38 +1034,7 @@ public class DBConnector {
         logRef.document(id).delete();
     }
 
-    /**
-     * Gets all notification logs from the database asynchronously
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
 
-    public void getNotificationLogs(LogListCallback callback) {
-        logRef.whereEqualTo("type", LogType.NOTIFICATION)
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Log> logs = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Log log = doc.toObject(NotificationLog.class);
-                                logs.add(log);
-                            }
-                            callback.onSuccess(logs);
-                        } else {
-                            callback.onSuccess(new ArrayList<Log>());
-                        }
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notification logs"));
-                    }
-
-
-                });
-    }
 
     /**
      * Gets all invitation logs from the database asynchronously
@@ -1034,21 +1042,21 @@ public class DBConnector {
      *      Callback to call when the operation is complete
      */
 
-    public void getInvitationLogs(LogListCallback callback) {
+    public void getAllInvitationLogs(LogListCallback callback) {
         logRef.whereEqualTo("type", LogType.INVITATION)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Log> logs = new ArrayList<>();
+                            List<LogEntry> logs = new ArrayList<>();
                             for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Log log = doc.toObject(InvitationLog.class);
+                                LogEntry log = doc.toObject(InvitationLogEntry.class);
                                 logs.add(log);
                             }
                             callback.onSuccess(logs);
                         } else {
-                            callback.onSuccess(new ArrayList<Log>());
+                            callback.onSuccess(new ArrayList<LogEntry>());
                         }
                     }
                 }).addOnFailureListener(new OnFailureListener() {
@@ -1060,6 +1068,26 @@ public class DBConnector {
                 });
 
     }
+
+    public void clearLogs(Runnable onComplete) {
+        logRef.get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Task<Void>> deleteTasks = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        deleteTasks.add(logRef.document(doc.getId()).delete());
+                    }
+                    // Wait for all deletes to finish
+                    Tasks.whenAll(deleteTasks)
+                            .addOnSuccessListener(aVoid -> onComplete.run());
+                })
+                .addOnFailureListener(e -> {
+                    System.out.println("Failed to clear logs: " + e.getMessage());
+                    onComplete.run();
+                });
+    }
+
+
+
 
 
 

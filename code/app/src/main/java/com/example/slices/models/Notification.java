@@ -8,7 +8,6 @@ public class Notification {
     protected String body;
     protected int notificationId;
     protected int recipientId;
-    protected String recipientDeviceId;
 
     protected int senderId;
 
@@ -18,8 +17,7 @@ public class Notification {
     
     protected NotificationType type;
     protected int eventId;
-    protected Entrant recipient;
-    protected Entrant sender;
+
 
 
 
@@ -32,33 +30,19 @@ public class Notification {
         this.body = body;
         this.notificationId = notificationId;
         this.recipientId = recipientId;
+        this.senderId = senderId;
         this.read = false;
         this.timestamp = Timestamp.now();
         this.type = NotificationType.NOTIFICATION;
     }
 
-    public Notification(String title, String body, int notificationId, Entrant recipient, Entrant sender) {
-        this.title = title;
-        this.body = body;
-        this.notificationId = notificationId;
-        this.recipient = recipient;
-        this.read = false;
-        this.timestamp = Timestamp.now();
-        this.type = NotificationType.NOTIFICATION;
-    }
 
 
     public String getTitle() {
         return title;
     }
 
-    public Entrant getRecipient() {
-        return recipient;
-    }
 
-    public Entrant getSender() {
-        return sender;
-    }
 
     public String getBody() {
         return body;
@@ -76,18 +60,27 @@ public class Notification {
         return senderId;
     }
 
-    public String getRecipientDeviceId() {
-        return recipientDeviceId;
+
+
+    public Timestamp getTimestamp() {
+        return timestamp;
+    }
+    public NotificationType getType() {
+        return type;
+    }
+    public int getEventId() {
+        return eventId;
     }
 
-
-    public boolean isRead() {
+    public boolean getRead() {
         return read;
     }
 
-    public void markAsRead() {
-        this.read = true;
+    public void setId (int id) {
+        this.notificationId = id;
     }
+
+
 
     public void setTitle(String title) {
         this.title = title;
@@ -97,17 +90,12 @@ public class Notification {
         this.body = body;
     }
 
-    public void setNotificationId(int notificationId) {
-        this.notificationId = notificationId;
-    }
 
     public void setRecipientId(int recipientId) {
         this.recipientId = recipientId;
     }
 
-    public void setRecipientDeviceId(String deviceId) {
-        this.recipientDeviceId = deviceId;
-    }
+
 
     public void setRead(boolean read) {
         this.read = read;
@@ -116,25 +104,35 @@ public class Notification {
     public void setSenderId(int senderId) {
         this.senderId = senderId;
     }
-    public void setSender(Entrant Sender) {
-        this.sender = sender;
+
+    public void setEventId(int eventId) {
+        this.eventId = eventId;
     }
-    public void setRecipient(Entrant recipient) {
-        this.recipient = recipient;
+    public void setType(NotificationType type) {
+        this.type = type;
     }
-    public Timestamp getTimestamp() {
-        return timestamp;
-    }
+
 
     public void setTimestamp(Timestamp timestamp) {
         this.timestamp = timestamp;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Notification other = (Notification) obj;
+        return notificationId == other.notificationId;
+    }
 
-
-
-
-
+    @Override
+    public int hashCode() {
+        return notificationId;
+    }
 
 
 }

@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.testsModels;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

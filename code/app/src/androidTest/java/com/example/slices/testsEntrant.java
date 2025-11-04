@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.testsModels;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -107,5 +107,6 @@ public class testsEntrant {
         completed = latch4.await(15000, TimeUnit.MILLISECONDS);
         assertTrue(completed);
     }
+
 }
 
