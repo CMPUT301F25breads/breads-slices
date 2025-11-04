@@ -1,4 +1,4 @@
-package com.example.slices.testsModels;
+package com.example.slices;
 
 public class testsNotificationLog {
 }
