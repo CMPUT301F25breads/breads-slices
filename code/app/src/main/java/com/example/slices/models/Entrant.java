@@ -229,6 +229,33 @@ public class Entrant {
     }
 
     /**
+     * Test constructor for the Entrant class for creating a secondary entrant
+     * @param name
+     *      Name of the entrant
+     * @param email
+     *      Email of the entrant
+     * @param phoneNumber
+     *      Phone number of the entrant
+     * @param id
+     *      ID of the entrant
+     * @param parent
+     *      Parent of the entrant
+     */
+    public Entrant(String name, String email, String phoneNumber, int id, Entrant parent) {
+        if (parent.parent != 0 ) {
+            throw new IllegalArgumentException("Cant have parent with parent");
+        }
+        this.name = name;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.id = id;
+        this.parent = parent.getId();
+        this.subEntrants = new ArrayList<Integer>();
+        parent.addSubEntrant(this);
+    }
+
+
+    /**
      * Getter for the device ID of the entrant
      * @return
      *      Device ID of the entrant
@@ -281,7 +308,7 @@ public class Entrant {
      * @return
      *      List of confirmed events of the entrant
      */
-    //ublic List<Event> getConfirmedEvents() {
+    //public List<Event> getConfirmedEvents() {
         //return confirmedEvents;
 
     //}
