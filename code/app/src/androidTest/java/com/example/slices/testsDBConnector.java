@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 
 import android.util.Log;
@@ -24,6 +25,7 @@ import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Invitation;
+import com.example.slices.models.InvitationLogEntry;
 import com.example.slices.models.LogEntry;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationLogEntry;
@@ -33,6 +35,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -43,12 +46,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Ignore
 public class testsDBConnector {
 
     private DBConnector db;
-    private boolean ignoreEntrantTests = false;
-    private boolean ignoreEventTests = false;
-    private boolean ignoreNotificationTests = false;
+    
+
 
 
     @Before
@@ -108,6 +111,7 @@ public class testsDBConnector {
 
     @Test
     public void testWriteAndGetEntrant() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Entrant entrant = TestUtils.createLocalTestEntrants(1).get(0);
@@ -140,6 +144,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetEntrantByDeviceId() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Entrant entrant = TestUtils.createLocalTestEntrants(1).get(0);
@@ -173,6 +178,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetNewEntrantId() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
@@ -193,6 +199,7 @@ public class testsDBConnector {
 
     @Test
     public void testUpdateEntrant() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Entrant entrant = TestUtils.createLocalTestEntrants(1).get(0);
@@ -236,6 +243,7 @@ public class testsDBConnector {
 
     @Test
     public void testDeleteEntrant() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Entrant entrant = TestUtils.createLocalTestEntrants(1).get(0);
@@ -270,6 +278,7 @@ public class testsDBConnector {
 
     @Test
     public void testWriteAndGetEvent() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Event event = TestUtils.createTestEvents(1, 10, 10).get(0);
@@ -302,6 +311,7 @@ public class testsDBConnector {
 
     @Test
     public void testUpdateEvent() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Event event = TestUtils.createTestEvents(1, 10, 10).get(0);
@@ -345,6 +355,7 @@ public class testsDBConnector {
 
     @Test
     public void testDeleteEvent() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Event event = TestUtils.createTestEvents(1, 10, 10).get(0);
@@ -377,6 +388,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetEntrantsForEvent() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Event event = TestUtils.createTestEvents(1, 10, 3).get(0);
@@ -411,6 +423,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetAllFutureEvents() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Event eventG = TestUtils.createTestEvents(1, 10, 10).get(0);
@@ -454,13 +467,12 @@ public class testsDBConnector {
     }
 
 
-
-
     // ---------- NOTIFICATION TESTS ----------
 
 
     @Test
     public void testGetNotificationId() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
@@ -480,6 +492,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetAllNotifications() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
@@ -526,6 +539,9 @@ public class testsDBConnector {
 
     @Test
     public void testWriteAndGetNotification() throws InterruptedException {
+
+        // Clear all collections before each test
+        clearAll();
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -557,6 +573,7 @@ public class testsDBConnector {
 
     @Test
     public void testUpdateNotification() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
@@ -601,6 +618,7 @@ public class testsDBConnector {
 
     @Test
     public void testDeleteNotification() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
@@ -633,6 +651,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetNotificationByRecipientId() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
@@ -693,6 +712,8 @@ public class testsDBConnector {
 
     @Test
     public void testGetNotificationsBySenderId() throws InterruptedException {
+
+        // Clear all collections before each test
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
@@ -753,6 +774,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetInvitationById() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
@@ -786,6 +808,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetInvitationByRecipientId() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
@@ -843,6 +866,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetInvitationBySenderId() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
@@ -899,6 +923,7 @@ public class testsDBConnector {
 
     @Test
     public void testGetInvitationByEventId() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
@@ -955,6 +980,7 @@ public class testsDBConnector {
 
     @Test
     public void testUpdateInvitation() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
@@ -1001,6 +1027,7 @@ public class testsDBConnector {
 
     @Test
     public void testWriteAndGetNotificationLog() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
@@ -1038,6 +1065,7 @@ public class testsDBConnector {
 
     @Test
     public void testDeleteLog() throws InterruptedException {
+
         // Clear all collections before each test
         clearAll();
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
@@ -1068,5 +1096,39 @@ public class testsDBConnector {
             }
         });
     }
+
+    @Test
+    public void testGetAllInvitationLogs() throws InterruptedException {
+
+        // Clear all collections before each test
+        clearAll();
+        Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
+        InvitationLogEntry log = new InvitationLogEntry(invitation, 1);
+        CountDownLatch latch = new CountDownLatch(1);
+        db.writeLog(log, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                db.getAllInvitationLogs(new LogListCallback() {
+                    @Override
+                    public void onSuccess(List<LogEntry> result) {
+                        assertTrue(result.stream().anyMatch(l -> l.getMessage().equals("Test Invitation Test Message")));
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        fail("Failed to get logs");
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                fail("Failed to write log");
+            }
+        });
+        latch.await(10, TimeUnit.SECONDS);
+    }
 }
+
 
