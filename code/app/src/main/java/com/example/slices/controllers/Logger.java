@@ -3,7 +3,7 @@ package com.example.slices.controllers;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.LogIDCallback;
 import com.example.slices.models.Notification;
-import com.example.slices.models.NotificationLog;
+import com.example.slices.models.NotificationLogEntry;
 
 public class Logger {
     private static Logger instance;
@@ -48,7 +48,7 @@ public class Logger {
             });
 
         }
-        db.writeLog(new NotificationLog(notification, largestId), new DBWriteCallback() {
+        db.writeLog(new NotificationLogEntry(notification, largestId), new DBWriteCallback() {
             @Override
             public void onSuccess() {
                 System.out.println("Logged notification successfully");

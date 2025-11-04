@@ -262,8 +262,8 @@ public class Entrant {
     }
     /**
      * Getter for the ID of the entrant
-     * @return
-     *      ID of the entrant
+     *
+     * @return ID of the entrant
      */
     public int getId() {
         return id;
@@ -444,5 +444,7 @@ public class Entrant {
     }
 
 
+    public void setDeviceId(String testDeviceId) {
 
+    }
 }

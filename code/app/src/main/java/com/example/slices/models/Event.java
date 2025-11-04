@@ -10,6 +10,7 @@ import com.google.firebase.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Class representing an entrant
@@ -131,6 +132,43 @@ public class Event implements Comparable<Event> {
                 DebugLogger.d("Event", "Event failed to get new id");
             }
         });
+    }
+
+    public Event (String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, boolean flag, EventCallback callback) {
+        this.name = name;
+        this.description = description;
+        this.location = location;
+        this.eventDate = eventDate;
+        this.regDeadline = regDeadline;
+        this.maxEntrants = maxEntrants;
+        this.currentEntrants = 0;
+        this.entrants = new ArrayList<Entrant>();
+        this.waitlist = new Waitlist();
+        db.getNewEventId(new EventIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                Event.this.id = id;
+                db.writeEvent(Event.this, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        DebugLogger.d("Event", "Event created successfully");
+                        callback.onSuccess(Event.this);
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        DebugLogger.d("Event", "Event creation failed");
+                        callback.onFailure(e);
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                DebugLogger.d("Event", "Event failed to get new id");
+            }
+        });
+
+
+
     }
 
 
@@ -314,18 +352,24 @@ public class Event implements Comparable<Event> {
         return this.eventDate.compareTo(other.eventDate);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Event event = (Event) obj;
+        return id == event.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 
 
 
-
-
-
-
-
-
-
-
-
+    public void setEntrants(List<Entrant> entrants) {
+        this.entrants = entrants;
+    }
 
 
 }

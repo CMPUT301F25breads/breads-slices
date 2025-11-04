@@ -2,6 +2,7 @@ package com.example.slices.models;
 
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.google.firebase.Timestamp;
 
@@ -11,13 +12,15 @@ public class Invitation extends Notification {
     private boolean accepted;
     private boolean declined;
 
+    public Invitation() {
+    }
 
     public Invitation(String title, String body, int notificationId, int recipient, int sender, int eventId) {
         this.title = title;
         this.body = body;
         this.notificationId = notificationId;
-        this.recipientId = recipientId;
-        this.senderId = senderId;
+        this.recipientId = recipient;
+        this.senderId = sender;
         this.eventId = eventId;
         this.read = false;
         this.timestamp = Timestamp.now();
@@ -26,32 +29,30 @@ public class Invitation extends Notification {
         this.declined = false;
 
     }
-    public Invitation(String title, String body, int notificationId, Entrant recipient, Entrant sender, int eventId) {
-        this.title = title;
-        this.body = body;
-        this.notificationId = notificationId;
-        this.recipientId = recipientId;
-        this.senderId = senderId;
-        this.eventId = eventId;
-        this.read = false;
-        this.timestamp = Timestamp.now();
-        this.type = NotificationType.INVITATION;
-        this.accepted = false;
-        this.declined = false;
 
-    }
 
     public void onAccept() {
         DBConnector db = new DBConnector();
         db.getEvent(eventId, new EventCallback() {
             @Override
             public void onSuccess(Event event) {
-                event.getWaitlist().removeEntrant(recipient);
-                event.addEntrant(recipient, new DBWriteCallback() {
+                db.getEntrant(recipientId, new EntrantCallback() {
                     @Override
-                    public void onSuccess() {
+                    public void onSuccess(Entrant entrant) {
+                        event.getWaitlist().removeEntrant(entrant);
+                        event.addEntrant(entrant, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
 
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+
+                            }
+                        });
                     }
+
 
                     @Override
                     public void onFailure(Exception e) {
@@ -70,11 +71,22 @@ public class Invitation extends Notification {
         db.getEvent(eventId, new EventCallback() {
             @Override
             public void onSuccess(Event event) {
-                event.removeEntrantFromWaitlist(recipient, new DBWriteCallback() {
+                db.getEntrant(recipientId, new EntrantCallback() {
                     @Override
-                    public void onSuccess() {
+                    public void onSuccess(Entrant entrant) {
+                        event.removeEntrantFromWaitlist(entrant, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
 
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+
+                            }
+                        });
                     }
+
 
                     @Override
                     public void onFailure(Exception e) {
@@ -88,15 +100,11 @@ public class Invitation extends Notification {
         });
     }
 
-    public int getEventId() {
-        return eventId;
-    }
-    public void setEventId(int eventId) {
-        this.eventId = eventId;
-    }
+
     public boolean isAccepted() {
         return accepted;
     }
+
     public void setAccepted(boolean accepted) {
         this.accepted = accepted;
     }
