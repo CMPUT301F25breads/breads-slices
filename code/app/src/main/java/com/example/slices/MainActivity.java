@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
     private SharedViewModel sharedViewModel;
+    private String appMode; // Variable to store what mode the app is in
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(binding.toolbar);
 
         sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+
+        // Start in User mode
+        appMode = "User";
 
         initializeUser();
 
@@ -80,12 +84,18 @@ public class MainActivity extends AppCompatActivity {
         binding.myEventsOrgButton.setVisibility(View.GONE);
         binding.browseButton.setVisibility(View.VISIBLE);
         binding.myEventsButton.setVisibility(View.VISIBLE);
+        appMode = "User";
     }
     public void switchToOrganizer() {
         binding.createButton.setVisibility(View.VISIBLE);
         binding.myEventsOrgButton.setVisibility(View.VISIBLE);
         binding.browseButton.setVisibility(View.GONE);
         binding.myEventsButton.setVisibility(View.GONE);
+        appMode = "Organizer";
+    }
+
+    public String getAppMode() {
+        return appMode;
     }
 
     /**
