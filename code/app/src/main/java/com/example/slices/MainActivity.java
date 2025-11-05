@@ -20,7 +20,6 @@ import com.example.slices.models.InstanceUtil;
 
 public class MainActivity extends AppCompatActivity {
 
-    private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
     private SharedViewModel sharedViewModel;
     private String appMode; // Variable to store what mode the app is in
@@ -32,8 +31,6 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        setSupportActionBar(binding.toolbar);
-
         sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
         // Start in User mode
@@ -42,56 +39,22 @@ public class MainActivity extends AppCompatActivity {
         initializeUser();
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-
-        // Set listeners for bottom navigation buttons
-        // Will all change soon
-        binding.myEventsButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MyEventsFragment));
-        binding.myEventsOrgButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MyEventsOrgFragment));
-        binding.browseButton.setOnClickListener(view -> navController.navigate(R.id.action_to_BrowseFragment));
-        binding.notifButton.setOnClickListener(view -> navController.navigate(R.id.action_to_NotifFragment));
-        binding.menuButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MenuFragment));
-        binding.createButton.setOnClickListener(view -> navController.navigate(R.id.action_to_CreateFragment));
-
-        // When ready to move to menu fragment this listener can be used and delete from here
-        //        binding.organizerSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-        //            if (getActivity() != null) {
-        //                ((MainActivity) getActivity()).toggleBar(isChecked);
-        //            }
-        //        });
-        binding.switch1.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            toggleBar(isChecked);
-        });
-    }
-
-    /**
-     * Alternate visibility between the Organizer navigation view and Entrant
-     * navigation view
-     * @param isChecked
-     *      boolean passed from a switch listener, true when switch is checked
-     *      false when not
-     */
-    public void toggleBar(boolean isChecked) {
-        binding.createButton.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-        binding.myEventsOrgButton.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-        binding.browseButton.setVisibility(isChecked ? View.GONE : View.VISIBLE);
-        binding.myEventsButton.setVisibility(isChecked ? View.GONE : View.VISIBLE);
+        NavigationUI.setupWithNavController(binding.bottomNav, navController);
     }
 
     public void switchToUser() {
-        binding.createButton.setVisibility(View.GONE);
-        binding.myEventsOrgButton.setVisibility(View.GONE);
-        binding.browseButton.setVisibility(View.VISIBLE);
-        binding.myEventsButton.setVisibility(View.VISIBLE);
         appMode = "User";
+        binding.bottomNav.getMenu().findItem(R.id.CreateFragment).setVisible(false);
+        binding.bottomNav.getMenu().findItem(R.id.MyEventsOrgFragment).setVisible(false);
+        binding.bottomNav.getMenu().findItem(R.id.BrowseFragment).setVisible(true);
+        binding.bottomNav.getMenu().findItem(R.id.MyEventsFragment).setVisible(true);
     }
     public void switchToOrganizer() {
-        binding.createButton.setVisibility(View.VISIBLE);
-        binding.myEventsOrgButton.setVisibility(View.VISIBLE);
-        binding.browseButton.setVisibility(View.GONE);
-        binding.myEventsButton.setVisibility(View.GONE);
         appMode = "Organizer";
+        binding.bottomNav.getMenu().findItem(R.id.CreateFragment).setVisible(true);
+        binding.bottomNav.getMenu().findItem(R.id.MyEventsOrgFragment).setVisible(true);
+        binding.bottomNav.getMenu().findItem(R.id.BrowseFragment).setVisible(false);
+        binding.bottomNav.getMenu().findItem(R.id.MyEventsFragment).setVisible(false);
     }
 
     public String getAppMode() {
