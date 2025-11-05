@@ -103,6 +103,10 @@ public class  MenuFragment extends Fragment {
             binding.nameTextfield.setError("Name required");
             return;
         }
+        if (newEmail.trim().isEmpty()) {
+            binding.emailTextfield.setError("Email required");
+            return;
+        }
 
         Entrant newUser = new Entrant(newName, newEmail, newPhone, currentUser.getId());
         newUser.setDeviceId(InstanceUtil.getDeviceId((MainActivity) requireActivity()));
