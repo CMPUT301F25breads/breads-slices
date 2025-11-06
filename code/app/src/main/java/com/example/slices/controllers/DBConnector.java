@@ -994,13 +994,19 @@ public class DBConnector {
                         // Get the highest ID
                         int highestId = 0;
                         for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                            int id = doc.getLong("id").intValue();
-                            if (id > highestId) {
-                                highestId = id;
-                                callback.onSuccess(highestId + 1);
-                            } else {
-                                callback.onSuccess(highestId + 1);
+                            if (doc.getLong("id") != null) {
+                                int id = doc.getLong("id").intValue();
+                                if (id > highestId) {
+                                    highestId = id;
                             }
+
+                            }
+                        }
+                        // Return the next ID
+                        if (highestId != 0) {
+                            callback.onSuccess(highestId + 1);
+                        } else {
+                            callback.onSuccess(1);
                         }
                     }
                     else {

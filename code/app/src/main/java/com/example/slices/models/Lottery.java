@@ -11,16 +11,14 @@ import java.util.List;
  */
 public class Lottery {
 
-    private List<Entrant> entrants;
-    private int numberOfWinners;
+
 
     /**
      * Constructor for the Lottery class - takes no arguments
      */
 
     public Lottery() {
-        this.entrants = new ArrayList<Entrant>();
-        this.numberOfWinners = 0;
+
     }
 
 
@@ -34,6 +32,9 @@ public class Lottery {
      *      List of winners
      */
     public List<Entrant> getWinners(List<Entrant> entrants, int numberOfWinners) {
+        if (numberOfWinners > entrants.size()) {
+            throw new IllegalArgumentException("Number of winners cannot be greater than the number of entrants");
+        }
         //Select winners from list of entrants
         List<Entrant> winners = new ArrayList<Entrant>();
         for (int i = 0; i < numberOfWinners; i++) {
