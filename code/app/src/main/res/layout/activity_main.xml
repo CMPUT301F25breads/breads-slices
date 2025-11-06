@@ -33,5 +33,21 @@
             android:layout_height="wrap_content"
             app:menu="@menu/bottom_nav"
             app:labelVisibilityMode="labeled" />
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_nav_org"
+            android:background="@color/white"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:menu="@menu/bottom_nav_menu_organizer"
+            app:labelVisibilityMode="labeled"
+            android:visibility="gone"/>
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_nav_admin"
+            android:background="@color/white"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:menu="@menu/admin_botnav"
+            app:labelVisibilityMode="labeled"
+            android:visibility="gone"/>
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
