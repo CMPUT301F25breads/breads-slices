@@ -1,5 +1,6 @@
 package com.example.slices.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,8 +9,11 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
 import com.example.slices.MainActivity;
+import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.MenuFragmentBinding;
@@ -17,6 +21,7 @@ import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
 import com.example.slices.testing.DebugLogger;
+import com.example.slices.fragments.Admin_SignIn;
 
 public class  MenuFragment extends Fragment {
     private MenuFragmentBinding binding;
@@ -69,6 +74,7 @@ public class  MenuFragment extends Fragment {
         binding.profileSaveButton.setOnClickListener(v -> onSaveClicked());
         binding.organizerModeButton.setOnClickListener(v -> onOrganizerClicked());
         binding.userModeButton.setOnClickListener(v -> onUserClicked());
+        binding.adminModeButton.setOnClickListener(v -> onAdminClicked());
     }
 
     private void onEditClicked() {
@@ -141,8 +147,11 @@ public class  MenuFragment extends Fragment {
     private void onOrganizerClicked() {
         ((MainActivity) requireActivity()).switchToOrganizer();
     }
-    private void onUserClicked() {
-        ((MainActivity) requireActivity()).switchToUser();
+    private void onUserClicked() { ((MainActivity) requireActivity()).switchToUser(); }
+
+    private void onAdminClicked() {
+        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+        navController.navigate(R.id.adminSignInFragment);
     }
 
     private void setProfileEditingEnabled(boolean enabled) {
