@@ -82,6 +82,11 @@ public class MainActivity extends AppCompatActivity {
         return appMode;
     }
 
+    public void navigateToDetails() {
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+        navController.navigate(R.id.action_MyEventsFragment_to_eventDetailsFragment);
+    }
+
     /**
      * Initialize the user information, either obtain entrant from firebase
      * if the deviceId exists, or create a new Entrant in firebase with the

@@ -10,6 +10,9 @@
         android:name="com.example.slices.fragments.MyEventsFragment"
         android:label="My Events"
         tools:layout="@layout/my_events_fragment">
+        <action
+            android:id="@+id/action_MyEventsFragment_to_eventDetailsFragment"
+            app:destination="@id/eventDetailsFragment"/>
 
     </fragment>
     <fragment
