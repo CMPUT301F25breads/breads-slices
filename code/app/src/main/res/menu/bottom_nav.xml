@@ -27,7 +27,7 @@
         android:visible="true"/>
     <item
         android:id="@+id/MenuFragment"
-        android:icon="@drawable/ic_profile"
+        android:icon="@drawable/ic_person"
         android:title="Menu"
         android:visible="true"/>
 </menu>
