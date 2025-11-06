@@ -70,7 +70,7 @@ public class Admin_SignIn extends Fragment {
             Toast.makeText(requireContext(), "Login successful!", Toast.LENGTH_SHORT).show();
 
             NavController navController = Navigation.findNavController(view);
-            navController.navigate(R.id.adminEventsFragment);
+            navController.navigate(R.id.adminHomeFragment);
 
         } else {
             Toast.makeText(requireContext(), "Invalid admin credentials", Toast.LENGTH_SHORT).show();
