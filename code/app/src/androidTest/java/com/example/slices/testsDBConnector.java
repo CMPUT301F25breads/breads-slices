@@ -35,6 +35,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -46,13 +47,34 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@Ignore
-public class testsDBConnector {
+/**
+ * Tests for the DBConnector class
+ * @author Ryan Haubrich
+ * @version 1.0
+ */
 
+public class testsDBConnector {
+    /**
+     * The DBConnector instance used for testing.
+     */
     private DBConnector db;
 
 
-
+    /**
+     * Sets up the test environment before each test.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
+    @BeforeClass
+    public static void globalSetup() throws InterruptedException {
+        DBConnector db = new DBConnector();
+        CountDownLatch latch = new CountDownLatch(4);
+        db.clearEntrants(() -> latch.countDown());
+        db.clearEvents(() -> latch.countDown());
+        db.clearNotifications(() -> latch.countDown());
+        db.clearLogs(() -> latch.countDown());
+        latch.await(15, TimeUnit.SECONDS);
+    }
 
     @Before
     public void setup() throws InterruptedException {
@@ -94,12 +116,17 @@ public class testsDBConnector {
             e.printStackTrace();
         }
 
-
     }
+
+    /**
+     * Cleans up the test environment before each test.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
 
     private void clearAll() throws InterruptedException {
         // Clear all collections before each test
-        CountDownLatch latch = new CountDownLatch(3);
+        CountDownLatch latch = new CountDownLatch(4);
         db.clearEntrants(() -> latch.countDown());
         db.clearEvents(() -> latch.countDown());
         db.clearNotifications(() -> latch.countDown());
@@ -109,6 +136,11 @@ public class testsDBConnector {
 
     // ---------- ENTRANT TESTS ----------
 
+    /**
+     * Tests the writeEntrant method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testWriteAndGetEntrant() throws InterruptedException {
 
@@ -142,6 +174,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the getEntrantByDeviceId method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetEntrantByDeviceId() throws InterruptedException {
 
@@ -176,6 +213,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the getNewEntrantId method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetNewEntrantId() throws InterruptedException {
 
@@ -197,6 +239,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the updateEntrant method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testUpdateEntrant() throws InterruptedException {
 
@@ -241,6 +288,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the deleteEntrant method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testDeleteEntrant() throws InterruptedException {
 
@@ -276,6 +328,11 @@ public class testsDBConnector {
 
     // ---------- EVENT TESTS ----------
 
+    /**
+     * Tests the writeEvent and getEvent method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testWriteAndGetEvent() throws InterruptedException {
 
@@ -309,6 +366,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the updateEvent method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testUpdateEvent() throws InterruptedException {
 
@@ -353,6 +415,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the deleteEvent method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testDeleteEvent() throws InterruptedException {
 
@@ -386,6 +453,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the getEntrantsForEvent method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetEntrantsForEvent() throws InterruptedException {
 
@@ -421,6 +493,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the getAllFutureEvents method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetAllFutureEvents() throws InterruptedException {
 
@@ -469,7 +546,11 @@ public class testsDBConnector {
 
     // ---------- NOTIFICATION TESTS ----------
 
-
+    /**
+     * Tests the getNotificationId method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetNotificationId() throws InterruptedException {
 
@@ -490,6 +571,11 @@ public class testsDBConnector {
         });
     }
 
+    /**
+     * Tests the getAllNotifications method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetAllNotifications() throws InterruptedException {
 
@@ -536,7 +622,11 @@ public class testsDBConnector {
 
     }
 
-
+    /**
+     * Tests the getNotificationById method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testWriteAndGetNotification() throws InterruptedException {
 
@@ -571,6 +661,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the updateNotification method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testUpdateNotification() throws InterruptedException {
 
@@ -616,6 +711,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the deleteNotification method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testDeleteNotification() throws InterruptedException {
 
@@ -649,10 +749,15 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the getNotificationByRecipientId method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetNotificationByRecipientId() throws InterruptedException {
 
-        // Clear all collections before each test
+        //Clear all collections before each test
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
@@ -710,10 +815,15 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the getNotificationsBySenderId method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetNotificationsBySenderId() throws InterruptedException {
 
-        // Clear all collections before each test
+        //Clear all collections before each test
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
@@ -772,10 +882,15 @@ public class testsDBConnector {
 
     // ---------- INVITATION TESTS ----------
 
+    /**
+     * Tests the getInvitationById method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetInvitationById() throws InterruptedException {
 
-        // Clear all collections before each test
+        //Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
         DebugLogger.d("Invitation", "Test Invitation");
@@ -806,10 +921,15 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the getInvitationByRecipientId method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetInvitationByRecipientId() throws InterruptedException {
 
-        // Clear all collections before each test
+        //Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
         Invitation invitation2 = new Invitation("Test Invitation2", "Test Message2", 2, 2, 3, 4);
@@ -863,11 +983,15 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
-
+    /**
+     * Tests the getInvitationBySenderId method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetInvitationBySenderId() throws InterruptedException {
 
-        // Clear all collections before each test
+        //Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
         Invitation invitation2 = new Invitation("Test Invitation2", "Test Message2", 2, 2, 3, 4);
@@ -921,10 +1045,15 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the getInvitationByEventId method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetInvitationByEventId() throws InterruptedException {
 
-        // Clear all collections before each test
+        //Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
         Invitation invitation2 = new Invitation("Test Invitation2", "Test Message2", 2, 2, 3, 4);
@@ -978,10 +1107,15 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the updateInvitation method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testUpdateInvitation() throws InterruptedException {
 
-        // Clear all collections before each test
+        //Clear all collections before each test
         clearAll();
         Invitation invitation = new Invitation("Test Invitation", "Test Message", 1, 2, 3, 4);
         CountDownLatch latch = new CountDownLatch(1);
@@ -1025,16 +1159,21 @@ public class testsDBConnector {
 
     // ---------- LOG TESTS ----------
 
+    /**
+     * Tests the getNotificationLog method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testWriteAndGetNotificationLog() throws InterruptedException {
 
-        // Clear all collections before each test
+        //Clear all collections before each test
         clearAll();
         Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
 
         NotificationLogEntry log = new NotificationLogEntry(notification, 1);
 
-        // Create a latch to wait for the write)
+        //Create a latch to wait for the write)
         CountDownLatch latch = new CountDownLatch(1);
 
         db.writeLog(log, new DBWriteCallback() {
@@ -1063,6 +1202,11 @@ public class testsDBConnector {
         latch.await(10, TimeUnit.SECONDS);
     }
 
+    /**
+     * Tests the deleteLog method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testDeleteLog() throws InterruptedException {
 
@@ -1097,6 +1241,11 @@ public class testsDBConnector {
         });
     }
 
+    /**
+     * Tests the getAllInvitationLogs method.
+     * @throws InterruptedException
+     *      Thrown if the thread is interrupted while waiting.
+     */
     @Test
     public void testGetAllInvitationLogs() throws InterruptedException {
 
