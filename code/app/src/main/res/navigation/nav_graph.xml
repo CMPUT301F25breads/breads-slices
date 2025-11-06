@@ -2,7 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/nav_graph.xml"
+    android:id="@+id/nav_graph"
     app:startDestination="@id/MyEventsFragment">
 
     <fragment
@@ -40,7 +40,11 @@
         android:name="com.example.slices.fragments.MenuFragment"
         android:label="Menu"
         tools:layout="@layout/menu_fragment"
-        />
+        >
+        <action
+            android:id="@+id/action_MenuFragment_to_adminSignInFragment"
+            app:destination="@id/adminSignInFragment" />
+    </fragment>
     <fragment
         android:id="@+id/MyEventsOrgFragment"
         android:name="com.example.slices.fragments.MyEventsOrgFragment"
@@ -57,6 +61,53 @@
             android:name="eventId"
             app:argType="string" />
     </fragment>
+
+    <fragment
+        android:id="@+id/adminSignInFragment"
+        android:name="com.example.slices.fragments.Admin_SignIn"
+        android:label="Admin Sign-In"
+        tools:layout="@layout/admin_signin">
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminHomeFragment"
+        android:name="com.example.slices.fragments.AdminHome"
+        android:label="Admin Home"
+        tools:layout="@layout/admin_home">
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminEventsFragment"
+        android:name="com.example.slices.fragments.AdminEventsFragment"
+        android:label="Admin Events"
+        tools:layout="@layout/admin_events" />
+
+    <fragment
+        android:id="@+id/adminProfilesFragment"
+        android:name="com.example.slices.fragments.AdminProfilesFragment"
+        android:label="Admin Profiles"
+        tools:layout="@layout/admin_profiles" />
+
+    <fragment
+        android:id="@+id/adminOrganizersFragment"
+        android:name="com.example.slices.fragments.AdminOrganizersFragment"
+        android:label="Admin Organizers"
+        tools:layout="@layout/admin_organizers" />
+
+    <action
+        android:id="@+id/action_to_adminHomeFragment"
+        app:destination="@id/adminHomeFragment" />
+
+    <action
+        android:id="@+id/action_to_adminProfilesFragment"
+        app:destination="@id/adminProfilesFragment" />
+    <action
+        android:id="@+id/action_to_adminOrganizersFragment"
+        app:destination="@id/adminOrganizersFragment" />
+
+    <action
+        android:id="@+id/action_to_adminEventsFragment"
+        app:destination="@id/adminEventsFragment" />
 
     <action
         android:id="@+id/action_to_MyEventsFragment"

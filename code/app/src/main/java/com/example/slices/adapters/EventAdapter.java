@@ -1,6 +1,9 @@
 package com.example.slices.adapters;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +16,12 @@ import com.example.slices.R;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class EventAdapter extends ArrayAdapter<Event> {
     public EventAdapter(Context context, List<Event> events) {
@@ -36,6 +43,7 @@ public class EventAdapter extends ArrayAdapter<Event> {
         title.setText(event.getName());
         ImageView image = view.findViewById(R.id.image);
         Glide.with(this.getContext()).load(event.getImageUrl()).into(image);
+
         return view;
     }
 }

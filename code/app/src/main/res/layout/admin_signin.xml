@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    tools:context=".SignInAdminActivity">
+    tools:context=".Admin_SignIn">
 
     <!-- Title -->
     <TextView
@@ -84,7 +84,7 @@
 
             <!-- Sign In Button -->
             <Button
-                android:id="@+id/btn_sign_in"
+                android:id="@+id/btn_signin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Sign In"
@@ -98,99 +98,26 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/bottom_menu_bar"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        app:layout_constraintBottom_toBottomOf="parent">
-        <FrameLayout
-            android:id="@+id/my_events_container"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/browse_create_container"
-            app:layout_constraintBottom_toBottomOf="parent">
+        android:layout_height="wrap_content"
+        android:layout_margin="15dp"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:clipToOutline="true"
+        android:background="@drawable/bottom_nav_background">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/my_events_button"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:icon="@drawable/ic_home"
-                app:iconSize="32dp"
-                app:iconGravity="textStart"
-                app:iconPadding="0dp"
-                android:background="@color/black"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/my_events_org_button"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:icon="@drawable/ic_home"
-                app:iconSize="32dp"
-                app:iconGravity="textStart"
-                app:iconPadding="0dp"
-                android:background="@color/black"
-                android:visibility="gone"/>
-
-        </FrameLayout>
-
-        <FrameLayout
-            android:id="@+id/browse_create_container"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            app:layout_constraintStart_toEndOf="@id/my_events_container"
-            app:layout_constraintEnd_toStartOf="@id/notif_button"
-            app:layout_constraintBottom_toBottomOf="parent">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/browse_button"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:icon="@drawable/ic_search"
-                app:iconSize="32dp"
-                app:iconGravity="textStart"
-                app:iconPadding="0dp"
-                android:background="@color/black"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/create_button"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:icon="@drawable/ic_add"
-                app:iconSize="32dp"
-                app:iconGravity="textStart"
-                app:iconPadding="0dp"
-                android:background="@color/black"
-                android:visibility="gone"/>
-        </FrameLayout>
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_nav"
+            android:background="@color/white"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:menu="@menu/bottom_nav"
+            app:labelVisibilityMode="labeled" />
+    </FrameLayout>
 
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/notif_button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            app:icon="@drawable/ic_notification"
-            app:iconGravity="textStart"
-            app:iconSize="32dp"
-            app:iconPadding="0dp"
-            app:layout_constraintStart_toEndOf="@id/browse_create_container"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/menu_button"
-            android:background="@color/black"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/menu_button"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            app:icon="@drawable/ic_profile"
-            app:iconSize="32dp"
-            app:iconPadding="0dp"
-            app:iconGravity="textStart"
-            app:layout_constraintStart_toEndOf="@id/notif_button"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:background="@color/black"/>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
