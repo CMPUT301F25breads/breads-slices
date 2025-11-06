@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.slices.MainActivity;
 import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.interfaces.EntrantEventCallback;
@@ -19,6 +20,11 @@ import com.example.slices.databinding.MyEventsFragmentBinding;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment showing the user's confirmed, waitlisted, and
+ * past events
+ * @author Brad Erdely
+ */
 public class MyEventsFragment extends Fragment {
 
     private MyEventsFragmentBinding binding;
@@ -40,15 +46,8 @@ public class MyEventsFragment extends Fragment {
         sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         setupEvents();
 
-        //ArrayList<Event> events = new ArrayList<>();
+        setupListeners();
 
-        // Testing
-        //for(int i = 0; i < 10; i++)
-            //events.add(new Event("Testing"));
-
-        //EventAdapter eventAdapter = new EventAdapter(requireContext(), events);
-        //binding.confirmedList.setAdapter(eventAdapter);
-        //binding.waitlistList.setAdapter(eventAdapter);
     }
 
     @Override
@@ -57,6 +56,9 @@ public class MyEventsFragment extends Fragment {
         binding = null;
     }
 
+    /**
+     * Finds all events for a given entrant and sets the adapters accordingly
+     */
     public void setupEvents() {
         DBConnector db = new DBConnector();
         db.getEventsForEntrant(sharedViewModel.getUser(), new EntrantEventCallback() {
@@ -74,6 +76,21 @@ public class MyEventsFragment extends Fragment {
             }
         });
 
+    }
+
+    /**
+     * Setup on item click listeners so clicking an events navigates to event details
+     */
+    public void setupListeners() {
+        binding.confirmedList.setOnItemClickListener((parent, v, position, id)-> {
+            sharedViewModel.setSelectedEvent(sharedViewModel.getEvents().get(position));
+            ((MainActivity)requireActivity()).navigateToDetails();
+        });
+
+        binding.waitlistList.setOnItemClickListener((parent, v, position, id)-> {
+            sharedViewModel.setSelectedEvent(sharedViewModel.getWaitlistedEvents().get(position));
+            ((MainActivity)requireActivity()).navigateToDetails();
+        });
     }
 
 }
