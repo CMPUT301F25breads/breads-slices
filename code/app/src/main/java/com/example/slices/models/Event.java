@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Class representing an entrant
+ * Class representing an event
  * @author Ryan Haubrich
  * @version 0.1
  *

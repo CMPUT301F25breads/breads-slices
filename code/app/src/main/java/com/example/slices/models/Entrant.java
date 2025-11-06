@@ -13,6 +13,8 @@ import java.util.Objects;
 
 
 /**
+ * @author Ryan Haubrich
+ * @version 1.0
  * Entrant class for storing entrant information
  *
  */
@@ -65,6 +67,9 @@ public class Entrant {
      * List of sub-entrants of the entrant
      */
     private List<Integer> subEntrants;
+
+    private List<Integer> organizedEvents;
+
 
     /**
      * Default constructor for the Entrant class, need for serialization
@@ -146,6 +151,7 @@ public class Entrant {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.subEntrants = new ArrayList<Integer>();
+        this.organizedEvents = new ArrayList<Integer>();
         db.getNewEntrantId(new EntrantIDCallback() {
             @Override
             public void onSuccess(int id) {
@@ -336,6 +342,11 @@ public class Entrant {
         return parent;
     }
 
+    public List<Integer> getOrganizedEvents() {
+        return organizedEvents;
+    }
+
+
     /**
      * Setter for the name of the entrant
      * @param name
@@ -403,6 +414,16 @@ public class Entrant {
     public void addSubEntrant(Entrant child) {
         subEntrants.add(child.getId());
     }
+
+    /**
+     * Adds an organized event to the list of organized events of the entrant
+     * @param eventId
+     *      Event ID to add
+     */
+    public void addOrganizedEvent(int eventId) {
+        organizedEvents.add(eventId);
+    }
+
 
 
     /**
@@ -477,6 +498,13 @@ public class Entrant {
 
 
     public void setDeviceId(String testDeviceId) {
+        this.deviceId = testDeviceId;
+
+
+    }
+
+    public void setOrganizedEvents(List<Integer> organizedEvents) {
+        this.organizedEvents = organizedEvents;
         deviceId = testDeviceId;
     }
 
