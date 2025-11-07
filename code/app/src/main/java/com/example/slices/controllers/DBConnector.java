@@ -402,6 +402,29 @@ public class DBConnector {
     }
 
     /**
+     * Gets all events from the database asynchronously (both past and future)
+     * @param callback Callback to call when the operation is complete
+     * @Author Sasieni
+     */
+    public void getAllEvents(EventListCallback callback) {
+        eventRef
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Event event = doc.toObject(Event.class);
+                            if (event != null) events.add(event);
+                        }
+                    }
+                    callback.onSuccess(events);
+                })
+                .addOnFailureListener(e ->
+                        callback.onFailure(new DBOpFailed("Failed to get events"))
+                );
+    }
+
+    /**
      * Gets all entrants or a specific event
      * @param eventId
      *      Event ID to search for
