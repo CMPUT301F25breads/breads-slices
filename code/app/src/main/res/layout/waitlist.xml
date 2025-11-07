@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/waitlist_fragment_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".fragments.WaitlistFragment">
+
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar_waitlist"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:title="Event Waitlist"
+        app:titleTextColor="@android:color/black" />
+
+    <!-- Waitlist count -->
+    <TextView
+        android:id="@+id/waitlistCountText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0 entrants in waitlist"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp" />
+    <TextView
+        android:id="@+id/waitlistInfoText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No waitlist data available."
+        android:textSize="16sp"
+        android:gravity="center"
+        android:layout_marginTop="24dp" />
+
+    <!-- RecyclerView for entrants -->
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewWaitlist"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="6dp"
+        tools:listitem="@layout/waitlist_card" />
+
+</LinearLayout>

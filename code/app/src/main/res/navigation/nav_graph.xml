@@ -97,6 +97,11 @@
         tools:layout="@layout/organizer_edit_event_fragment"/>
 
     <fragment
+        android:id="@+id/waitlistFragment"
+        android:name="com.example.slices.fragments.WaitlistFragment"
+        android:label="Waitlist" />
+
+    <fragment
         android:id="@+id/adminSignInFragment"
         android:name="com.example.slices.fragments.Admin_SignIn"
         android:label="Admin Sign-In"

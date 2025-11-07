@@ -102,7 +102,13 @@ public class OrganizerEditEventFragment extends Fragment {
         buttonEditGuidelines.setOnClickListener(v -> Toast.makeText(getContext(), "Edit Guidelines clicked", Toast.LENGTH_SHORT).show());
         buttonEditLocation.setOnClickListener(v -> Toast.makeText(getContext(), "Edit Location clicked", Toast.LENGTH_SHORT).show());
         buttonEditImage.setOnClickListener(v -> Toast.makeText(getContext(), "Edit Image clicked", Toast.LENGTH_SHORT).show());
-        buttonViewWaitingList.setOnClickListener(v -> Toast.makeText(getContext(), "View Waiting List clicked", Toast.LENGTH_SHORT).show());
+        buttonViewWaitingList.setOnClickListener(v -> {
+            Bundle args = new Bundle();
+
+            androidx.navigation.NavController navController =
+                    androidx.navigation.Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+            navController.navigate(R.id.waitlistFragment, args);
+        });
         backButton.setOnClickListener(v -> requireActivity().onBackPressed());
     }
 
