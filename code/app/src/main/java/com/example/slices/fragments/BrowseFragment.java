@@ -10,7 +10,11 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
+import androidx.navigation.fragment.NavHostFragment;
 
+import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.models.Event;
@@ -30,6 +34,8 @@ import java.util.List;
 public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
     private ArrayList<Event> eventList = new ArrayList<>();
+    private SharedViewModel vm;
+    private DBConnector db;
 
     @Override
     public View onCreateView(
@@ -44,9 +50,15 @@ public class BrowseFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        SharedViewModel vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        DBConnector db = new DBConnector();
+        vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        db = new DBConnector();
+        setupEvents();
 
+        setupListeners();
+
+    }
+
+    public void setupEvents() {
         db.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
@@ -57,6 +69,8 @@ public class BrowseFragment extends Fragment {
                     EntrantEventAdapter eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
                     eventAdapter.setViewModel(vm);
                     binding.browseEventList.setAdapter(eventAdapter);
+
+
 
                 } catch (Exception e) {
                     Log.e("BrowseFragment", "Error setting adapter", e);
@@ -74,7 +88,25 @@ public class BrowseFragment extends Fragment {
                 binding.browseEventList.setAdapter(eventAdapter);
             }
         });
+    }
 
+    /**
+     * Setup on item click listeners so clicking an events navigates to event details
+     * @author Brad Erdely
+     */
+    public void setupListeners() {
+        binding.browseEventList.setOnItemClickListener((parent, v, position, id)-> {
+            vm.setSelectedEvent(eventList.get(position));
+
+            NavController navController = NavHostFragment.findNavController(this);
+
+            NavOptions options = new NavOptions.Builder()
+                    .setRestoreState(true)
+                    .setPopUpTo(R.id.BrowseFragment, true)
+                    .build();
+
+            navController.navigate(R.id.action_global_EventDetailsFragment, null, options);
+        });
     }
 
     @Override

@@ -33,6 +33,7 @@ public class MyEventsFragment extends Fragment {
 
     private MyEventsFragmentBinding binding;
     private SharedViewModel sharedViewModel;
+    private DBConnector db;
 
     @Override
     public View onCreateView(
@@ -64,7 +65,7 @@ public class MyEventsFragment extends Fragment {
      * Finds all events for a given entrant and sets the adapters accordingly
      */
     public void setupEvents() {
-        DBConnector db = new DBConnector();
+        db = new DBConnector();
         db.getEventsForEntrant(sharedViewModel.getUser(), new EntrantEventCallback() {
             @Override
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
@@ -72,6 +73,7 @@ public class MyEventsFragment extends Fragment {
                 sharedViewModel.setWaitlistedEvents(waitEvents);
                 binding.confirmedList.setAdapter(new EventAdapter(requireContext(), events));
                 binding.waitlistList.setAdapter(new EventAdapter(requireContext(), waitEvents));
+
             }
 
             @Override
@@ -107,11 +109,14 @@ public class MyEventsFragment extends Fragment {
 
             NavOptions options = new NavOptions.Builder()
                     .setRestoreState(true)
-                    .setPopUpTo(R.id.nav_graph, false)
+                    .setPopUpTo(R.id.MyEventsFragment, true)
                     .build();
 
             navController.navigate(R.id.action_global_EventDetailsFragment, null, options);
         });
     }
 
+    public void setDb(DBConnector db) {
+        this.db = db;
+    }
 }
