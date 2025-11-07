@@ -31,7 +31,9 @@ import com.example.slices.controllers.DBConnector;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 
 public class OrganizerEditEventFragment extends Fragment {
 
@@ -171,8 +173,9 @@ public class OrganizerEditEventFragment extends Fragment {
                 textLocation.setText(event.getLocation());
                 editMaxParticipants.setText(String.valueOf(event.getMaxEntrants()));
                 editMaxWaiting.setText("50");
-                editDate.setText(String.valueOf(event.getEventDate()));
-                editRegEnd.setText(String.valueOf(event.getRegDeadline()));
+                SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
+                editDate.setText(dateFormat.format(event.getEventDate().toDate()));
+                editRegEnd.setText(dateFormat.format(event.getRegDeadline().toDate()));
 
 
                 // To be implemented later
