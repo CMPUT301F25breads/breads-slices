@@ -105,7 +105,7 @@ public class MainActivityTest {
         onView(allOf(withId(R.id.CreateFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
                 .perform(click());
 
-        onView(withId(R.id.create_button)).check(matches(isDisplayed()));
+        onView(withId(R.id.create_frag)).check(matches(isDisplayed()));
     }
     @Test
     public void navigateToMyEventsOrgTest() {
@@ -114,7 +114,7 @@ public class MainActivityTest {
         onView(allOf(withId(R.id.MyEventsOrgFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
                 .perform(click());
 
-        onView(withId(R.id.org_button))
+        onView(withId(R.id.org_events_frag))
                 .check(matches(isDisplayed()));
     }
     @Test
@@ -134,7 +134,7 @@ public class MainActivityTest {
         //onView(allOf(withId(R.id.NotifOrgFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
                 //.perform(click());
 
-        onView(withId(R.id.create_button)).check(matches(isDisplayed()));
+        onView(withId(R.id.create_frag)).check(matches(isDisplayed()));
     }
 
     /**

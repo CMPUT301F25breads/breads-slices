@@ -36,8 +36,7 @@ public class OrganizerEventsTest {
         onView(allOf(withId(R.id.MyEventsOrgFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
                 .perform(click());
 
-        onView(withId(R.id.org_button))
-                .check(matches(isDisplayed()));
+        onView(withId(R.id.org_events_frag)).check(matches(isDisplayed()));
     }
 
 }

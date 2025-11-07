@@ -29,7 +29,10 @@ import com.example.slices.fragments.Admin_SignIn;
 
 
 /**
- * Author: Bhupinder Singh
+ * Fragment that displays and edits the current user's profile, and lets the user
+ * switch between User, Organizer, and Admin modes. Also provides navigation to the
+ * Admin sign-in screen.
+ * @author Bhupinder Singh
  */
 public class  MenuFragment extends Fragment {
     private MenuFragmentBinding binding;
@@ -79,13 +82,16 @@ public class  MenuFragment extends Fragment {
     }
 
 
-    // Sets up the click listeners for the buttons
+    /**
+     * Sets up the click listeners for the buttons
+     */
     private void setUpClickListeners() {
         binding.profileEditButton.setOnClickListener(v -> onEditClicked());
         binding.profileCancelButton.setOnClickListener(v -> onCancelClicked());
         binding.profileSaveButton.setOnClickListener(v -> onSaveClicked());
         binding.organizerModeButton.setOnClickListener(v -> onOrganizerClicked());
         binding.userModeButton.setOnClickListener(v -> onUserClicked());
+        binding.adminModeButton.setOnClickListener(v -> onAdminClicked());
         binding.adminSigninButton.setOnClickListener(v -> onAdminSignInClicked());
     }
 
@@ -93,7 +99,7 @@ public class  MenuFragment extends Fragment {
         setProfileEditingEnabled(true);
     }
 
-    /*
+    /**
      * Reverts fields back to original and turns off editing
      */
     private void onCancelClicked() {
@@ -105,7 +111,7 @@ public class  MenuFragment extends Fragment {
         binding.sendNotificationsSwitch.setChecked(notifications);
     }
 
-    /*
+    /**
      * Tries to save the user with entered information,
      * if unsuccessful, pops an error and stays in edit mode
      */
@@ -175,6 +181,9 @@ public class  MenuFragment extends Fragment {
 //        navController.navigate(R.id.adminSignInFragment);
     }
 
+    private void onAdminClicked() {
+        ((MainActivity) requireActivity()).switchToAdmin();
+    };
     private void onOrganizerClicked() {
         ((MainActivity) requireActivity()).switchToOrganizer();
     }

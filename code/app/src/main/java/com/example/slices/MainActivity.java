@@ -8,23 +8,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.ActivityMainBinding;
 import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.interfaces.EntrantCallback;
-import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Entrant;
-import com.example.slices.models.Event;
 import com.example.slices.models.InstanceUtil;
-import com.example.slices.testing.DebugLogger;
-import com.google.firebase.Timestamp;
 
-import java.util.Calendar;
-import java.util.Date;
-
+/**
+ * MainActivity View that sets up navigation for the bottom navigation bars
+ * and gets the entrant object for the entrant in the firebase that has
+ * a matching deviceId field
+ * @author Brad
+ */
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
@@ -49,29 +47,6 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(binding.bottomNav, navController);
         NavigationUI.setupWithNavController(binding.bottomNavOrg, navController);
         NavigationUI.setupWithNavController(binding.bottomNavAdmin, navController);
-
-//        String name = "Event" ;
-//        String description = "Description" ;
-//        String location = "Location" ;
-//        Calendar cal = Calendar.getInstance();
-//        cal.set(2025, 12, 12, 15, 0, 0);
-//        Date date = cal.getTime();
-//        Timestamp eventDate = new Timestamp(date);
-//        cal.set(2025, 12, 12, 13, 0, 0);
-//        Date date2 = cal.getTime();
-//        Timestamp regDeadline = new Timestamp(date2);
-//
-//        new Event(name, description, location, eventDate, regDeadline, 5, new EventCallback() {
-//            @Override
-//            public void onSuccess(Event event) {
-//
-//            }
-//
-//            @Override
-//            public void onFailure(Exception e) {
-//                DebugLogger.d("TestUtils", "Failed to create event: " + e.getMessage());
-//            }
-//        });
 
     }
 

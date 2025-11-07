@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
+import com.example.slices.models.Invitation;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationType;
 import com.google.android.material.button.MaterialButton;
@@ -24,15 +25,29 @@ import java.util.List;
 
 
 /**
- * Author: Bhupinder Singh
+ * RecyclerView adapter that displays Notification items as cards and
+ * configures actions based on the NotificationType.
+ * For Invitation items, the adapter shows Accept and Decline actions.
+ * For Not Selected items, the adapter shows Stay Registered and Decline.
+ * For simple Notification items, no actions are shown.
+ * Used in NotifFragment
+ * @author Bhupinder Singh
  */
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.VH> {
     private final Context context;
     private final List<Notification> items = new ArrayList<>();
     private final DBConnector db = new DBConnector();
 
+    /**
+     * Creates a new NotificationAdapter.
+     * @param context context used for inflating views and UI operations
+     */
     public NotificationAdapter(Context context) { this.context = context; }
 
+    /**
+     * Replaces the adapter's notifications with the provided list and refreshes the UI.
+     * @param list list of notifications to display
+     */
     public void setNotifications(List<Notification> list) {
         items.clear();
         items.addAll(list);
@@ -46,6 +61,13 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         return new VH(v);
     }
 
+    /**
+     * Binds the notification at the given position to the provided ViewHolder.
+     * Sets title, body, event details, and configures action buttons
+     * based on the notification type.
+     * @param h the ViewHolder to bind
+     * @param position adapter position of the item
+     */
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
         Notification n = items.get(position);
@@ -72,29 +94,69 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
             }
         });
 
-        // Sets the button text and visibility based on the notification type
+        // Configure action buttons based on notification type
         switch (n.getType()) {
             case INVITATION:
                 h.acceptButton.setText("Accept");
                 h.declineButton.setVisibility(View.VISIBLE);
                 h.acceptButton.setVisibility(View.VISIBLE);
+                h.acceptButton.setOnClickListener(v -> ((Invitation )n).onAccept(new EventCallback() {
+                    @Override
+                    public void onSuccess(Event event) {
+                        items.remove(n);
+                        notifyDataSetChanged();
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(context, "Error: Couldn't accept event", Toast.LENGTH_SHORT).show();
+                        Log.e("NotificationAdapter", "Error accepting event", e);
+                    }
+                }));
+                h.declineButton.setOnClickListener(v ->((Invitation) n).onDecline(new EventCallback() {
+                    @Override
+                    public void onSuccess(Event event) {
+                        items.remove(n);
+                        notifyDataSetChanged();
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(context, "Error: Couldn't decline event", Toast.LENGTH_SHORT).show();
+                        Log.e("NotificationAdapter", "Error declining event", e);
+                    }
+                }));
                 break;
             case NOT_SELECTED:
                 h.acceptButton.setText("Stay Registered");
                 h.acceptButton.setVisibility(View.VISIBLE);
                 h.declineButton.setVisibility(View.VISIBLE);
+                h.acceptButton.setOnClickListener(v -> {
+                    items.remove(n);
+                    notifyDataSetChanged();
+                });
+                h.declineButton.setOnClickListener(v ->((Invitation) n).onDecline(new EventCallback() {
+                    @Override
+                    public void onSuccess(Event event) {
+                        items.remove(n);
+                        notifyDataSetChanged();
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(context, "Error: Couldn't decline event", Toast.LENGTH_SHORT).show();
+                        Log.e("NotificationAdapter", "Error declining event", e);
+                    }
+                }));
                 break;
             case NOTIFICATION:
-                h.acceptButton.setVisibility(View.GONE);
-                h.declineButton.setVisibility(View.GONE);
-                break;
-            default:
                 h.acceptButton.setVisibility(View.GONE);
                 h.declineButton.setVisibility(View.GONE);
                 break;
         }
     }
 
+    /**
+     * Returns the number of notifications in the adapter.
+     * @return item count
+     */
     @Override
     public int getItemCount() {
         return items.size();
@@ -106,7 +168,6 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
     static class VH extends RecyclerView.ViewHolder {
         final TextView title, body, eventName, eventDate;
         final MaterialButton declineButton, acceptButton;
-
         VH(@NonNull View v) {
             super(v);
             title = v.findViewById(R.id.notification_card_title);

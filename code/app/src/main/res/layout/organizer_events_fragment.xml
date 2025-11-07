@@ -5,7 +5,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#FFFFFF">
+    android:background="#FFFFFF"
+    android:id="@+id/org_events_frag">
 
     <!-- Title -->
     <TextView

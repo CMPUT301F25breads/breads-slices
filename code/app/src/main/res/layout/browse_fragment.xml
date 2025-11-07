@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ListView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/browse_event_list"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.BrowseFragment" />
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginTop="30dp"
+        android:fontFamily="sans-serif"
+        android:text="Browse Events"
+        android:textColor="@color/black"
+        android:textSize="50sp"
+        android:textStyle="bold" />
+
+    <ListView
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/browse_event_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".fragments.BrowseFragment" />
+</LinearLayout>
