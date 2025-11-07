@@ -1,1 +1,12 @@
+com.example.slices
+com.example.slices.adapters
 com.example.slices.controllers
+com.example.slices.exceptions
+com.example.slices.fragments
+com.example.slices.interfaces
+com.example.slices.models
+com.example.slices.testing
+com.example.slices.uitests
+com.example.slices.uitests.admin
+com.example.slices.uitests.organizer
+com.example.slices.uitests.user
