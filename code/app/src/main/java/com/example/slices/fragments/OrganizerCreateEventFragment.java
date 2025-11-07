@@ -33,6 +33,22 @@ import com.google.firebase.auth.FirebaseAuth;
 import java.io.IOException;
 import java.util.Calendar;
 
+/**
+ * OrganizerCreateEventFragment.java
+ *
+ * Purpose: Fragment for creating a new event by an organizer.
+ *          Handles user input for event details, date/time pickers,
+ *          image upload, validation, and saving the event to the database.
+ *
+ * Outstanding Issues:
+ * - Navigation back button is currently not implemented.
+ * - QR code generation for the event once confirm button is pressed is TODO.
+ * - Some event attributes that the organizer is asked to fill in are not part of the Event constructor yet so they are currently not used nor connected to the database.
+ *
+ * @author: Juliana
+ *
+ */
+
 public class OrganizerCreateEventFragment extends Fragment {
 
     private EditText editEventName, editDescription, editGuidelines, editLocation;
@@ -43,6 +59,9 @@ public class OrganizerCreateEventFragment extends Fragment {
     private Button buttonConfirm;
     private ImageButton uploadButton, backButton;
 
+    /**
+     * Launcher for picking an image from the gallery.
+     */
     private final ActivityResultLauncher<Intent> pickImageLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
@@ -57,6 +76,14 @@ public class OrganizerCreateEventFragment extends Fragment {
                 }
             });
 
+    /**
+     * Inflates the fragment layout.
+     *
+     * @param inflater  LayoutInflater object.
+     * @param container Parent view group.
+     * @param savedInstanceState Bundle containing saved state.
+     * @return The inflated view.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -64,6 +91,13 @@ public class OrganizerCreateEventFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_organizer_create_event, container, false);
     }
 
+    /**
+     * Initializes UI components and sets up listeners for date/time pickers,
+     * image upload, and event creation.
+     *
+     * @param view The root view.
+     * @param savedInstanceState Bundle containing saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -103,6 +137,11 @@ public class OrganizerCreateEventFragment extends Fragment {
         buttonConfirm.setOnClickListener(v -> createEvent());
     }
 
+    /**
+     * Displays a DatePickerDialog for the given EditText.
+     *
+     * @param target EditText to populate with selected date.
+     */
     private void showDatePicker(EditText target) {
         Calendar calendar = Calendar.getInstance();
         DatePickerDialog datePicker = new DatePickerDialog(
@@ -115,6 +154,11 @@ public class OrganizerCreateEventFragment extends Fragment {
         datePicker.show();
     }
 
+    /**
+     * Displays a TimePickerDialog for the given EditText.
+     *
+     * @param target EditText to populate with selected time.
+     */
     private void showTimePicker(EditText target) {
         Calendar calendar = Calendar.getInstance();
         TimePickerDialog timePicker = new TimePickerDialog(
@@ -131,11 +175,18 @@ public class OrganizerCreateEventFragment extends Fragment {
         timePicker.show();
     }
 
+    /**
+     * Opens the gallery to select an event image.
+     */
     private void openGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         pickImageLauncher.launch(intent);
     }
 
+    /**
+     * Collects input, validates it, creates an Event object,
+     * and writes it to the database.
+     */
     private void createEvent() {
         String name = editEventName.getText().toString().trim();
         String desc = editDescription.getText().toString().trim();
@@ -233,6 +284,11 @@ public class OrganizerCreateEventFragment extends Fragment {
         }
     }
 
+    /**
+     * Navigates to the OrganizerEditEventFragment after event creation.
+     *
+     * @param bundle Bundle containing event ID.
+     */
     private void navigateToEditFragment(Bundle bundle) {
         NavController navController = NavHostFragment.findNavController(this);
 

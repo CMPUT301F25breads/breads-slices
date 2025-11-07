@@ -23,18 +23,44 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * OrganizerEventAdapter.java
+ *
+ * Purpose: Adapter for displaying a list of events in a RecyclerView
+ *          in the OrganizerEventsFragment. Handles binding event data
+ *          to views, image loading with Glide, and click navigation
+ *          to the OrganizerEditEventFragment.
+ *
+ * @author Juliana
+ *
+ */
+
 public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAdapter.ViewHolder> {
 
     private final Context context;
     private final List<Event> eventList;
     private final OrganizerEventsFragment fragment; // Needed for navigation
 
+    /**
+     * Constructor for OrganizerEventAdapter.
+     *
+     * @param context  The context in which the adapter is used.
+     * @param eventList The list of Event objects to display.
+     * @param fragment  The fragment from which navigation occurs.
+     */
     public OrganizerEventAdapter(Context context, List<Event> eventList, OrganizerEventsFragment fragment) {
         this.context = context;
         this.eventList = eventList;
         this.fragment = fragment;
     }
 
+    /**
+     * Inflates the layout for an individual event card.
+     *
+     * @param parent   The parent ViewGroup.
+     * @param viewType The type of view (unused here).
+     * @return A ViewHolder containing the inflated view.
+     */
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -42,6 +68,12 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
         return new ViewHolder(view);
     }
 
+    /**
+     * Binds data from an Event object to the corresponding ViewHolder.
+     *
+     * @param holder   The ViewHolder to bind data to.
+     * @param position The position of the Event in the list.
+     */
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Event event = eventList.get(position);
@@ -70,15 +102,28 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
         });
     }
 
+    /**
+     * Returns the total number of events.
+     *
+     * @return Size of the event list.
+     */
     @Override
     public int getItemCount() {
         return eventList.size();
     }
 
+    /**
+     * ViewHolder class holds references to the views for an individual event item.
+     */
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView eventName, eventDetails, eventDateTime;
         ImageView imgEvent;
 
+        /**
+         * Constructor for ViewHolder.
+         *
+         * @param itemView The view representing an individual event item.
+         */
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             eventName = itemView.findViewById(R.id.eventName);
@@ -88,6 +133,11 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
         }
     }
 
+    /**
+     * Navigates from OrganizerEventsFragment to OrganizerEditEventFragment.
+     *
+     * @param bundle Bundle containing the event ID for the selected event.
+     */
     private void navigateToEditEvent(Bundle bundle) {
         NavController navController = NavHostFragment.findNavController(fragment);
 
