@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.uitests;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
@@ -13,6 +13,9 @@ import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+
+import com.example.slices.MainActivity;
+import com.example.slices.R;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,7 +34,7 @@ public class MainActivityTest {
     @Test
     public void bottomNavUserVisible() {
         onView(withId(R.id.bottom_nav))
-                .check(matches(ViewMatchers.isDisplayed()));
+                .check(matches(isDisplayed()));
     }
     @Test
     public void switchToOrgMode_bottomNavOrgVisible() {

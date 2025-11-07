@@ -40,20 +40,42 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
     @Nullable
     private SharedViewModel vm;
 
+    /**
+     * Sets the shared view model used ny this adapter
+     * @param vm
+     *     the SharedViewModel instance to bind with this adapter
+     */
     public void setViewModel(@Nullable SharedViewModel vm) {
         this.vm = vm;
         notifyDataSetChanged();
     }
 
-
+    /**
+     * Constructor for EntrantEventAdapter for displaying events that the entrant can join or leave
+     * @param context
+     *     the current context
+     * @param events
+     *      the list of events to display
+     */
     public EntrantEventAdapter(Context context, List<Event> events) {
         super(context, 0, events);
     }
 
+    /**
+     * sets the EventActions interface for handling join/leave actions externally
+     * @param actions
+     *      the EventActions callback
+     */
     public void setActions(@Nullable EventActions actions) {
         this.actions = actions;
     }
 
+    /**
+     * updateWaitlistButton
+     *     updates the background and text color based on waitlist status of the event
+     * @param isOn
+     *     true if the current user is waitlisted for the event, false if not on waitlist for event
+     */
     private void updateWaitlistButton(@NonNull Button actionBtn, boolean isOn) {
         if (isOn) {
             actionBtn.setText("Leave");
@@ -70,6 +92,14 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         }
     }
 
+    /**
+     * Returns the view for a single vent item in the list
+     *
+     * @param position the position of the event in the list
+     * @param convertView the recycled view to reuse, if available
+     * @param parent the parent view that this view will be attached to
+     * @return the fully bound view for the given event
+     */
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {

@@ -33,7 +33,8 @@
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back"
-                    android:contentDescription="Back" />
+                    android:contentDescription="Back"
+                    android:visibility="gone"/>
 
                 <EditText
                     android:id="@+id/editEventName"
