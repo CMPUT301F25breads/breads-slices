@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private SharedViewModel sharedViewModel;
     private String appMode; // Variable to store what mode the app is in
+    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
         initializeUser();
 
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupWithNavController(binding.bottomNav, navController);
         NavigationUI.setupWithNavController(binding.bottomNavOrg, navController);
         NavigationUI.setupWithNavController(binding.bottomNavAdmin, navController);
@@ -80,11 +81,6 @@ public class MainActivity extends AppCompatActivity {
 
     public String getAppMode() {
         return appMode;
-    }
-
-    public void navigateToDetails() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        navController.navigate(R.id.action_MyEventsFragment_to_eventDetailsFragment);
     }
 
     /**
