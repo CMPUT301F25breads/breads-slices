@@ -23,7 +23,6 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private SharedViewModel sharedViewModel;
     private String appMode; // Variable to store what mode the app is in
-    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
         initializeUser();
 
-        navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupWithNavController(binding.bottomNav, navController);
         NavigationUI.setupWithNavController(binding.bottomNavOrg, navController);
         NavigationUI.setupWithNavController(binding.bottomNavAdmin, navController);
@@ -53,10 +52,6 @@ public class MainActivity extends AppCompatActivity {
         binding.bottomNav.setVisibility(View.VISIBLE);
         binding.bottomNavOrg.setVisibility(View.GONE);
         binding.bottomNavAdmin.setVisibility(View.GONE);
-//        binding.bottomNav.getMenu().findItem(R.id.CreateFragment).setVisible(false);
-//        binding.bottomNav.getMenu().findItem(R.id.MyEventsOrgFragment).setVisible(false);
-//        binding.bottomNav.getMenu().findItem(R.id.BrowseFragment).setVisible(true);
-//        binding.bottomNav.getMenu().findItem(R.id.MyEventsFragment).setVisible(true);
     }
 
     /**

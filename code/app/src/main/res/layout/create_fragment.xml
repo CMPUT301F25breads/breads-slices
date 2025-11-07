@@ -4,6 +4,7 @@
     android:layout_height="match_parent">
     <TextView
         android:layout_width="match_parent"
+        android:id="@+id/create_button"
         android:layout_height="match_parent"
         android:text="create"
         android:gravity="center">
