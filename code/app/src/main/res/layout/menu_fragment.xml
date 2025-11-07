@@ -233,6 +233,7 @@
                     android:layout_height="wrap_content"
                     android:padding="0dp"
                     android:text="Admin"
+                    android:visibility="gone"
                     style="?materialButtonOutlinedStyle"/>
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
