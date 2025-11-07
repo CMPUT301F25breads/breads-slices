@@ -12,7 +12,9 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.MainActivity;
 import com.example.slices.R;
@@ -160,8 +162,17 @@ public class  MenuFragment extends Fragment {
     }
     
     private void onAdminSignInClicked() {
-        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
-        navController.navigate(R.id.adminSignInFragment);
+        NavController navController = NavHostFragment.findNavController(this);
+
+        // Options to avoid breaking the bottom nav bar stack
+        NavOptions options = new NavOptions.Builder()
+                .setRestoreState(true)
+                .setPopUpTo(R.id.nav_graph, false)
+                .build();
+
+        navController.navigate(R.id.adminSignInFragment, null, options);
+//        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+//        navController.navigate(R.id.adminSignInFragment);
     }
 
     private void onOrganizerClicked() {
