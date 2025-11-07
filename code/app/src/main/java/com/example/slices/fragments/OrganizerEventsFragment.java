@@ -21,11 +21,18 @@ import java.util.Calendar;
 import java.util.List;
 
 /**
- * OrganizerEventsFragment
- * Shows all events created by the current organizer, divided into
- * Upcoming, In Progress, and Past sections.
+ * OrganizerEventsFragment.java
  *
- * Author: Juliana
+ * Purpose: Fragment that displays all events created by the current organizer,
+ *          divided into Upcoming, In Progress, and Past sections.
+ *          Uses RecyclerViews and OrganizerEventAdapter to display event cards.
+ *
+ * Outstanding Issues:
+ * - getAllFutureEvents() currently placeholder; may need proper filtering by organizer ID.
+ * - No error handling for empty lists or null event dates.
+ * - Sorting logic is simple right now...later it will be implemented based on event status.
+ *
+ * @author: Juliana
  */
 public class OrganizerEventsFragment extends Fragment {
 
@@ -40,6 +47,14 @@ public class OrganizerEventsFragment extends Fragment {
     // Firebase / DB helper
     private final DBConnector db = new DBConnector();
 
+    /**
+     * Inflates the fragment layout using view binding.
+     *
+     * @param inflater  LayoutInflater object.
+     * @param container Parent view group.
+     * @param savedInstanceState Bundle containing saved state.
+     * @return The root view of the fragment.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -48,6 +63,12 @@ public class OrganizerEventsFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Initializes RecyclerViews and loads the organizer's events.
+     *
+     * @param view The root view.
+     * @param savedInstanceState Bundle containing saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -61,6 +82,10 @@ public class OrganizerEventsFragment extends Fragment {
         loadOrganizerEvents();
     }
 
+    /**
+     * Loads events from the database and categorizes them as Upcoming, In Progress, or Past.
+     * Updates the corresponding RecyclerViews with an OrganizerEventAdapter.
+     */
     private void loadOrganizerEvents() {
         //getAllFutureEvents is a placeholder for the actual organizer's events based on ID
         db.getAllFutureEvents(new EventListCallback() {
@@ -102,6 +127,9 @@ public class OrganizerEventsFragment extends Fragment {
         });
     }
 
+    /**
+     * Cleans up view binding to avoid memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

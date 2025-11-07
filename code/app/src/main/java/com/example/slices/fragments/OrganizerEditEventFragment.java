@@ -35,6 +35,22 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+/**
+ * OrganizerEditEventFragment.java
+ *
+ * Purpose: Fragment that allows an organizer to view and edit details of an existing event.
+ *          Handles loading event data from the database, editing fields, showing dialogs,
+ *          date/time pickers, and navigation to related fragments (e.g., waiting list).
+ *
+ * Outstanding Issues:
+ * - Editing event image is not yet implemented.
+ * - Location-based maximum distance logic is partly implemented.
+ * - Some fields (guidelines, location) are placeholders and need proper binding after adding attributes to the Event constructor
+ * - Back button functionality is not implemented yet.
+ *
+ * @author: Juliana
+ */
+
 public class OrganizerEditEventFragment extends Fragment {
 
     private EditText editEventName, editDate, editTime, editRegStart, editRegEnd,
@@ -46,10 +62,21 @@ public class OrganizerEditEventFragment extends Fragment {
     private DBConnector dbConnector;
     private String eventID; // event being edited
 
+    /**
+     * Default constructor.
+     */
     public OrganizerEditEventFragment() {
         // Required empty constructor
     }
 
+    /**
+     * Inflates the fragment layout.
+     *
+     * @param inflater  LayoutInflater object.
+     * @param container Parent view group.
+     * @param savedInstanceState Bundle containing saved state.
+     * @return The inflated view.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -58,6 +85,13 @@ public class OrganizerEditEventFragment extends Fragment {
         return inflater.inflate(R.layout.organizer_edit_event_fragment, container, false);
     }
 
+    /**
+     * Initializes UI components, sets listeners for date/time pickers,
+     * edit dialogs, and loads event data.
+     *
+     * @param view The root view.
+     * @param savedInstanceState Bundle containing saved state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -147,7 +181,9 @@ public class OrganizerEditEventFragment extends Fragment {
     }
 
     /**
-     * Loads event data from Firestore using DBConnector
+     * Loads event data from the database using DBConnector.
+     *
+     * @param eventID String ID of the event to load.
      */
     private void loadEventData(String eventID) {
         int id;
@@ -199,6 +235,11 @@ public class OrganizerEditEventFragment extends Fragment {
     }
 
     // --- Helper for Date Picker ---
+    /**
+     * Displays a DatePickerDialog for the given EditText.
+     *
+     * @param targetEditText EditText to populate with the selected date.
+     */
     private void showDatePickerDialog(EditText targetEditText) {
         Calendar calendar = Calendar.getInstance();
         DatePickerDialog datePickerDialog = new DatePickerDialog(
@@ -215,6 +256,11 @@ public class OrganizerEditEventFragment extends Fragment {
     }
 
     // --- Helper for Time Picker ---
+    /**
+     * Displays a TimePickerDialog for the given EditText.
+     *
+     * @param targetEditText EditText to populate with the selected time.
+     */
     private void showTimePickerDialog(EditText targetEditText) {
         Calendar calendar = Calendar.getInstance();
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
@@ -237,6 +283,12 @@ public class OrganizerEditEventFragment extends Fragment {
     }
 
     // --- Helper for Edit Dialog ---
+    /**
+     * Shows an AlertDialog with an EditText to edit text fields (description, guidelines, location).
+     *
+     * @param title Text for the dialog title.
+     * @param targetTextView TextView to update with the input from the dialog.
+     */
     private void showEditDialog(String title, TextView targetTextView) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle(title);
@@ -270,6 +322,11 @@ public class OrganizerEditEventFragment extends Fragment {
         dialog.show();
     }
 
+    /**
+     * Navigates to the EventEntrantsFragment for viewing the waiting list.
+     *
+     * @param bundle Bundle containing any relevant data for the navigation.
+     */
     private void navigateToEntrantsFragment(Bundle bundle) {
         NavController navController = NavHostFragment.findNavController(this);
 
