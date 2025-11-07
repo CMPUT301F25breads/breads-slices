@@ -41,6 +41,17 @@ public class SharedViewModel extends ViewModel {
         this.waitlistedEvents.setValue(waitlistedEvents);
     }
 
+    // Added getters and setters for selected events for EventDetailsFrag
+    // - Raj
+    public void setSelectedEvent(Event e) {
+        selectedEvent.setValue(e);
+    }
+
+    public Event getSelectedEvent() {
+        return selectedEvent.getValue();
+    }
+
+
     private final MutableLiveData<ArrayList<String>> waitlistedEventIds = new
             MutableLiveData<>(new ArrayList<>());
 
