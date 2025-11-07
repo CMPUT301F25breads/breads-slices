@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNavigationViewO"
+        android:background="#FFFFFF">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Back arrow + Event name field -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/backButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_arrow_back"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Back" />
+
+                <EditText
+                    android:id="@+id/editEventName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Enter Event Name"
+                    android:background="@android:drawable/edit_text"
+                    android:padding="10dp"
+                    android:layout_marginStart="8dp" />
+            </LinearLayout>
+
+            <!-- Poster / image upload box -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:background="#E9DDFF">
+
+                <!-- The poster/image background -->
+                <ImageView
+                    android:id="@+id/eventImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_image" />
+
+                <!-- The centered upload icon -->
+                <ImageButton
+                    android:id="@+id/uploadButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/circle_background"
+                    android:src="@drawable/ic_upload"
+                    android:contentDescription="upload" />
+
+            </FrameLayout>
+
+            <!-- Description box -->
+            <EditText
+                android:id="@+id/editDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Enter a description for your event"
+                android:background="@android:drawable/edit_text"
+                android:minLines="3"
+                android:gravity="top"
+                android:padding="10dp" />
+
+            <!-- Guidelines -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Guidelines"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp" />
+            <EditText
+                android:id="@+id/editGuidelines"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Enter rules and guidelines for event"
+                android:background="@android:drawable/edit_text"
+                android:minLines="2"
+                android:gravity="top"
+                android:padding="10dp" />
+
+            <!-- Location -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Location Details"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp" />
+            <EditText
+                android:id="@+id/editLocation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Enter event location details"
+                android:background="@android:drawable/edit_text"
+                android:minLines="2"
+                android:gravity="top"
+                android:padding="10dp" />
+
+            <!-- Date and Time row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:orientation="horizontal"
+                android:weightSum="2" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Date"
+                    android:textStyle="bold"
+                    android:layout_marginTop="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Time"
+                    android:textStyle="bold"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginLeft="165dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:weightSum="2">
+                <EditText
+                    android:id="@+id/editDate"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:hint="mm/dd/yyyy"
+                    android:background="@android:drawable/edit_text"
+                    android:padding="10dp" />
+
+                <EditText
+                    android:id="@+id/editTime"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:hint="hh:mm AM/PM"
+                    android:layout_marginStart="8dp"
+                    android:background="@android:drawable/edit_text"
+                    android:padding="10dp" />
+            </LinearLayout>
+
+            <!-- Registration period -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Registration Period"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <EditText
+                    android:id="@+id/editRegStart"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Start Date
+                    (mm/dd/yyyy)"
+                    android:background="@android:drawable/edit_text"
+                    android:padding="10dp" />
+
+                <EditText
+                    android:id="@+id/editRegEnd"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="End Date
+                    (mm/dd/yyyy)"
+                    android:layout_marginStart="8dp"
+                    android:background="@android:drawable/edit_text"
+                    android:padding="10dp" />
+            </LinearLayout>
+
+            <!-- Maximum fields -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Waiting List Capacity (optional)"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+                <EditText
+                    android:id="@+id/editMaxWaiting"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginLeft="89dp"
+                    android:inputType="number"
+                    android:background="@android:drawable/edit_text"
+                    android:padding="10dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Maximum Number of Participants"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+                <EditText
+                    android:id="@+id/editMaxParticipants"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginLeft="74dp"
+                    android:inputType="number"
+                    android:background="@android:drawable/edit_text"
+                    android:padding="10dp" />
+            </LinearLayout>
+
+            <!-- Entrant location toggle -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="287dp"
+                    android:layout_height="wrap_content"
+                    android:text="Entrant Location"
+                    android:textStyle="bold"/>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchEntrantLocation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="0dp"/>
+            </LinearLayout>
+
+            <!-- Confirm button -->
+            <Button
+                android:id="@+id/buttonConfirm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Confirm"
+                android:backgroundTint="#7E57C2"
+                android:textColor="#FFFFFF"
+                android:padding="10dp"
+                android:fontFamily="sans-serif-medium" />
+
+        </LinearLayout>
+    </ScrollView>
+    <!-- Bottom Navigation -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationViewO"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:minHeight="0dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="0dp"
+        android:layout_gravity="bottom"
+        app:menu="@menu/bottom_nav_menu_organizer"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent" />
+</RelativeLayout>

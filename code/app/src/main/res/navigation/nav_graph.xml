@@ -50,7 +50,7 @@
     </fragment>
     <fragment
         android:id="@+id/MyEventsOrgFragment"
-        android:name="com.example.slices.fragments.MyEventsOrgFragment"
+        android:name="com.example.slices.fragments.OrganizerEventsFragment"
         android:label="My Events Organizer"
         tools:layout="@layout/my_events_org_fragment">
 
