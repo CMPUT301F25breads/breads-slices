@@ -22,8 +22,8 @@ import com.example.slices.databinding.EventDetailsFragmentBinding;
 
 /** EventDetailsFragment
  * A fragment for displaying the details of a tapped-on event in the Browse window
- * Includes
- * - R.P.
+ *
+ * @Author Raj Prasad
  */
 public class EventDetailsFragment extends Fragment {
     private EventDetailsFragmentBinding binding;
@@ -33,7 +33,7 @@ public class EventDetailsFragment extends Fragment {
 
     /**
      * updateWaitlistButton
-     *     updates the background and text color based on waitlist status of the event
+     *     updates the waitlist button text color and background based on waitlist status of the event
      * @param isOn
      *     true if the current user is waitlisted for the event, false if not on waitlist for event
      */
@@ -70,6 +70,13 @@ public class EventDetailsFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called after the fragment's view has been created.
+     * Initialize event details, set up waitlist button behaviours and bind event date to the UI
+     * @param view the fragment's root view
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view,
                               @Nullable Bundle savedInstanceState) {
