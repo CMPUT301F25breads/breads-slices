@@ -25,7 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Author: Bhupinder Singh
+ * Fragment that displays a list of notifications and invitations for the
+ * current user.
+ * Invitations are always displayed before general notifications.
+ * @author Bhupinder Singh
  */
 public class NotifFragment extends Fragment {
     private NotifFragmentBinding binding;
