@@ -216,14 +216,6 @@ public class OrganizerCreateEventFragment extends Fragment {
                     bundle.putString("eventID", String.valueOf(event.getId()));
                     // TODO: Navigation to OrganizerEditEventFragment
                     navigateToEditFragment(bundle);
-//                    NavController navController = NavHostFragment.findNavController(getContext().this);
-//
-//                    NavOptions options = new NavOptions.Builder()
-//                            .setPopUpTo(R.id.OrganizerEventsFragment, false) // pop only to the current tab
-//                            .setLaunchSingleTop(true)                        // prevent duplicates
-//                            .setRestoreState(true)                           // restore fragment state if needed
-//                            .build();
-//
 //                    navController.navigate(R.id.action_global_OrganizerEditEventFragment, bundle, options);
 //                    NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
 //                            .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment, bundle);
@@ -245,9 +237,9 @@ public class OrganizerCreateEventFragment extends Fragment {
         NavController navController = NavHostFragment.findNavController(this);
 
         NavOptions options = new NavOptions.Builder()
-                .setPopUpTo(R.id.nav_graph, false) // pop only to the current tab
-                .setLaunchSingleTop(true)                        // prevent duplicates
-                .setRestoreState(true)                           // restore fragment state if needed
+                .setPopUpTo(R.id.nav_graph, false)
+                .setLaunchSingleTop(true)
+                .setRestoreState(true)
                 .build();
 
         navController.navigate(R.id.action_OrganizerEventsFragment_to_OrganizerEditEventFragment, bundle, options);
