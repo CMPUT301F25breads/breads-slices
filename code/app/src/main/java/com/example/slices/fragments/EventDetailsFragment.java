@@ -12,10 +12,11 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.WaitlistController;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.databinding.EventDetailsFragmentBinding;
 
 /** EventDetailsFragment
@@ -76,7 +77,7 @@ public class EventDetailsFragment extends Fragment {
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         if (vm.getSelectedEvent() != null && vm.getUser() != null) {
             Event e = vm.getSelectedEvent();
-            String entrantId = String.valueOf(vm.getUser().getId());
+            final String entrantId = String.valueOf(vm.getUser().getId());
             int eventId = e.getId(); // reserved for future join/leave event call usage
 
             // initial waitlist state based on event data
@@ -94,30 +95,43 @@ public class EventDetailsFragment extends Fragment {
                     isWaitlisted = false;
                     vm.removeWaitlistedId(eventIdStr);
                     updateWaitlistButton(isWaitlisted);
-                    WaitlistController.leave(eventIdStr, entrantId, () -> {
-                        // success means do nothing else
-                    }, e1-> {
-                        // revert on exception
-                        isWaitlisted = true;
-                        vm.addWaitlistedId(eventIdStr);
-                        updateWaitlistButton(isWaitlisted);
-                        Toast.makeText(requireContext(),
-                                "Failed to leave waitlist. Please try again.",
-                                Toast.LENGTH_SHORT).show();
+                    WaitlistController.leave(eventIdStr, entrantId, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // success means do nothing else
+                        }
+
+                        @Override
+                        public void onFailure(Exception e1) {
+                            // revert on exception
+                            isWaitlisted = true;
+                            vm.addWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            Toast.makeText(requireContext(),
+                                    "Failed to leave waitlist. Please try again.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
                     });
                 } else {
                     isWaitlisted = true;
                     vm.addWaitlistedId(eventIdStr);
                     updateWaitlistButton(isWaitlisted);
 
-                    WaitlistController.join(eventIdStr, entrantId, () -> {
-                    }, e1 -> {
-                        isWaitlisted = false;
-                        vm.removeWaitlistedId(eventIdStr);
-                        updateWaitlistButton(isWaitlisted);
-                        Toast.makeText(requireContext(),
-                                "Failed to join waitlist. Please try again.",
-                                Toast.LENGTH_SHORT).show();
+                    WaitlistController.join(eventIdStr, entrantId, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // success means do nothing else
+                        }
+
+                        @Override
+                        public void onFailure(Exception e1) {
+                            isWaitlisted = false;
+                            vm.removeWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            Toast.makeText(requireContext(),
+                                    "Failed to join waitlist. Please try again.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
                     });
                 }
             });
