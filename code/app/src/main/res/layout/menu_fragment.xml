@@ -1,20 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    android:id="@+id/testingMenu"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <LinearLayout
         android:layout_height="match_parent"
         android:layout_width="match_parent"
-
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:orientation="vertical"
-
-        android:background="@color/white">
-
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+        android:background="@color/white"
+        android:layout_marginBottom="100dp">
 
         <TextView
             android:layout_width="match_parent"
@@ -222,19 +218,41 @@
                     android:id="@+id/organizer_mode_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:padding="0dp"
                     android:text="Organizer"
                     style="?materialButtonOutlinedStyle"/>
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/user_mode_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:padding="0dp"
                     android:text="User"
-
+                    style="?materialButtonOutlinedStyle"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/admin_mode_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="0dp"
+                    android:text="Admin"
+                    android:visibility="gone"
                     style="?materialButtonOutlinedStyle"/>
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp">
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/admin_signin_button"
+            android:text="Admin Sign In"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

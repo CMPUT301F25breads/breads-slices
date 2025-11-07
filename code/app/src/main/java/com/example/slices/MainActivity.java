@@ -1,8 +1,6 @@
 package com.example.slices;
 
 import android.os.Bundle;
-import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -22,10 +20,9 @@ import com.example.slices.models.InstanceUtil;
 
 public class MainActivity extends AppCompatActivity {
 
-    private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
-    private Entrant user;
     private SharedViewModel sharedViewModel;
+    private String appMode; // Variable to store what mode the app is in
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,60 +33,49 @@ public class MainActivity extends AppCompatActivity {
 
         sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
-        setSupportActionBar(binding.toolbar);
+        // Start in User mode
+        appMode = "User";
 
         initializeUser();
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-
-        // Set listeners for bottom navigation buttons
-        // Will all change soon
-        binding.myEventsButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MyEventsFragment));
-        binding.myEventsOrgButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MyEventsOrgFragment));
-        binding.browseButton.setOnClickListener(view -> navController.navigate(R.id.action_to_BrowseFragment));
-        binding.notifButton.setOnClickListener(view -> navController.navigate(R.id.action_to_NotifFragment));
-        binding.menuButton.setOnClickListener(view -> navController.navigate(R.id.action_to_MenuFragment));
-        binding.createButton.setOnClickListener(view -> navController.navigate(R.id.action_to_CreateFragment));
-
-        // When ready to move to menu fragment this listener can be used and delete from here
-        //        binding.organizerSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-        //            if (getActivity() != null) {
-        //                ((MainActivity) getActivity()).toggleBar(isChecked);
-        //            }
-        //        });
-        binding.switch1.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            toggleBar(isChecked);
-        });
-
-    }
-
-    public void switchToUser() {
-        binding.createButton.setVisibility(View.GONE);
-        binding.myEventsOrgButton.setVisibility(View.GONE);
-        binding.browseButton.setVisibility(View.VISIBLE);
-        binding.myEventsButton.setVisibility(View.VISIBLE);
-    }
-    public void switchToOrganizer() {
-        binding.createButton.setVisibility(View.VISIBLE);
-        binding.myEventsOrgButton.setVisibility(View.VISIBLE);
-        binding.browseButton.setVisibility(View.GONE);
-        binding.myEventsButton.setVisibility(View.GONE);
+        NavigationUI.setupWithNavController(binding.bottomNav, navController);
+        NavigationUI.setupWithNavController(binding.bottomNavOrg, navController);
+        NavigationUI.setupWithNavController(binding.bottomNavAdmin, navController);
     }
 
     /**
-     * Alternate visibility between the Organizer navigation view and Entrant
-     * navigation view
-     * @param isChecked
-     *      boolean passed from a switch listener, true when switch is checked
-     *      false when not
+     * Switches visibility of Bottom Navigation Menu to enable User Mode
      */
-    public void toggleBar(boolean isChecked) {
-        binding.createButton.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-        binding.myEventsOrgButton.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-        binding.browseButton.setVisibility(isChecked ? View.GONE : View.VISIBLE);
-        binding.myEventsButton.setVisibility(isChecked ? View.GONE : View.VISIBLE);
+    public void switchToUser() {
+        appMode = "User";
+        binding.bottomNav.setVisibility(View.VISIBLE);
+        binding.bottomNavOrg.setVisibility(View.GONE);
+        binding.bottomNavAdmin.setVisibility(View.GONE);
+    }
+
+    /**
+     * Switches visibility of Bottom Navigation Menu to enable Organizer Mode
+     */
+    public void switchToOrganizer() {
+        appMode = "Organizer";
+        binding.bottomNav.setVisibility(View.GONE);
+        binding.bottomNavOrg.setVisibility(View.VISIBLE);
+        binding.bottomNavAdmin.setVisibility(View.GONE);
+    }
+
+    /**
+     * Switches visibility of Bottom Navigation Menu to enable Admin Mode
+     */
+    public void switchToAdmin() {
+        appMode = "Admin";
+        binding.bottomNav.setVisibility(View.GONE);
+        binding.bottomNavOrg.setVisibility(View.GONE);
+        binding.bottomNavAdmin.setVisibility(View.VISIBLE);
+    }
+
+    public String getAppMode() {
+        return appMode;
     }
 
     /**
@@ -100,11 +86,11 @@ public class MainActivity extends AppCompatActivity {
     public void initializeUser() {
         String deviceId = InstanceUtil.getDeviceId(this);
         DBConnector db = new DBConnector();
-        db.getEntrant(deviceId, new EntrantCallback() {
+        db.getEntrantByDeviceId(deviceId, new EntrantCallback() {
             @Override
             public void onSuccess(Entrant entrant) {
                 sharedViewModel.setUser(entrant);
-                Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getId()), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getName()), Toast.LENGTH_SHORT).show();
             }
 
             @Override

@@ -5,12 +5,14 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.slices.models.Entrant;
+import com.example.slices.models.Event;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Shared model to facilitate communication of data between fragments
+ * @author Brad Erdely
  */
 public class SharedViewModel extends ViewModel {
 
@@ -41,12 +43,9 @@ public class SharedViewModel extends ViewModel {
         this.waitlistedEvents.setValue(waitlistedEvents);
     }
 
-    // Added getters and setters for selected events for EventDetailsFrag
-    // - Raj
-    public void setSelectedEvent(Event e) {
-        selectedEvent.setValue(e);
+    public void setSelectedEvent(Event event) {
+        this.selectedEvent.setValue(event);
     }
-
     public Event getSelectedEvent() {
         return selectedEvent.getValue();
     }

@@ -1,7 +1,7 @@
 package com.example.slices.interfaces;
 
 import androidx.annotation.NonNull;
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 
 /**
  * EventActions

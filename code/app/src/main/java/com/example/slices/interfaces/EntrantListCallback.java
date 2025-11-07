@@ -5,7 +5,11 @@ import com.example.slices.models.Entrant;
 
 import java.util.List;
 
-// Callback interface for handling list of entrants retrieved from the database
+/**
+ * Interface for entrant list callbacks
+ * @author ?
+ * @version 1.0
+ */
 public interface EntrantListCallback {
     void onSuccess(List<String> entrants);
     void onFailure(Exception e);

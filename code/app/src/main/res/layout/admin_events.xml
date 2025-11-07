@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/white"
-    tools:context=".Event">
+    tools:context=".models.Event">
 
     <!-- Toolbar -->
     <androidx.appcompat.widget.Toolbar
@@ -14,11 +14,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/white"
-        android:padding="16dp"
+        android:padding="1dp"
         android:elevation="4dp"
         app:title="Events"
         app:titleTextAppearance="@style/TextAppearance.AppCompat.Large"
-        app:titleTextColor="@color/black" />
+        app:titleTextColor="@color/black"
+        app:navigationIcon="@drawable/ic_back"/>
 
     <!-- Search Bar -->
     <LinearLayout

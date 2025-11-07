@@ -8,12 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.example.slices.Event;
-import com.example.slices.adapters.EventAdapter;
-import com.example.slices.databinding.MyEventsFragmentBinding;
 import com.example.slices.databinding.MyEventsOrgFragmentBinding;
-
-import java.util.ArrayList;
 
 public class MyEventsOrgFragment extends Fragment {
     private MyEventsOrgFragmentBinding binding;

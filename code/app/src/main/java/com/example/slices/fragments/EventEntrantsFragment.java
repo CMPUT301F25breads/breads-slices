@@ -8,13 +8,12 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.example.slices.Event;
+import com.example.slices.models.Event;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.controllers.NotificationDialog;
 import com.example.slices.controllers.NotificationService;
 import com.example.slices.databinding.EventEntrantsFragmentBinding;
 import com.example.slices.interfaces.EventCallback;
-import com.example.slices.models.NotificationType;
 
 /**
  * Fragment for displaying the list of entrants for a specific event
