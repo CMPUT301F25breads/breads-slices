@@ -7,6 +7,8 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
+import static org.hamcrest.Matchers.allOf;
+
 import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -31,7 +33,7 @@ public class AdminProfilesTest {
     public void setup() {
         scenario.getScenario().onActivity(MainActivity::switchToAdmin);
 
-        onView(Matchers.allOf(ViewMatchers.withId(R.id.adminProfilesFragment), isDescendantOfA(withId(R.id.bottom_nav))))
+        onView(allOf(withId(R.id.adminProfilesFragment), isDescendantOfA(withId(R.id.bottom_nav))))
                 .perform(click());
 
         onView(withId(R.id.confirmed_list)).check(matches(isDisplayed()));

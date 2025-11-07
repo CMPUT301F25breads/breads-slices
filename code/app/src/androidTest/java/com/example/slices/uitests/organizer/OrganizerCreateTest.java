@@ -36,7 +36,7 @@ public class OrganizerCreateTest {
         onView(allOf(withId(R.id.CreateFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
                 .perform(click());
 
-        onView(withId(R.id.create_button)).check(matches(isDisplayed()));
+        onView(withId(R.id.create_frag)).check(matches(isDisplayed()));
     }
 
 }
