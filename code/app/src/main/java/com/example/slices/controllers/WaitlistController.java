@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
@@ -19,7 +20,7 @@ import java.util.function.Consumer;
  *
  * format on firebase looks like this:
  *   events/{eventId}/waitlist/{entrantid}
- *   entrants/{userid}/{id}
+ *   updated a batch update: waitlist.entrants: [userid1, userid2, ... ]
  * @Author Raj Prasad
  *   Note: I don't know what I'm doing with the DB, so feel free to jump in! -Raj
  *   Note 2: I like hashmaps and dictionaries. -Raj
@@ -36,16 +37,6 @@ public class WaitlistController {
                 .collection("waitlist").document(userid);
     }
 
-//    Commented this one out because creating a new "waitlist" collection in firebase might be a
-//    little weird - possibly causing issues later down the path
-//
-//    private static DocumentReference userWaitlistRef(@NonNull String userid,
-//                                                     @NonNull String eventId) {
-//        // this will create a "waitlist" field on the Firebase DB on first run
-//        return db().collection("entrants").document(userid)
-//                .collection("waitlist").document(eventId);
-//    }
-
     //  mirror docs under both paths in a single batch
     public static void join(@NonNull String eventId,
                             @NonNull String userid,
@@ -56,6 +47,11 @@ public class WaitlistController {
         batch.set(db().collection("entrants").document(userid), new HashMap<>(),
                 SetOptions.merge());
         batch.set(eventWaitlistRef(eventId, userid), marker);
+        // NEW! updating fields inside each event doc on DB
+        batch.update(
+                db().collection("events").document(eventId),
+                "waitlist.entrants",
+                FieldValue.arrayUnion(userid));
         batch.commit().addOnSuccessListener(v -> onOk.run())
                 .addOnFailureListener(onErr::accept);
     }
@@ -67,6 +63,11 @@ public class WaitlistController {
                              @NonNull Consumer<Exception> onErr) {
         WriteBatch batch = db().batch();
         batch.delete(eventWaitlistRef(eventId, userid));
+        // NEW! updating the batch in each event doc on db
+        batch.update(
+                db().collection("events").document(eventId),
+                "waitlist.entrants",
+                FieldValue.arrayRemove(userid));
         batch.commit().addOnSuccessListener(v -> onOk.run())
                 .addOnFailureListener(onErr::accept);
     }
@@ -76,7 +77,7 @@ public class WaitlistController {
     public static void isOnWaitlist(@NonNull String eventId,
                                     @NonNull String userid,
                                     @NonNull Consumer<Boolean> cb) {
-        Task<DocumentSnapshot> t = eventWaitlistRef(userid, eventId).get();
+        Task<DocumentSnapshot> t = eventWaitlistRef(eventId, userid).get();
         t.addOnSuccessListener(snap -> cb.accept(snap.exists()))
          .addOnFailureListener(e -> cb.accept(false));
     }
