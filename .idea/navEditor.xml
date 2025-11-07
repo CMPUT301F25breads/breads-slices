@@ -143,6 +143,16 @@
                       <LayoutPositions />
                     </value>
                   </entry>
+                  <entry key="action_to_adminOrganizersFragment">
+                    <value>
+                      <LayoutPositions />
+                    </value>
+                  </entry>
+                  <entry key="action_to_adminProfilesFragment">
+                    <value>
+                      <LayoutPositions />
+                    </value>
+                  </entry>
                   <entry key="adminEventsFragment">
                     <value>
                       <LayoutPositions>
@@ -179,13 +189,13 @@
                       </LayoutPositions>
                     </value>
                   </entry>
-                  <entry key="adminProfilessFragment">
+                  <entry key="adminProfilesFragment">
                     <value>
                       <LayoutPositions>
                         <option name="myPosition">
                           <Point>
-                            <option name="x" value="510" />
-                            <option name="y" value="1108" />
+                            <option name="x" value="12" />
+                            <option name="y" value="12" />
                           </Point>
                         </option>
                       </LayoutPositions>
