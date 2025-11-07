@@ -8,8 +8,12 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.MainActivity;
+import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.interfaces.EntrantEventCallback;
@@ -80,16 +84,33 @@ public class MyEventsFragment extends Fragment {
 
     /**
      * Setup on item click listeners so clicking an events navigates to event details
+     * @author Brad Erdely
      */
     public void setupListeners() {
         binding.confirmedList.setOnItemClickListener((parent, v, position, id)-> {
             sharedViewModel.setSelectedEvent(sharedViewModel.getEvents().get(position));
-            ((MainActivity)requireActivity()).navigateToDetails();
+
+            NavController navController = NavHostFragment.findNavController(this);
+
+            NavOptions options = new NavOptions.Builder()
+                    .setRestoreState(true)
+                    .setPopUpTo(R.id.nav_graph, false)
+                    .build();
+
+            navController.navigate(R.id.action_global_EventDetailsFragment, null, options);
         });
 
         binding.waitlistList.setOnItemClickListener((parent, v, position, id)-> {
             sharedViewModel.setSelectedEvent(sharedViewModel.getWaitlistedEvents().get(position));
-            ((MainActivity)requireActivity()).navigateToDetails();
+
+            NavController navController = NavHostFragment.findNavController(this);
+
+            NavOptions options = new NavOptions.Builder()
+                    .setRestoreState(true)
+                    .setPopUpTo(R.id.nav_graph, false)
+                    .build();
+
+            navController.navigate(R.id.action_global_EventDetailsFragment, null, options);
         });
     }
 
