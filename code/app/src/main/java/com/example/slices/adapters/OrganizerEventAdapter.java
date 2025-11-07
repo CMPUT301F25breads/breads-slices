@@ -65,11 +65,8 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
         holder.itemView.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putString("eventID", String.valueOf(event.getId()));
-            //TODO: Navigation to OrganizerEditEventFragment
-            navigateToEditEvent(bundle);
 
-//            NavHostFragment.findNavController(fragment)
-//                    .navigate(R.id.action_OrganizerEventsFragment_to_OrganizerEditEventFragment, bundle);
+            navigateToEditEvent(bundle);
         });
     }
 
@@ -100,6 +97,6 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
                 .setRestoreState(true)
                 .build();
 
-        navController.navigate(R.id.action_global_OrganizerEditEventFragment, bundle, options);
+        navController.navigate(R.id.action_OrganizerEventsFragment_to_OrganizerEditEventFragment, bundle, options);
     }
 }
