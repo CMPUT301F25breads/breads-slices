@@ -128,6 +128,12 @@
         android:label="Admin Organizers"
         tools:layout="@layout/admin_organizers" />
 
+    <fragment
+        android:id="@+id/EventEntrantsFragment"
+        android:name="com.example.slices.fragments.EventEntrantsFragment"
+        android:label="Event Entrants"
+        tools:layout="@layout/event_entrants_fragment" />
+
     <action
         android:id="@+id/action_to_adminHomeFragment"
         app:destination="@id/adminHomeFragment" />
@@ -184,5 +190,9 @@
     <action
         android:id="@+id/action_global_OrganizerEditEventFragment"
         app:destination="@id/OrganizerEditEventFragment" />
+
+    <action
+        android:id="@+id/action_OrganizerEditEventFragment_to_EventEntrantsFragment"
+        app:destination="@id/EventEntrantsFragment" />
 
 </navigation>
