@@ -6,7 +6,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/white"
-    tools:context=".AdminProfilesFragment">
+    android:id="@+id/adminprofiles_frag"
+    tools:context="fragments.AdminProfilesFragment">
 
     <!-- Toolbar -->
     <androidx.appcompat.widget.Toolbar

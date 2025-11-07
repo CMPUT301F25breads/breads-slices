@@ -15,15 +15,21 @@ import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.ActivityMainBinding;
 import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Entrant;
+import com.example.slices.models.Event;
 import com.example.slices.models.InstanceUtil;
+import com.example.slices.testing.DebugLogger;
+import com.google.firebase.Timestamp;
+
+import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     private SharedViewModel sharedViewModel;
     private String appMode; // Variable to store what mode the app is in
-    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,10 +45,34 @@ public class MainActivity extends AppCompatActivity {
 
         initializeUser();
 
-        navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupWithNavController(binding.bottomNav, navController);
         NavigationUI.setupWithNavController(binding.bottomNavOrg, navController);
         NavigationUI.setupWithNavController(binding.bottomNavAdmin, navController);
+
+//        String name = "Event" ;
+//        String description = "Description" ;
+//        String location = "Location" ;
+//        Calendar cal = Calendar.getInstance();
+//        cal.set(2025, 12, 12, 15, 0, 0);
+//        Date date = cal.getTime();
+//        Timestamp eventDate = new Timestamp(date);
+//        cal.set(2025, 12, 12, 13, 0, 0);
+//        Date date2 = cal.getTime();
+//        Timestamp regDeadline = new Timestamp(date2);
+//
+//        new Event(name, description, location, eventDate, regDeadline, 5, new EventCallback() {
+//            @Override
+//            public void onSuccess(Event event) {
+//
+//            }
+//
+//            @Override
+//            public void onFailure(Exception e) {
+//                DebugLogger.d("TestUtils", "Failed to create event: " + e.getMessage());
+//            }
+//        });
+
     }
 
     /**
@@ -53,10 +83,6 @@ public class MainActivity extends AppCompatActivity {
         binding.bottomNav.setVisibility(View.VISIBLE);
         binding.bottomNavOrg.setVisibility(View.GONE);
         binding.bottomNavAdmin.setVisibility(View.GONE);
-//        binding.bottomNav.getMenu().findItem(R.id.CreateFragment).setVisible(false);
-//        binding.bottomNav.getMenu().findItem(R.id.MyEventsOrgFragment).setVisible(false);
-//        binding.bottomNav.getMenu().findItem(R.id.BrowseFragment).setVisible(true);
-//        binding.bottomNav.getMenu().findItem(R.id.MyEventsFragment).setVisible(true);
     }
 
     /**
