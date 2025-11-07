@@ -44,10 +44,10 @@ public class EventDetailsFragment extends Fragment {
         if (isOn) {
             binding.btnJoinWaitlist.setText("Leave Waitlist");
             binding.btnJoinWaitlist.setBackgroundTintList(
-                    ContextCompat.getColorStateList(requireContext(), R.color.white)
+                    ContextCompat.getColorStateList(requireContext(), R.color.red)
             );
             binding.btnJoinWaitlist.setTextColor(
-                    ContextCompat.getColor(requireContext(), R.color.button_purple)
+                    ContextCompat.getColor(requireContext(), R.color.white)
             );
         } else {
             binding.btnJoinWaitlist.setText("Join Waitlist");
