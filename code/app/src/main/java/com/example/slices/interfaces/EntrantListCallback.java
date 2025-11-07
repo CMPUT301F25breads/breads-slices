@@ -11,6 +11,6 @@ import java.util.List;
  * @version 1.0
  */
 public interface EntrantListCallback {
-    void onSuccess(List<Entrant> entrants);
+    void onSuccess(List<String> entrants);
     void onFailure(Exception e);
 }

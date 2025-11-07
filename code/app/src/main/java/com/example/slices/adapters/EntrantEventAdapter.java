@@ -13,7 +13,7 @@ import androidx.core.content.ContextCompat;
 
 import com.example.slices.models.Event;
 import com.example.slices.R;
-import com.example.slices.controllers.DBConnector;
+import com.example.slices.controllers.WaitlistController;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventActions;
 import com.example.slices.SharedViewModel;
@@ -23,8 +23,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
 
 /** EntrantEventAdapter
@@ -34,8 +32,6 @@ import java.util.List;
  * white text / black text, respectively).
  *
  * @author Raj Prasad
- * Note: later, figure out how to engage the local list/set of waitlisted event IDs to decide
- * the button state rather than pure Boolean to set fixed states
  */
 public class EntrantEventAdapter extends ArrayAdapter<Event> {
     @Nullable
@@ -49,20 +45,6 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         notifyDataSetChanged();
     }
 
-    // localized caching for per event waitlist state (by int eventId)
-    private final Map<Integer, Boolean> waitlisted = new HashMap<>();
-
-    // set/override state for a single event id
-    public void setWaitlisted(int eventId, boolean on) {
-        waitlisted.put(eventId, on);
-        notifyDataSetChanged();
-    }
-
-    // read current state -> defaults to false (not on waitlist)
-    private boolean isWaitlisted(int eventId) {
-        return Boolean.TRUE.equals(waitlisted.get(eventId));
-    }
-
 
     public EntrantEventAdapter(Context context, List<Event> events) {
         super(context, 0, events);
@@ -70,6 +52,22 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
 
     public void setActions(@Nullable EventActions actions) {
         this.actions = actions;
+    }
+
+    private void updateWaitlistButton(@NonNull Button actionBtn, boolean isOn) {
+        if (isOn) {
+            actionBtn.setText("Leave");
+            actionBtn.setBackgroundTintList(ColorStateList.valueOf(
+                    ContextCompat.getColor(getContext(), android.R.color.white)));
+            actionBtn.setTextColor(ContextCompat.getColor(getContext(), R.color.button_purple));
+            actionBtn.setTag("leave");
+        } else {
+            actionBtn.setText("Join");
+            actionBtn.setBackgroundTintList(ColorStateList.valueOf(
+                    ContextCompat.getColor(getContext(), R.color.button_purple)));
+            actionBtn.setTextColor(ContextCompat.getColor(getContext(), android.R.color.white));
+            actionBtn.setTag("join");
+        }
     }
 
     @NonNull
@@ -84,15 +82,14 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         }
         // inflate the view first, then grab the event + null guard
         Event event = getItem(position);
-        DBConnector db = new DBConnector();
 
         if (event == null){
             return view;
         }
         final int eventId = event.getId(); // ID from firestore DB
         final String eventIdStr = String.valueOf(eventId); // then make it string
-        // then, isOn can check truth value
-        boolean isOn = (vm != null && vm.isWaitlisted(eventIdStr)) || isWaitlisted(eventId);
+        // initial waitlist state comes from shared view model
+        boolean isOn = vm != null && vm.isWaitlisted(eventIdStr);
 
         // binding core card views, same as EventAdapter behaviour
         TextView title = view.findViewById(R.id.event_title);
@@ -109,78 +106,58 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         if (buttonView instanceof Button) {
             Button actionBtn = (Button) buttonView;
 
-            if (isOn) {
-                actionBtn.setText("Leave");
-                actionBtn.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.
-                        getColor(getContext(), android.R.color.white)));
-                actionBtn.setTextColor(ContextCompat.getColor(getContext(), R.color.button_purple));
-                actionBtn.setTag("leave");
-            } else {
-                actionBtn.setText("Join");
-                actionBtn.setBackgroundTintList(ColorStateList.valueOf(
-                        ContextCompat.getColor(getContext(), R.color.button_purple)));
-                actionBtn.setTextColor(ContextCompat.getColor(getContext(), android.R.color.white));
-                actionBtn.setTag("join");
-            }
+            updateWaitlistButton(actionBtn, isOn);
 
-            // toggle color/text on click, notify optional callbacks
+            // toggle join/leave on click using shared state + controller
             actionBtn.setOnClickListener(v -> {
-                boolean isLeave = "leave".equals(actionBtn.getTag());
-                if (isLeave) {
-                    // switch to "Join"
-                    actionBtn.setText("Join");
-                    // set background color
-                    actionBtn.setBackgroundTintList(ColorStateList.valueOf(
-                            ContextCompat.getColor(getContext(), R.color.button_purple)));
-                    // set text color
-                    actionBtn.setTextColor(ContextCompat.getColor(getContext(),
-                            android.R.color.white));
-                    actionBtn.setTag("join");
+                if (vm == null || vm.getUser() == null) {
+                    return;
+                }
 
-                    waitlisted.put(eventId, false);
-                    event.removeEntrantFromWaitlist(vm.getUser(), new DBWriteCallback()  {
+                final String userId = String.valueOf(vm.getUser().getId());
+                boolean isWaitlisted = vm.isWaitlisted(eventIdStr);
+
+                if (isWaitlisted) {
+                    // switch to Join
+                    updateWaitlistButton(actionBtn, false);
+
+                    WaitlistController.leave(eventIdStr, userId, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
-
+                            vm.removeWaitlistedId(eventIdStr);
+                            if (actions != null) {
+                                actions.onLeaveClicked(event);
+                            }
                         }
 
                         @Override
                         public void onFailure(Exception e) {
-
+                            // reverts on failure
+                            updateWaitlistButton(actionBtn, true);
                         }
                     });
-
-                    if (actions != null) {
-                        actions.onLeaveClicked(event);
-                    }
                 } else {
-                    // switch to "Leave"
-                    actionBtn.setText("Leave");
-                    actionBtn.setBackgroundTintList(ColorStateList.valueOf(
-                            ContextCompat.getColor(getContext(), android.R.color.white)));
-                    actionBtn.setTextColor(ContextCompat.getColor(getContext(), R.color.button_purple));
-                    actionBtn.setTag("leave");
-                    waitlisted.put(eventId, true);
-                    event.addEntrantToWaitlist(vm.getUser(), new DBWriteCallback() {
+                    // switch to Leave
+                    updateWaitlistButton(actionBtn, true);
+
+                    WaitlistController.join(eventIdStr, userId, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
-
+                            vm.addWaitlistedId(eventIdStr);
+                            if (actions != null) {
+                                actions.onJoinClicked(event);
+                            }
                         }
 
                         @Override
                         public void onFailure(Exception e) {
-
+                            // reverts on failure
+                            updateWaitlistButton(actionBtn, false);
                         }
                     });
-
-
-                    if (actions != null) {
-                        actions.onJoinClicked(event);
-                    }
                 }
             });
         }
-
         return view;
     }
 }

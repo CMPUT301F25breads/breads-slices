@@ -59,7 +59,8 @@
     <fragment
         android:id="@+id/eventDetailsFragment"
         android:name="com.example.slices.fragments.EventDetailsFragment"
-        android:label="Event Details">
+        android:label="Event Details"
+        tools:layout="@layout/event_details_fragment">
         <argument
             android:name="eventId"
             app:argType="string" />

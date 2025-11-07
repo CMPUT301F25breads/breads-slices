@@ -46,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:text="12 Participants | Dec 12 2025"
                 android:textSize="13sp"
-                android:textColor="@color/dark_gray" />
+                android:textColor="@color/dark_grey" />
         </LinearLayout>
 
         <!-- Remove Button -->
