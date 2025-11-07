@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * Fragment for Admins to view, filter, and remove events.
  * Displays all events from Firestore in a RecyclerView.
- * @author Ryan
+ * @author Sasieni
  */
 public class AdminEventsFragment extends Fragment {
 
@@ -54,7 +54,7 @@ public class AdminEventsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // ---------- Toolbar ----------
+        // Toolbar
         Toolbar toolbar = view.findViewById(R.id.toolbar);
         ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
 
@@ -72,14 +72,14 @@ public class AdminEventsFragment extends Fragment {
             }
         });
 
-        // ---------- RecyclerView ----------
+        //RecyclerView
         recyclerView = view.findViewById(R.id.recyclerViewEvents);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         eventAdapter = new AdminEventAdapter(requireContext(), eventList, true); // true = admin mode
         recyclerView.setAdapter(eventAdapter);
 
-        // ---------- Search Bar ----------
+        //Search Bar
         searchBar = view.findViewById(R.id.searchBar);
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -89,7 +89,7 @@ public class AdminEventsFragment extends Fragment {
             @Override public void afterTextChanged(Editable s) {}
         });
 
-        // ---------- Load Events from Database ----------
+        //Load Events from Database
         dbConnector = new DBConnector();
         loadEventsFromDB();
     }

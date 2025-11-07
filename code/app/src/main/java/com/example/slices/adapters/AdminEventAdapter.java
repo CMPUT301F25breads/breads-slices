@@ -43,6 +43,13 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
         this.isAdmin = isAdmin;
     }
 
+    /**
+     *
+     * @param parent   The ViewGroup into which the new View will be added after it is bound to
+     *                 an adapter position.
+     * @param viewType The view type of the new View.
+     * @return new View Holder
+     */
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -50,6 +57,12 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
         return new ViewHolder(view);
     }
 
+    /**
+     *Sets title,image and description for event.
+     * had remove button
+     * @param holder   View holder holding the current items's view
+     * @param position The position of the item within the adapter's data set.
+     */
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Event event = eventList.get(position);
@@ -101,7 +114,13 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
         return eventList.size();
     }
 
-    // ---------- Filtering and updates ----------
+    //Filtering and updates
+
+    /**
+     * Filters displayed events based on query
+     * if empty, full list is restored
+     * @param query
+     */
     public void filter(String query) {
         List<Event> filtered = new ArrayList<>();
         if (query == null || query.trim().isEmpty()) {
@@ -119,13 +138,21 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
         notifyDataSetChanged();
     }
 
+    /**
+     * Updates list of evens when new data is loaded from Firestore
+     * @param newList retrieved from Firestore
+     */
     public void updateFullList(List<Event> newList) {
         this.eventList = new ArrayList<>(newList);
         this.eventListFull = new ArrayList<>(newList);
         notifyDataSetChanged();
     }
 
-    // ---------- ViewHolder ----------
+    //ViewHolder
+
+    /**
+     * binds xml components to java objects
+     */
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView title, details;
         ImageView icon;
