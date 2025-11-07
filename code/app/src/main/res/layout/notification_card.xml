@@ -14,40 +14,58 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
         <TextView
+            android:id="@+id/notification_card_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="You were not selected"
+            android:text="Title"
             android:textStyle="bold"
             android:textSize="20sp">
         </TextView>
         <TextView
+            android:id="@+id/notification_card_body"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginVertical="10dp"
-            android:text="You can still stay registered in case somebody declines their selection, or you may decline if you no longer wish to participate."
+            android:text="Body"
             android:textSize="15sp">
         </TextView>
         <TextView
+            android:id="@+id/notification_card_event_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Soccer Tournament"
+            android:text="Event Name"
             android:textStyle="bold"
             android:textSize="20sp">
         </TextView>
         <TextView
+            android:id="@+id/notification_card_event_date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Dec 1 2025 at 4PM"
+            android:text="Event Date"
             android:textStyle="bold"
             android:textSize="15sp">
         </TextView>
-        <TextView
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Not Selected"
-            android:textAlignment="viewEnd"
-            android:textStyle="bold"
-            android:textSize="20sp">
-        </TextView>
+            android:layout_marginTop="10dp">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/notification_card_decline_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Decline"
+                android:layout_marginRight="15dp"
+                app:layout_constraintRight_toLeftOf="@id/notification_card_accept_button"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:visibility="gone"/>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/notification_card_accept_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Accept"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:visibility="gone"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

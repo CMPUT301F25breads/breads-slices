@@ -19,10 +19,11 @@
         android:textStyle="bold" />
 
     <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/notification_recycler"
         android:layout_marginHorizontal="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:listitem="@layout/notification_selected_card">
+        tools:listitem="@layout/notification_card">
 
     </androidx.recyclerview.widget.RecyclerView>
 

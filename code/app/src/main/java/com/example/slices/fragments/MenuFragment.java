@@ -1,9 +1,11 @@
 package com.example.slices.fragments;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -18,6 +20,10 @@ import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
 import com.example.slices.testing.DebugLogger;
 
+
+/**
+ * Author: Bhupinder Singh
+ */
 public class  MenuFragment extends Fragment {
     private MenuFragmentBinding binding;
 
@@ -49,11 +55,13 @@ public class  MenuFragment extends Fragment {
         phoneNumber = user.getPhoneNumber();
         notifications = user.getSendNotifications();
 
+        // Sets the text fields to the current user's information
         binding.nameTextfield.setText(name);
         binding.emailTextfield.setText(email);
         binding.phoneNumberTextfield.setText(phoneNumber);
         binding.sendNotificationsSwitch.setChecked(notifications);
 
+        // Sets the app mode button to the current app mode
         if (((MainActivity) requireActivity()).getAppMode().equals("User")) {
             binding.appModeButtonGroup.check(binding.userModeButton.getId());
         } else {
@@ -63,12 +71,15 @@ public class  MenuFragment extends Fragment {
         setUpClickListeners();
     }
 
+
+    // Sets up the click listeners for the buttons
     private void setUpClickListeners() {
         binding.profileEditButton.setOnClickListener(v -> onEditClicked());
         binding.profileCancelButton.setOnClickListener(v -> onCancelClicked());
         binding.profileSaveButton.setOnClickListener(v -> onSaveClicked());
         binding.organizerModeButton.setOnClickListener(v -> onOrganizerClicked());
         binding.userModeButton.setOnClickListener(v -> onUserClicked());
+        binding.adminSigninButton.setOnClickListener(v -> onAdminSignInClicked());
     }
 
     private void onEditClicked() {
@@ -108,6 +119,7 @@ public class  MenuFragment extends Fragment {
             return;
         }
 
+        //Creates a new Entrant object with the new information and the current user's ID
         Entrant newUser = new Entrant(newName, newEmail, newPhone, currentUser.getId());
         newUser.setDeviceId(InstanceUtil.getDeviceId((MainActivity) requireActivity()));
         newUser.setSendNotifications(newNotifications);
@@ -115,6 +127,7 @@ public class  MenuFragment extends Fragment {
         binding.profileSaveButton.setEnabled(false);
         binding.profileCancelButton.setEnabled(false);
 
+        // Updates the user in the database
         db.updateEntrant(newUser, new DBWriteCallback() {
             @Override public void onSuccess() {
                 vm.setUser(newUser);
@@ -135,9 +148,17 @@ public class  MenuFragment extends Fragment {
                 binding.sendNotificationsSwitch.setChecked(notifications);
 
                 setProfileEditingEnabled(true);
+                Log.e("MenuFragment", "Error updating profile", e);
+                Toast.makeText(requireContext(), "Error updating profile", Toast.LENGTH_SHORT).show();
             }
         });
     }
+
+    // TODO
+    private void onAdminSignInClicked() {
+
+    }
+
     private void onOrganizerClicked() {
         ((MainActivity) requireActivity()).switchToOrganizer();
     }
@@ -145,6 +166,11 @@ public class  MenuFragment extends Fragment {
         ((MainActivity) requireActivity()).switchToUser();
     }
 
+
+    /**
+     * Enables or disables the profile editing fields
+     * @param enabled: true if the fields should be enabled, false otherwise
+     */
     private void setProfileEditingEnabled(boolean enabled) {
         binding.nameTextfield.setEnabled(enabled);
         binding.emailTextfield.setEnabled(enabled);
