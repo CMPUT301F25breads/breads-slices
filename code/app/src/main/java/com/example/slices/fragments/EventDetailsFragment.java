@@ -4,14 +4,18 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.slices.Event;
+import com.example.slices.R;
 import com.example.slices.SharedViewModel;
+import com.example.slices.controllers.WaitlistController;
 import com.example.slices.databinding.EventDetailsFragmentBinding;
 
 /** EventDetailsFragment
@@ -22,6 +26,37 @@ import com.example.slices.databinding.EventDetailsFragmentBinding;
 public class EventDetailsFragment extends Fragment {
     private EventDetailsFragmentBinding binding;
     private SharedViewModel vm;
+
+    private boolean isWaitlisted = false;
+
+    /**
+     * updateWaitlistButton
+     *     updates the background and text color based on waitlist status of the event
+     * @param isOn
+     *     true if the current user is waitlisted for the event, false if not on waitlist for event
+     */
+    /* TODO: Make the button updates less ugly in EntrantEventAdapter (shouldn't have
+        all that code inside an adapter) - Raj
+    */
+    private void updateWaitlistButton(boolean isOn) {
+        if (isOn) {
+            binding.btnJoinWaitlist.setText("Leave Waitlist");
+            binding.btnJoinWaitlist.setBackgroundTintList(
+                    ContextCompat.getColorStateList(requireContext(), R.color.white)
+            );
+            binding.btnJoinWaitlist.setTextColor(
+                    ContextCompat.getColor(requireContext(), R.color.button_purple)
+            );
+        } else {
+            binding.btnJoinWaitlist.setText("Join Waitlist");
+            binding.btnJoinWaitlist.setBackgroundTintList(
+                    ContextCompat.getColorStateList(requireContext(), R.color.button_purple)
+            );
+            binding.btnJoinWaitlist.setTextColor(
+                    ContextCompat.getColor(requireContext(), R.color.white)
+            );
+        }
+    }
 
     // Inflate binding
     @Nullable
@@ -39,8 +74,53 @@ public class EventDetailsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        if (vm.getSelectedEvent() != null) {
+        if (vm.getSelectedEvent() != null && vm.getUser() != null) {
             Event e = vm.getSelectedEvent();
+            String entrantId = String.valueOf(vm.getUser().getId());
+            int eventId = e.getId(); // reserved for future join/leave event call usage
+
+            // initial waitlist state based on event data
+            isWaitlisted = vm.isWaitlisted(String.valueOf(eventId));
+
+            // update initial button appearance based on waitlist status
+            updateWaitlistButton(isWaitlisted);
+
+            // Waitlist button toggling
+            binding.btnJoinWaitlist.setOnClickListener(v -> {
+                final String eventIdStr = String.valueOf(eventId);
+
+                // checks to see if waitlisted and communicating with DB for join/leave functions
+                if (isWaitlisted) {
+                    isWaitlisted = false;
+                    vm.removeWaitlistedId(eventIdStr);
+                    updateWaitlistButton(isWaitlisted);
+                    WaitlistController.leave(eventIdStr, entrantId, () -> {
+                        // success means do nothing else
+                    }, e1-> {
+                        // revert on exception
+                        isWaitlisted = true;
+                        vm.addWaitlistedId(eventIdStr);
+                        updateWaitlistButton(isWaitlisted);
+                        Toast.makeText(requireContext(),
+                                "Failed to leave waitlist. Please try again.",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                } else {
+                    isWaitlisted = true;
+                    vm.addWaitlistedId(eventIdStr);
+                    updateWaitlistButton(isWaitlisted);
+
+                    WaitlistController.join(eventIdStr, entrantId, () -> {
+                    }, e1 -> {
+                        isWaitlisted = false;
+                        vm.removeWaitlistedId(eventIdStr);
+                        updateWaitlistButton(isWaitlisted);
+                        Toast.makeText(requireContext(),
+                                "Failed to join waitlist. Please try again.",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
 
             binding.eventTitle.setText(e.getName());
             binding.eventToolbar.setTitle(e.getName());

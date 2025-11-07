@@ -15,15 +15,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-/**
+/** @Author: Raj Prasad
  * controller for managing waitlist join/leave without touching DBConnector controller.
  *
  * format on firebase looks like this:
  *   events/{eventId}/waitlist/{entrantid}
  *   updated a batch update: waitlist.entrants: [userid1, userid2, ... ]
- * @Author Raj Prasad
- *   Note: I don't know what I'm doing with the DB, so feel free to jump in! -Raj
- *   Note 2: I like hashmaps and dictionaries. -Raj
  */
 public class WaitlistController {
 
