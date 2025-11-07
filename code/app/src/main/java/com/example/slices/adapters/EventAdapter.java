@@ -1,24 +1,22 @@
 package com.example.slices.adapters;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.example.slices.models.Event;
 import com.example.slices.R;
-import com.google.firebase.Timestamp;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
+import androidx.navigation.NavOptions;
+import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,39 +24,84 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Basic adapter to display important event information
- * Will change to a recycler adapter after halfway
+ * Recycler Adapter for use with events in the user
+ * MyEvents fragment
  * @author Brad Erdely
  */
-public class EventAdapter extends ArrayAdapter<Event> {
-    public EventAdapter(Context context, List<Event> events) {
-        super(context, 0, events);
+public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
+
+    private final Context context;
+    private final List<Event> events;
+    private final Fragment fragment; // Reference for NavController
+
+    public EventAdapter(Context context, List<Event> events, Fragment fragment) {
+        this.context = context;
+        this.events = events;
+        this.fragment = fragment;
     }
 
     @NonNull
     @Override
-    public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        View view;
-        if (convertView == null) {
-            view = LayoutInflater.from(getContext()).inflate(R.layout.user_events_card, parent, false);
-        } else {
-            view = convertView;
-        }
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context)
+                .inflate(R.layout.user_events_card, parent, false);
+        return new ViewHolder(view);
+    }
 
-        Event event = getItem(position);
-        TextView title = view.findViewById(R.id.event_title);
-        title.setText(event.getName());
-        ImageView image = view.findViewById(R.id.image);
-        Glide.with(this.getContext()).load(event.getImageUrl()).into(image);
-        TextView details = view.findViewById(R.id.event_date_place);
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Event event = events.get(position);
+
+        // Set text fields
+        holder.title.setText(event.getName());
         Date date = event.getEventDate().toDate();
-
         SimpleDateFormat formatter = new SimpleDateFormat("ha | MMM. dd, yyyy", Locale.CANADA);
+        holder.details.setText(formatter.format(date) + " | " + event.getLocation());
 
-        String formatted = formatter.format(date);
-        String a = formatted + " | " + event.getLocation();
-        details.setText(a);
+        // Load image
+        Glide.with(context)
+                .load(event.getImageUrl())
+                .placeholder(R.drawable.ic_image)
+                .into(holder.image);
 
-        return view;
+        // Click listener to navigate to EventDetailsFragment
+        holder.itemView.setOnClickListener(v -> {
+            Bundle bundle = new Bundle();
+            bundle.putString("eventID", String.valueOf(event.getId()));
+
+            navigateToDetails(bundle);
+        });
+    }
+
+    /**
+     * Navigates the the EventDetailsFragment
+     * @param bundle
+     *      bundle containing the eventId of the selected item
+     */
+    private void navigateToDetails(Bundle bundle) {
+        NavController navController = NavHostFragment.findNavController(fragment);
+        NavOptions options = new NavOptions.Builder()
+                .setRestoreState(true)
+                .setPopUpTo(R.id.nav_graph, false)
+                .build();
+
+        navController.navigate(R.id.action_global_EventDetailsFragment, bundle, options);
+    }
+
+    @Override
+    public int getItemCount() {
+        return events.size();
+    }
+
+    static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView title, details;
+        ImageView image;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            title = itemView.findViewById(R.id.event_title);
+            details = itemView.findViewById(R.id.event_date_place);
+            image = itemView.findViewById(R.id.image);
+        }
     }
 }
