@@ -78,7 +78,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         View view;
 
         if (convertView == null) {
-            view = LayoutInflater.from(getContext()).inflate(R.layout.event_card, parent, false);
+            view = LayoutInflater.from(getContext()).inflate(R.layout.browse_events_card, parent, false);
         } else {
             view = convertView;
         }
@@ -101,7 +101,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         }
         ImageView image = view.findViewById(R.id.image);
         if (image != null) {
-            Glide.with(getContext()).load(event.getImageUrl()).into(image);
+            Glide.with(this.getContext()).load(event.getImageUrl()).into(image);
         }
 
         // join/leave button (safeguarded if the layout doesnt have it)

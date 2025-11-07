@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.bumptech.glide.Glide;
 import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
@@ -151,6 +152,7 @@ public class EventDetailsFragment extends Fragment {
                 whenText = "Date/time TBD"; // in case of any errors in date/time, failsafe!
             }
             binding.eventDatetime.setText(whenText);
+            Glide.with(this.getContext()).load(e.getImageUrl()).into(binding.eventImage);
 
             // counts style reflecting the "Waitlist | Participants" from the xml style
             int wlCount = 0; //waitlist count
