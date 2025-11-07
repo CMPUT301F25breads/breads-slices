@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
+import com.example.slices.MainActivity;
 import com.example.slices.R;
 import com.example.slices.fragments.EventDetailsFragment;
 
@@ -56,7 +57,6 @@ public class Admin_SignIn extends Fragment {
     /**
      * Validates the username and password
      */
-
     private void handleSignIn(View view) {
         String enteredUsername = usernameInput.getText().toString().trim();
         String enteredPassword = passwordInput.getText().toString().trim();
@@ -67,6 +67,7 @@ public class Admin_SignIn extends Fragment {
         }
 
         if (enteredUsername.equals(admin_username) && enteredPassword.equals(admin_password)) {
+            ((MainActivity) requireActivity()).switchToAdmin();
             Toast.makeText(requireContext(), "Login successful!", Toast.LENGTH_SHORT).show();
 
             NavController navController = Navigation.findNavController(view);
