@@ -10,7 +10,11 @@ public enum NotificationType {
      * Notification represents an invitation
      */
     INVITATION,
-
+    /**
+     * Notification represents a rejection with the ability to stay registered
+     * Added by Bhupinder
+     */
+    NOT_SELECTED,
     /**
      * Notification represents a general notification
      */
