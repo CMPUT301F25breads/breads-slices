@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private SharedViewModel sharedViewModel;
     private String appMode; // Variable to store what mode the app is in
+    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,23 +39,44 @@ public class MainActivity extends AppCompatActivity {
 
         initializeUser();
 
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupWithNavController(binding.bottomNav, navController);
+        NavigationUI.setupWithNavController(binding.bottomNavOrg, navController);
+        NavigationUI.setupWithNavController(binding.bottomNavAdmin, navController);
     }
 
+    /**
+     * Switches visibility of Bottom Navigation Menu to enable User Mode
+     */
     public void switchToUser() {
         appMode = "User";
-        binding.bottomNav.getMenu().findItem(R.id.CreateFragment).setVisible(false);
-        binding.bottomNav.getMenu().findItem(R.id.MyEventsOrgFragment).setVisible(false);
-        binding.bottomNav.getMenu().findItem(R.id.BrowseFragment).setVisible(true);
-        binding.bottomNav.getMenu().findItem(R.id.MyEventsFragment).setVisible(true);
+        binding.bottomNav.setVisibility(View.VISIBLE);
+        binding.bottomNavOrg.setVisibility(View.GONE);
+        binding.bottomNavAdmin.setVisibility(View.GONE);
+//        binding.bottomNav.getMenu().findItem(R.id.CreateFragment).setVisible(false);
+//        binding.bottomNav.getMenu().findItem(R.id.MyEventsOrgFragment).setVisible(false);
+//        binding.bottomNav.getMenu().findItem(R.id.BrowseFragment).setVisible(true);
+//        binding.bottomNav.getMenu().findItem(R.id.MyEventsFragment).setVisible(true);
     }
+
+    /**
+     * Switches visibility of Bottom Navigation Menu to enable Organizer Mode
+     */
     public void switchToOrganizer() {
         appMode = "Organizer";
-        binding.bottomNav.getMenu().findItem(R.id.CreateFragment).setVisible(true);
-        binding.bottomNav.getMenu().findItem(R.id.MyEventsOrgFragment).setVisible(true);
-        binding.bottomNav.getMenu().findItem(R.id.BrowseFragment).setVisible(false);
-        binding.bottomNav.getMenu().findItem(R.id.MyEventsFragment).setVisible(false);
+        binding.bottomNav.setVisibility(View.GONE);
+        binding.bottomNavOrg.setVisibility(View.VISIBLE);
+        binding.bottomNavAdmin.setVisibility(View.GONE);
+    }
+
+    /**
+     * Switches visibility of Bottom Navigation Menu to enable Admin Mode
+     */
+    public void switchToAdmin() {
+        appMode = "Admin";
+        binding.bottomNav.setVisibility(View.GONE);
+        binding.bottomNavOrg.setVisibility(View.GONE);
+        binding.bottomNavAdmin.setVisibility(View.VISIBLE);
     }
 
     public String getAppMode() {

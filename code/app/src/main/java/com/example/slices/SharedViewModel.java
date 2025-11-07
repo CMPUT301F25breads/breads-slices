@@ -12,6 +12,7 @@ import java.util.List;
 
 /**
  * Shared model to facilitate communication of data between fragments
+ * @author Brad Erdely
  */
 public class SharedViewModel extends ViewModel {
 
@@ -41,6 +42,14 @@ public class SharedViewModel extends ViewModel {
     public void setWaitlistedEvents(List<Event> waitlistedEvents) {
         this.waitlistedEvents.setValue(waitlistedEvents);
     }
+
+    public void setSelectedEvent(Event event) {
+        this.selectedEvent.setValue(event);
+    }
+    public Event getSelectedEvent() {
+        return selectedEvent.getValue();
+    }
+
 
     private final MutableLiveData<ArrayList<String>> waitlistedEventIds = new
             MutableLiveData<>(new ArrayList<>());

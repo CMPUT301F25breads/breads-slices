@@ -3,6 +3,11 @@ package com.example.slices.controllers;
 
 import androidx.annotation.NonNull;
 
+import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EventCallback;
+import com.example.slices.models.Entrant;
+import com.example.slices.models.Event;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -26,6 +31,8 @@ import java.util.function.Consumer;
  */
 public class WaitlistController {
 
+    private static final DBConnector dbConnector = new DBConnector();
+
     private static FirebaseFirestore db() {
         return FirebaseFirestore.getInstance();
     }
@@ -47,7 +54,10 @@ public class WaitlistController {
 //    }
 
     //  mirror docs under both paths in a single batch
-    public static void join(@NonNull String eventId,
+    /*
+    Ryan - Gonna rewrite this to work with the intended path for the waitlist
+     */
+    /*public static void join(@NonNull String eventId,
                             @NonNull String userid,
                             @NonNull Runnable onOk,
                             @NonNull Consumer<Exception> onErr) {
@@ -58,10 +68,49 @@ public class WaitlistController {
         batch.set(eventWaitlistRef(eventId, userid), marker);
         batch.commit().addOnSuccessListener(v -> onOk.run())
                 .addOnFailureListener(onErr::accept);
+
+    }*/
+    public static void join(@NonNull String eventId,
+                            @NonNull String userid,
+                            @NonNull DBWriteCallback callback) {
+        dbConnector.getEvent(Integer.parseInt(eventId), new EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+                //If we successfully get the event, get the entrant
+                dbConnector.getEntrant(Integer.parseInt(userid), new EntrantCallback() {
+                    @Override
+                    public void onSuccess(Entrant entrant) {
+                        //If we successfully get the entrant, add them to the waitlist
+                        event.addEntrantToWaitlist(entrant, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                callback.onSuccess();
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                callback.onFailure(e);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+
     }
 
+
     // leave an event waitlist: delete both marker docs in the map in a single batch
-    public static void leave(@NonNull String eventId,
+    /*public static void leave(@NonNull String eventId,
                              @NonNull String userid,
                              @NonNull Runnable onOk,
                              @NonNull Consumer<Exception> onErr) {
@@ -69,7 +118,46 @@ public class WaitlistController {
         batch.delete(eventWaitlistRef(eventId, userid));
         batch.commit().addOnSuccessListener(v -> onOk.run())
                 .addOnFailureListener(onErr::accept);
+    }*/
+
+    public static void leave(@NonNull String eventId,
+                             @NonNull String userid,
+                             @NonNull DBWriteCallback callback) {
+        dbConnector.getEvent(Integer.parseInt(eventId), new EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+                //Now get the entrant
+                dbConnector.getEntrant(Integer.parseInt(userid), new EntrantCallback() {
+                    @Override
+                    public void onSuccess(Entrant entrant) {
+                        //Now remove them from the waitlist
+                        event.removeEntrantFromWaitlist(entrant, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                callback.onSuccess();
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                callback.onFailure(e);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
+
 
     // check to see if a specific userid is on the waitlist for a given eventID just in case
     // that user decides to leave the waitlist at the exact moment they may receive an invite

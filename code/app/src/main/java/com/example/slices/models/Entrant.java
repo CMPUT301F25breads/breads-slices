@@ -13,6 +13,8 @@ import java.util.Objects;
 
 
 /**
+ * @author Ryan Haubrich
+ * @version 1.0
  * Entrant class for storing entrant information
  *
  */
@@ -29,7 +31,7 @@ public class Entrant {
      * Phone number of the entrant, may be null
      */
     private String phoneNumber;
-    /*
+    /**
      * Notification preference of entrant, may be null
      */
     private boolean sendNotifications;
@@ -65,6 +67,9 @@ public class Entrant {
      * List of sub-entrants of the entrant
      */
     private List<Integer> subEntrants;
+
+    private List<Integer> organizedEvents;
+
 
     /**
      * Default constructor for the Entrant class, need for serialization
@@ -146,6 +151,7 @@ public class Entrant {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.subEntrants = new ArrayList<Integer>();
+        this.organizedEvents = new ArrayList<Integer>();
         db.getNewEntrantId(new EntrantIDCallback() {
             @Override
             public void onSuccess(int id) {
@@ -308,22 +314,22 @@ public class Entrant {
     public List<Integer> getSubEntrants() {
         return subEntrants;
     }
-    /**
+    /*/**
      * Getter for the list of confirmed events of the entrant
      * @return
      *      List of confirmed events of the entrant
      */
     //public List<Event> getConfirmedEvents() {
-        //return confirmedEvents;
+    //return confirmedEvents;
 
     //}
-    /**
+    /*/**
      * Getter for the list of waitlisted events of the entrant
      * @return
      *      List of waitlisted events of the entrant
      */
     //public List<Event> getWaitlistedEvents() {
-        //return waitlistedEvents;
+    //return waitlistedEvents;
 
     //}
 
@@ -335,6 +341,17 @@ public class Entrant {
     public int getParent() {
         return parent;
     }
+
+    /**
+     * Getter for the list of organized events of the entrant
+     * @return
+     *      List of organized events of the entrant
+     */
+
+    public List<Integer> getOrganizedEvents() {
+        return organizedEvents;
+    }
+
 
     /**
      * Setter for the name of the entrant
@@ -373,22 +390,22 @@ public class Entrant {
 
     }
 
-    /**
+    /*/**
      * Setter for the list of confirmed events of the entrant
      * @param events
      *      List of confirmed events of the entrant
      */
     //public void setConfirmedEvents(List<Event> events) {
-        //this.confirmedEvents = events;
+    //this.confirmedEvents = events;
 
     //}
-    /**
+    /*/**
      * Setter for the list of waitlisted events of the entrant
      * @param events
      *      List of waitlisted events of the entrant
      */
     //public void setWaitlistedEvents(List<Event> events) {
-        //this.waitlistedEvents = events;
+    //this.waitlistedEvents = events;
 
     //}
 
@@ -404,6 +421,14 @@ public class Entrant {
         subEntrants.add(child.getId());
     }
 
+    /**
+     * Adds an organized event to the list of organized events of the entrant
+     * @param eventId
+     *      Event ID to add
+     */
+    public void addOrganizedEvent(int eventId) {
+        organizedEvents.add(eventId);
+    }
 
     /**
      * Gets the sub entrants of the entrant
@@ -432,6 +457,12 @@ public class Entrant {
         }
 
     }
+
+    /**
+     * Gets the parent of the entrant
+     * @param callback
+     *      Callback for when the parent is retrieved
+     */
 
     public void getParent(EntrantCallback callback) {
         //Get the parent of the entrant
@@ -475,14 +506,41 @@ public class Entrant {
         return Objects.hash(id);
     }
 
+    /**
+     * Sets the device ID of the entrant
+     * @param testDeviceId
+     *      Device ID to set
+     */
 
     public void setDeviceId(String testDeviceId) {
-        deviceId = testDeviceId;
+        this.deviceId = testDeviceId;
+
+
     }
 
+    /**
+     * Sets the list of organized events of the entrant
+     * @param organizedEvents
+     *      List of organized events to set
+     */
+    public void setOrganizedEvents(List<Integer> organizedEvents) {
+        this.organizedEvents = organizedEvents;
+    }
+
+    /**
+     * Gets the notifications preference of the entrant
+     * @return
+     *      True if notifications are enabled, false otherwise
+     */
     public boolean getSendNotifications() {
         return sendNotifications;
     }
+
+    /**
+     * Sets the notifications preference of the entrant
+     * @param enabled
+     *      True if notifications are enabled, false otherwise
+     */
 
     public void setSendNotifications(boolean enabled) {
         sendNotifications = enabled;

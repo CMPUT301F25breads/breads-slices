@@ -1,15 +1,23 @@
 package com.example.slices.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
+import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.MainActivity;
+import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.MenuFragmentBinding;
@@ -17,7 +25,12 @@ import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
 import com.example.slices.testing.DebugLogger;
+import com.example.slices.fragments.Admin_SignIn;
 
+
+/**
+ * Author: Bhupinder Singh
+ */
 public class  MenuFragment extends Fragment {
     private MenuFragmentBinding binding;
 
@@ -49,11 +62,13 @@ public class  MenuFragment extends Fragment {
         phoneNumber = user.getPhoneNumber();
         notifications = user.getSendNotifications();
 
+        // Sets the text fields to the current user's information
         binding.nameTextfield.setText(name);
         binding.emailTextfield.setText(email);
         binding.phoneNumberTextfield.setText(phoneNumber);
         binding.sendNotificationsSwitch.setChecked(notifications);
 
+        // Sets the app mode button to the current app mode
         if (((MainActivity) requireActivity()).getAppMode().equals("User")) {
             binding.appModeButtonGroup.check(binding.userModeButton.getId());
         } else {
@@ -63,12 +78,15 @@ public class  MenuFragment extends Fragment {
         setUpClickListeners();
     }
 
+
+    // Sets up the click listeners for the buttons
     private void setUpClickListeners() {
         binding.profileEditButton.setOnClickListener(v -> onEditClicked());
         binding.profileCancelButton.setOnClickListener(v -> onCancelClicked());
         binding.profileSaveButton.setOnClickListener(v -> onSaveClicked());
         binding.organizerModeButton.setOnClickListener(v -> onOrganizerClicked());
         binding.userModeButton.setOnClickListener(v -> onUserClicked());
+        binding.adminSigninButton.setOnClickListener(v -> onAdminSignInClicked());
     }
 
     private void onEditClicked() {
@@ -108,6 +126,7 @@ public class  MenuFragment extends Fragment {
             return;
         }
 
+        //Creates a new Entrant object with the new information and the current user's ID
         Entrant newUser = new Entrant(newName, newEmail, newPhone, currentUser.getId());
         newUser.setDeviceId(InstanceUtil.getDeviceId((MainActivity) requireActivity()));
         newUser.setSendNotifications(newNotifications);
@@ -115,6 +134,7 @@ public class  MenuFragment extends Fragment {
         binding.profileSaveButton.setEnabled(false);
         binding.profileCancelButton.setEnabled(false);
 
+        // Updates the user in the database
         db.updateEntrant(newUser, new DBWriteCallback() {
             @Override public void onSuccess() {
                 vm.setUser(newUser);
@@ -135,16 +155,35 @@ public class  MenuFragment extends Fragment {
                 binding.sendNotificationsSwitch.setChecked(notifications);
 
                 setProfileEditingEnabled(true);
+                Log.e("MenuFragment", "Error updating profile", e);
+                Toast.makeText(requireContext(), "Error updating profile", Toast.LENGTH_SHORT).show();
             }
         });
     }
+    
+    private void onAdminSignInClicked() {
+        NavController navController = NavHostFragment.findNavController(this);
+
+        // Options to avoid breaking the bottom nav bar stack
+        NavOptions options = new NavOptions.Builder()
+                .setRestoreState(true)
+                .setPopUpTo(R.id.nav_graph, false)
+                .build();
+
+        navController.navigate(R.id.adminSignInFragment, null, options);
+//        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+//        navController.navigate(R.id.adminSignInFragment);
+    }
+
     private void onOrganizerClicked() {
         ((MainActivity) requireActivity()).switchToOrganizer();
     }
-    private void onUserClicked() {
-        ((MainActivity) requireActivity()).switchToUser();
-    }
+    private void onUserClicked() { ((MainActivity) requireActivity()).switchToUser(); }
 
+    /**
+     * Enables or disables the profile editing fields
+     * @param enabled: true if the fields should be enabled, false otherwise
+     */
     private void setProfileEditingEnabled(boolean enabled) {
         binding.nameTextfield.setEnabled(enabled);
         binding.emailTextfield.setEnabled(enabled);

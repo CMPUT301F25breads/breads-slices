@@ -6,18 +6,20 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/white"
-    tools:context=".ProfilesActivity">
+    tools:context=".AdminProfilesFragment">
 
     <!-- Toolbar -->
-    <TextView
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/title_profiles"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Profiles"
-        android:textStyle="bold"
-        android:textSize="28sp"
-        android:textColor="@color/black"
-        android:padding="16dp" />
+        android:background="@color/white"
+        android:padding="1dp"
+        android:elevation="4dp"
+        app:title="Profiles"
+        app:titleTextAppearance="@style/TextAppearance.AppCompat.Large"
+        app:titleTextColor="@color/black"
+        app:navigationIcon="@drawable/ic_back"/>
 
     <!-- Search Bar -->
     <LinearLayout

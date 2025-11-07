@@ -9,7 +9,10 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
+import com.example.slices.SharedViewModel;
+import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.models.Event;
 import com.example.slices.adapters.EventAdapter;
 import com.example.slices.controllers.DBConnector;
@@ -19,6 +22,11 @@ import com.example.slices.interfaces.EventListCallback;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment showing a list of all events
+ * Will later also include search functionality
+ * @author Brad Erdely, Raj Prasad
+ */
 public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
     private ArrayList<Event> eventList = new ArrayList<>();
@@ -36,6 +44,7 @@ public class BrowseFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        SharedViewModel vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         DBConnector db = new DBConnector();
 
         db.getAllFutureEvents(new EventListCallback() {
@@ -44,8 +53,11 @@ public class BrowseFragment extends Fragment {
                 try {
                     eventList.clear();
                     eventList.addAll(events);
-                    EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+
+                    EntrantEventAdapter eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
+                    eventAdapter.setViewModel(vm);
                     binding.browseEventList.setAdapter(eventAdapter);
+
                 } catch (Exception e) {
                     Log.e("BrowseFragment", "Error setting adapter", e);
                     Toast.makeText(requireContext(), "Error displaying events", Toast.LENGTH_SHORT).show();
@@ -58,7 +70,7 @@ public class BrowseFragment extends Fragment {
 
                 Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
 
-                EventAdapter eventAdapter = new EventAdapter(requireContext(), eventList);
+                EntrantEventAdapter eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
                 binding.browseEventList.setAdapter(eventAdapter);
             }
         });
