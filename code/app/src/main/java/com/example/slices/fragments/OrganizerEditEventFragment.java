@@ -8,12 +8,12 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.example.slices.databinding.FragmentOrganizerEditEventBinding;
+import com.example.slices.databinding.OrganizerEditEventFragmentBinding;
 
 
 public class OrganizerEditEventFragment extends Fragment {
 
-    FragmentOrganizerEditEventBinding binding;
+    OrganizerEditEventFragmentBinding binding;
 
     @Override
     public View onCreateView(
@@ -21,7 +21,7 @@ public class OrganizerEditEventFragment extends Fragment {
             Bundle savedInstanceState
     ) {
 
-        binding = FragmentOrganizerEditEventBinding.inflate(inflater, container, false);
+        binding = OrganizerEditEventFragmentBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
 
