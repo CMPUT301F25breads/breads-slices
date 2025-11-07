@@ -1,86 +1,111 @@
 package com.example.slices.fragments;
 
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.DatePicker;
-import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.Toast;
-
+import android.widget.*;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.R;
+import com.example.slices.controllers.DBConnector;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 
-import java.text.SimpleDateFormat;
+import java.io.IOException;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 
 public class OrganizerCreateEventFragment extends Fragment {
 
-    private EditText eventNameInput, eventDescriptionInput, eventLocationInput;
-    private EditText eventDateInput, regDeadlineInput, maxEntrantsInput;
-    private Button createEventButton;
-    private ImageButton backButton;
+    private EditText editEventName, editDescription, editGuidelines, editLocation;
+    private EditText editDate, editTime, editRegStart, editRegEnd, editMaxWaiting, editMaxParticipants;
+    private SwitchCompat switchEntrantLocation;
+    private ImageView eventImage;
+    private Uri imageUri;
+    private Button buttonConfirm;
+    private ImageButton uploadButton, backButton;
 
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
-
-    public OrganizerCreateEventFragment() {
-        // Empty constructor
-    }
+    private final ActivityResultLauncher<Intent> pickImageLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                    imageUri = result.getData().getData();
+                    try {
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(requireContext().getContentResolver(), imageUri);
+                        eventImage.setImageBitmap(bitmap);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getContext(), "Failed to load image", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-
-        View view = inflater.inflate(R.layout.fragment_organizer_create_event, container, false);
-
-        // Link to layout components
-        eventNameInput = view.findViewById(R.id.editEventName);
-        eventDescriptionInput = view.findViewById(R.id.editDescription);
-        eventLocationInput = view.findViewById(R.id.editLocation);
-        eventDateInput = view.findViewById(R.id.editDate);
-        regDeadlineInput = view.findViewById(R.id.input_registration_deadline);
-        maxEntrantsInput = view.findViewById(R.id.input_max_entrants);
-        createEventButton = view.findViewById(R.id.button_create_event);
-        backButton = view.findViewById(R.id.backButton);
-
-        // --- Date picker dialogs ---
-        eventDateInput.setOnClickListener(v -> showDatePickerDialog(eventDateInput));
-        regDeadlineInput.setOnClickListener(v -> showDatePickerDialog(regDeadlineInput));
-
-        // --- Back button ---
-        if (backButton != null) {
-            backButton.setOnClickListener(v -> requireActivity().onBackPressed());
-        }
-
-        // --- Create Event button ---
-        createEventButton.setOnClickListener(v -> handleCreateEvent());
-
-        return view;
+        return inflater.inflate(R.layout.fragment_organizer_create_event, container, false);
     }
 
-    private void showDatePickerDialog(EditText targetField) {
-        final Calendar calendar = Calendar.getInstance();
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
+        editEventName = view.findViewById(R.id.editEventName);
+        editDescription = view.findViewById(R.id.editDescription);
+        editGuidelines = view.findViewById(R.id.editGuidelines);
+        editLocation = view.findViewById(R.id.editLocation);
+        editDate = view.findViewById(R.id.editDate);
+        editTime = view.findViewById(R.id.editTime);
+        editRegStart = view.findViewById(R.id.editRegStart);
+        editRegEnd = view.findViewById(R.id.editRegEnd);
+        editMaxWaiting = view.findViewById(R.id.editMaxWaiting);
+        editMaxParticipants = view.findViewById(R.id.editMaxParticipants);
+        switchEntrantLocation = view.findViewById(R.id.switchEntrantLocation);
+        eventImage = view.findViewById(R.id.eventImage);
+        uploadButton = view.findViewById(R.id.uploadButton);
+        backButton = view.findViewById(R.id.backButton);
+        buttonConfirm = view.findViewById(R.id.buttonConfirm);
+
+        // TODO: Back button → navigate to organizer events (implement navigation)
+        backButton.setOnClickListener(v -> NavHostFragment.findNavController(this)
+                .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEventsFragment));
+
+        // Date picker
+        editDate.setOnClickListener(v -> showDatePicker(editDate));
+        editRegStart.setOnClickListener(v -> showDatePicker(editRegStart));
+        editRegEnd.setOnClickListener(v -> showDatePicker(editRegEnd));
+
+        // Time picker
+        editTime.setOnClickListener(v -> showTimePicker(editTime));
+
+        // Upload image
+        uploadButton.setOnClickListener(v -> openGallery());
+
+        // Confirm event creation
+        buttonConfirm.setOnClickListener(v -> createEvent());
+    }
+
+    private void showDatePicker(EditText target) {
+        Calendar calendar = Calendar.getInstance();
         DatePickerDialog datePicker = new DatePickerDialog(
-                getContext(),
-                (DatePicker view, int year, int month, int dayOfMonth) -> {
-                    calendar.set(year, month, dayOfMonth);
-                    String formattedDate = dateFormat.format(calendar.getTime());
-                    targetField.setText(formattedDate);
-                },
+                requireContext(),
+                (view, year, month, dayOfMonth) -> target.setText((month + 1) + "/" + dayOfMonth + "/" + year),
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
@@ -88,50 +113,119 @@ public class OrganizerCreateEventFragment extends Fragment {
         datePicker.show();
     }
 
-    private void handleCreateEvent() {
-        String name = eventNameInput.getText().toString().trim();
-        String description = eventDescriptionInput.getText().toString().trim();
-        String location = eventLocationInput.getText().toString().trim();
-        String eventDateStr = eventDateInput.getText().toString().trim();
-        String regDeadlineStr = regDeadlineInput.getText().toString().trim();
-        String maxEntrantsStr = maxEntrantsInput.getText().toString().trim();
+    private void showTimePicker(EditText target) {
+        Calendar calendar = Calendar.getInstance();
+        TimePickerDialog timePicker = new TimePickerDialog(
+                requireContext(),
+                (view, hourOfDay, minute) -> {
+                    String amPm = (hourOfDay >= 12) ? "PM" : "AM";
+                    int hour = (hourOfDay % 12 == 0) ? 12 : hourOfDay % 12;
+                    target.setText(String.format("%02d:%02d %s", hour, minute, amPm));
+                },
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                false
+        );
+        timePicker.show();
+    }
 
-        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(description) || TextUtils.isEmpty(location)
-                || TextUtils.isEmpty(eventDateStr) || TextUtils.isEmpty(regDeadlineStr)
-                || TextUtils.isEmpty(maxEntrantsStr)) {
-            Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+    private void openGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pickImageLauncher.launch(intent);
+    }
+
+    private void createEvent() {
+        String name = editEventName.getText().toString().trim();
+        String desc = editDescription.getText().toString().trim();
+        String guide = editGuidelines.getText().toString().trim();
+        String location = editLocation.getText().toString().trim();
+        String dateStr = editDate.getText().toString().trim();           // mm/dd/yyyy
+        String timeStr = editTime.getText().toString().trim();           // hh:mm AM/PM
+        String regStartStr = editRegStart.getText().toString().trim();  // mm/dd/yyyy
+        String regEndStr = editRegEnd.getText().toString().trim();      // mm/dd/yyyy
+        String maxWaitStr = editMaxWaiting.getText().toString().trim();
+        String maxPartStr = editMaxParticipants.getText().toString().trim();
+        boolean entrantLoc = switchEntrantLocation.isChecked();
+
+        // Check required fields
+        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(desc) || TextUtils.isEmpty(dateStr) ||
+                TextUtils.isEmpty(timeStr) || TextUtils.isEmpty(location)) {
+            Toast.makeText(getContext(), "Please fill in all required fields.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        int maxEntrants;
         try {
-            maxEntrants = Integer.parseInt(maxEntrantsStr);
-        } catch (NumberFormatException e) {
-            Toast.makeText(getContext(), "Max entrants must be a number", Toast.LENGTH_SHORT).show();
-            return;
-        }
+            // Parse event start datetime
+            Calendar eventCal = Calendar.getInstance();
+            String[] dateParts = dateStr.split("/");
+            String[] timeParts = timeStr.split("[: ]");
+            int month = Integer.parseInt(dateParts[0]) - 1;
+            int day = Integer.parseInt(dateParts[1]);
+            int year = Integer.parseInt(dateParts[2]);
+            int hour = Integer.parseInt(timeParts[0]);
+            int minute = Integer.parseInt(timeParts[1]);
+            String amPm = timeParts[2];
+            if (amPm.equalsIgnoreCase("PM") && hour != 12) hour += 12;
+            if (amPm.equalsIgnoreCase("AM") && hour == 12) hour = 0;
+            eventCal.set(year, month, day, hour, minute, 0);
+            Timestamp eventTimestamp = new Timestamp(eventCal.getTime());
 
-        try {
-            Date eventDate = dateFormat.parse(eventDateStr);
-            Date regDeadline = dateFormat.parse(regDeadlineStr);
+            // Parse registration start/end dates
+            Calendar regStartCal = Calendar.getInstance();
+            Calendar regEndCal = Calendar.getInstance();
+            if (!TextUtils.isEmpty(regStartStr)) {
+                String[] regStartParts = regStartStr.split("/");
+                regStartCal.set(Integer.parseInt(regStartParts[2]), Integer.parseInt(regStartParts[0]) - 1,
+                        Integer.parseInt(regStartParts[1]), 0, 0, 0);
+            }
+            if (!TextUtils.isEmpty(regEndStr)) {
+                String[] regEndParts = regEndStr.split("/");
+                regEndCal.set(Integer.parseInt(regEndParts[2]), Integer.parseInt(regEndParts[0]) - 1,
+                        Integer.parseInt(regEndParts[1]), 23, 59, 59);
+            }
+            Timestamp regStartTimestamp = new Timestamp(regStartCal.getTime());
+            Timestamp regEndTimestamp = new Timestamp(regEndCal.getTime());
 
-            Timestamp eventTimestamp = new Timestamp(eventDate);
-            Timestamp regDeadlineTimestamp = new Timestamp(regDeadline);
+            // Max participants / waiting list
+            int maxParticipants = TextUtils.isEmpty(maxPartStr) ? 0 : Integer.parseInt(maxPartStr);
+            int maxWaiting = TextUtils.isEmpty(maxWaitStr) ? 0 : Integer.parseInt(maxWaitStr);
 
-            new Event(name, description, location, eventTimestamp, regDeadlineTimestamp, maxEntrants, new EventCallback() {
+            // Organizer ID (if we want event to be associated to organizer)
+            //String organizerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+            // Create event object
+            Event event = new Event(name, desc, location, eventTimestamp, regEndTimestamp, maxParticipants,
+                    new EventCallback() {
+                        @Override
+                        public void onSuccess(Event event) { }
+
+                        @Override
+                        public void onFailure(Exception e) { }
+                    });
+
+            // Save to database
+            DBConnector dbConnector = new DBConnector();
+            dbConnector.writeEvent(event, new DBWriteCallback() {
                 @Override
-                public void onSuccess(Event event) {
+                public void onSuccess() {
                     Toast.makeText(getContext(), "Event created successfully!", Toast.LENGTH_SHORT).show();
-                    requireActivity().onBackPressed(); // Go back after success
+                    // TODO: Generate unique QR Code
+                    Bundle bundle = new Bundle();
+                    bundle.putString("eventID", String.valueOf(event.getId()));
+                    // TODO: Navigation to OrganizerEditEventFragment
+                    NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
+                            .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment, bundle);
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    Toast.makeText(getContext(), "Failed to create event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
+
         } catch (Exception e) {
-            Toast.makeText(getContext(), "Invalid date format. Please use MM/dd/yyyy", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 }

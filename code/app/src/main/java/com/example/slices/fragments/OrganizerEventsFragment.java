@@ -62,12 +62,11 @@ public class OrganizerEventsFragment extends Fragment {
     }
 
     private void loadOrganizerEvents() {
-        // TODO: replace this with db.getEventsForOrganizer(currentOrganizerID)
-        // For now, use getAllFutureEvents() as placeholder
+        //getAllFutureEvents is a placeholder for the actual organizer's events based on ID
         db.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                // Clear all old lists
+                // Clear old lists
                 upcomingEvents.clear();
                 inProgressEvents.clear();
                 pastEvents.clear();
@@ -76,7 +75,7 @@ public class OrganizerEventsFragment extends Fragment {
                 Calendar cal = Calendar.getInstance();
                 long now = cal.getTimeInMillis();
 
-                // Sort events into the right category
+                // Sort events
                 for (Event e : events) {
                     long eventTime = e.getEventDate().toDate().getTime();
                     long regDeadline = e.getRegDeadline().toDate().getTime();
@@ -90,10 +89,10 @@ public class OrganizerEventsFragment extends Fragment {
                     }
                 }
 
-                // Bind lists to RecyclerViews using our new adapter
-                binding.rvUpcoming.setAdapter(new OrganizerEventAdapter(requireContext(), upcomingEvents));
-                binding.rvInProgress.setAdapter(new OrganizerEventAdapter(requireContext(), inProgressEvents));
-                binding.rvPast.setAdapter(new OrganizerEventAdapter(requireContext(), pastEvents));
+                // Use new adapter constructor with 'this' fragment
+                binding.rvUpcoming.setAdapter(new OrganizerEventAdapter(requireContext(), upcomingEvents, OrganizerEventsFragment.this));
+                binding.rvInProgress.setAdapter(new OrganizerEventAdapter(requireContext(), inProgressEvents, OrganizerEventsFragment.this));
+                binding.rvPast.setAdapter(new OrganizerEventAdapter(requireContext(), pastEvents, OrganizerEventsFragment.this));
             }
 
             @Override
