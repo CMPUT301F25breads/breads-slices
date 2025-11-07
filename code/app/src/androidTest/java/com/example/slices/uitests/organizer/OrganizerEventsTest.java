@@ -33,7 +33,7 @@ public class OrganizerEventsTest {
     public void setup() {
         scenario.getScenario().onActivity(MainActivity::switchToOrganizer);
 
-        onView(allOf(withId(R.id.MyEventsOrgFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
+        onView(allOf(withId(R.id.OrganizerEventsFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
                 .perform(click());
 
         onView(withId(R.id.org_events_frag)).check(matches(isDisplayed()));

@@ -102,7 +102,7 @@ public class MainActivityTest {
     public void navigateToCreateOrgTest() {
         scenario.getScenario().onActivity(MainActivity::switchToOrganizer);
 
-        onView(allOf(withId(R.id.CreateFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
+        onView(allOf(withId(R.id.OrganizerCreateEventFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
                 .perform(click());
 
         onView(withId(R.id.create_frag)).check(matches(isDisplayed()));
@@ -111,7 +111,7 @@ public class MainActivityTest {
     public void navigateToMyEventsOrgTest() {
         scenario.getScenario().onActivity(MainActivity::switchToOrganizer);
 
-        onView(allOf(withId(R.id.MyEventsOrgFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
+        onView(allOf(withId(R.id.OrganizerEventsFragment), isDescendantOfA(withId(R.id.bottom_nav_org))))
                 .perform(click());
 
         onView(withId(R.id.org_events_frag))
