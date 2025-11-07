@@ -26,13 +26,6 @@
             app:destination="@id/eventDetailsFragment" />
     </fragment>
     <fragment
-        android:id="@+id/CreateFragment"
-        android:name="com.example.slices.fragments.CreateFragment"
-        android:label="Create Events"
-        tools:layout="@layout/create_fragment">
-
-    </fragment>
-    <fragment
         android:id="@+id/NotifFragment"
         android:name="com.example.slices.fragments.NotifFragment"
         android:label="Notifications"
@@ -47,13 +40,6 @@
         <action
             android:id="@+id/action_MenuFragment_to_adminSignInFragment"
             app:destination="@id/adminSignInFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/MyEventsOrgFragment"
-        android:name="com.example.slices.fragments.OrganizerEventsFragment"
-        android:label="My Events Organizer"
-        tools:layout="@layout/my_events_org_fragment">
-
     </fragment>
 
     <fragment

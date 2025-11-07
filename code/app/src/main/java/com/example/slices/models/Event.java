@@ -391,6 +391,15 @@ public class Event implements Comparable<Event> {
     }
 
     /**
+     * Setter for the image url
+     * @param imageUrl
+     *      firebase download url
+     */
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    /**
      * Adds an entrant directly to the event
      * This should only be used internally for testing or by the lottery
      * @param entrant
