@@ -9,6 +9,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -64,8 +66,10 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
             Bundle bundle = new Bundle();
             bundle.putString("eventID", String.valueOf(event.getId()));
             //TODO: Navigation to OrganizerEditEventFragment
-            NavHostFragment.findNavController(fragment)
-                    .navigate(R.id.action_OrganizerEventsFragment_to_OrganizerEditEventFragment, bundle);
+            navigateToEditEvent(bundle);
+
+//            NavHostFragment.findNavController(fragment)
+//                    .navigate(R.id.action_OrganizerEventsFragment_to_OrganizerEditEventFragment, bundle);
         });
     }
 
@@ -85,5 +89,17 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
             eventDateTime = itemView.findViewById(R.id.eventDateTime);
             imgEvent = itemView.findViewById(R.id.imgEvent);
         }
+    }
+
+    private void navigateToEditEvent(Bundle bundle) {
+        NavController navController = NavHostFragment.findNavController(fragment);
+
+        NavOptions options = new NavOptions.Builder()
+                .setPopUpTo(R.id.nav_graph, false)
+                .setLaunchSingleTop(true)
+                .setRestoreState(true)
+                .build();
+
+        navController.navigate(R.id.action_global_OrganizerEditEventFragment, bundle, options);
     }
 }
