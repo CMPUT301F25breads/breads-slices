@@ -2,6 +2,7 @@ package com.example.slices.controllers;
 
 import androidx.annotation.NonNull;
 
+import com.example.slices.interfaces.EntrantEventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.exceptions.EntrantNotFound;
@@ -436,6 +437,47 @@ public class DBConnector {
                 });
     }
 
+    /**
+     * Gets all events for a given entrant
+     * @param entrant
+     *      user to find events for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public void getEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
+        eventRef
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Event> events = new ArrayList<>();
+                            List<Event> waitEvents = new ArrayList<>();
+                            for(DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Event event = doc.toObject(Event.class);
+                                if(event.getEntrants().contains(entrant))
+                                    events.add(event);
+                                else if(event.getWaitlist().getEntrants().contains(entrant))
+                                    waitEvents.add(event);
+                            }
+                            if (events != null) {
+                                callback.onSuccess(events, waitEvents);
+                            } else {
+
+                                callback.onSuccess(new ArrayList<Event>(), new ArrayList<>());
+                            }
+                        } else {
+                            callback.onFailure(new EventNotFound("No events found for ", entrant.getName()));
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get events for an entrant"));
+                    }
+                });
+    }
 
 
     /**
@@ -952,13 +994,19 @@ public class DBConnector {
                         // Get the highest ID
                         int highestId = 0;
                         for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                            int id = doc.getLong("id").intValue();
-                            if (id > highestId) {
-                                highestId = id;
-                                callback.onSuccess(highestId + 1);
-                            } else {
-                                callback.onSuccess(highestId + 1);
+                            if (doc.getLong("id") != null) {
+                                int id = doc.getLong("id").intValue();
+                                if (id > highestId) {
+                                    highestId = id;
                             }
+
+                            }
+                        }
+                        // Return the next ID
+                        if (highestId != 0) {
+                            callback.onSuccess(highestId + 1);
+                        } else {
+                            callback.onSuccess(1);
                         }
                     }
                     else {

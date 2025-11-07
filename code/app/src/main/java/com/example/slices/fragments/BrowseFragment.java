@@ -19,6 +19,11 @@ import com.example.slices.interfaces.EventListCallback;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment showing a list of all events
+ * Will later also include search functionality
+ * @author Brad Erdely, Raj Prasad
+ */
 public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
     private ArrayList<Event> eventList = new ArrayList<>();

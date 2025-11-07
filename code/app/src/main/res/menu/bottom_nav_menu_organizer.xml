@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/nav_my_events"
+        android:id="@+id/MyEventsOrgFragment"
         android:icon="@drawable/ic_home"
         android:title="My Events" />
 
     <item
-        android:id="@+id/nav_create_event"
+        android:id="@+id/CreateFragment"
         android:icon="@drawable/ic_add"
         android:title="Create Event" />
 
     <item
-        android:id="@+id/nav_notifications"
+        android:id="@+id/NotifFragment"
         android:icon="@drawable/ic_notifications"
         android:title="Notifications" />
 
     <item
-        android:id="@+id/nav_menu"
+        android:id="@+id/MenuFragment"
         android:icon="@drawable/ic_menu"
         android:title="Menu" />
 </menu>

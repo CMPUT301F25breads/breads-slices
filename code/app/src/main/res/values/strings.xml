@@ -12,7 +12,6 @@
     <string name="menu">Menu</string>
 
 
-
     <!-- Notification strings -->
     <string name="send_notification">Send Notification</string>
     <string name="send_to_waitlist">Send to Waitlist</string>
@@ -28,4 +27,6 @@
     <string name="no_entrants_selected">Please select at least one entrant</string>
     <string name="notification_title_required">Please enter a notification title</string>
     <string name="notification_message_required">Please enter a notification message</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
