@@ -67,6 +67,36 @@
     </fragment>
 
     <fragment
+        android:id="@+id/OrganizerCreateEventFragment"
+        android:name="com.example.slices.fragments.OrganizerCreateEventFragment"
+        android:label="Create Event"
+        tools:layout="@layout/fragment_organizer_create_event">
+    <action
+        android:id="@+id/action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment"
+        app:destination="@id/OrganizerEditEventFragment"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/OrganizerEventsFragment"
+        app:popUpToInclusive="false" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/OrganizerEventsFragment"
+        android:name="com.example.slices.fragments.OrganizerEventsFragment"
+        android:label="Create Event"
+        tools:layout="@layout/fragment_organizer_create_event">
+        <action
+            android:id="@+id/action_OrganizerEventFragment_to_OrganizerEditEventFragment"
+            app:destination="@id/OrganizerEditEventFragment"/>
+
+    </fragment>
+    <fragment
+        android:id="@+id/OrganizerEditEventFragment"
+        android:name="com.example.slices.fragments.OrganizerEditEventFragment"
+        android:label="Edit Event"
+        tools:layout="@layout/fragment_organizer_edit_event"/>
+
+    <fragment
         android:id="@+id/adminSignInFragment"
         android:name="com.example.slices.fragments.Admin_SignIn"
         android:label="Admin Sign-In"
@@ -110,6 +140,19 @@
         app:destination="@id/adminOrganizersFragment" />
 
     <action
+        android:id="@+id/action_to_organizerEventsFragment"
+        app:destination="@id/OrganizerEventsFragment" />
+    <action
+        android:id="@+id/action_to_organizerCreateEventsFragment"
+        app:destination="@id/OrganizerCreateEventFragment" />
+    <action
+        android:id="@+id/action_OrganizerEventsFragment_to_OrganizerEditEventFragment"
+        app:destination="@id/OrganizerEditEventFragment"/>
+    <action
+        android:id="@+id/action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment"
+        app:destination="@id/OrganizerEditEventFragment"/>
+
+    <action
         android:id="@+id/action_to_adminEventsFragment"
         app:destination="@id/adminEventsFragment" />
 
@@ -138,5 +181,8 @@
     <action
         android:id="@+id/action_global_EventDetailsFragment"
         app:destination="@id/eventDetailsFragment" />
+    <action
+        android:id="@+id/action_global_OrganizerEditEventFragment"
+        app:destination="@id/OrganizerEditEventFragment" />
 
 </navigation>

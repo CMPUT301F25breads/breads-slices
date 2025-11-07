@@ -18,6 +18,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.R;
@@ -83,8 +85,8 @@ public class OrganizerCreateEventFragment extends Fragment {
         buttonConfirm = view.findViewById(R.id.buttonConfirm);
 
         // TODO: Back button → navigate to organizer events (implement navigation)
-        backButton.setOnClickListener(v -> NavHostFragment.findNavController(this)
-                .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEventsFragment));
+//        backButton.setOnClickListener(v -> NavHostFragment.findNavController(this)
+//                .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEventsFragment));
 
         // Date picker
         editDate.setOnClickListener(v -> showDatePicker(editDate));
@@ -213,8 +215,18 @@ public class OrganizerCreateEventFragment extends Fragment {
                     Bundle bundle = new Bundle();
                     bundle.putString("eventID", String.valueOf(event.getId()));
                     // TODO: Navigation to OrganizerEditEventFragment
-                    NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
-                            .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment, bundle);
+                    navigateToEditFragment(bundle);
+//                    NavController navController = NavHostFragment.findNavController(getContext().this);
+//
+//                    NavOptions options = new NavOptions.Builder()
+//                            .setPopUpTo(R.id.OrganizerEventsFragment, false) // pop only to the current tab
+//                            .setLaunchSingleTop(true)                        // prevent duplicates
+//                            .setRestoreState(true)                           // restore fragment state if needed
+//                            .build();
+//
+//                    navController.navigate(R.id.action_global_OrganizerEditEventFragment, bundle, options);
+//                    NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
+//                            .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment, bundle);
                 }
 
                 @Override
@@ -227,5 +239,17 @@ public class OrganizerCreateEventFragment extends Fragment {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void navigateToEditFragment(Bundle bundle) {
+        NavController navController = NavHostFragment.findNavController(this);
+
+        NavOptions options = new NavOptions.Builder()
+                .setPopUpTo(R.id.nav_graph, false) // pop only to the current tab
+                .setLaunchSingleTop(true)                        // prevent duplicates
+                .setRestoreState(true)                           // restore fragment state if needed
+                .build();
+
+        navController.navigate(R.id.action_OrganizerEventsFragment_to_OrganizerEditEventFragment, bundle, options);
     }
 }

@@ -6,14 +6,16 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
-/**
- * Function that takes a string and turns it into a QRCode
- * @param
- *      msg - String to encode into a QRCode
- * @returns
- *      Bitmap - bitmap of QRCode, can be used in an ImageView
- */
+
 public class QREncoder {
+    /**
+     * Function that takes a string and turns it into a QRCode
+     * @param
+     *      msg - String to encode into a QRCode
+     * @return
+     *      Bitmap of QRCode, can be used in an ImageView
+     * @author Brad Erdely
+     */
     public static Bitmap encode(String msg) {
         BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
         try {
