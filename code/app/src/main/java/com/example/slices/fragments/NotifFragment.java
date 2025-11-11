@@ -17,7 +17,10 @@ import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.NotificationAdapter;
 import com.example.slices.controllers.DBConnector;
 import com.example.slices.databinding.NotifFragmentBinding;
+import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.NotificationListCallback;
+import com.example.slices.models.Event;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationType;
 
@@ -51,7 +54,6 @@ public class NotifFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         db = new DBConnector();
-
         // Sets up the recycler view for the notifications
         recyclerView = binding.notificationRecycler;
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
