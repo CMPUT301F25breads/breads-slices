@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.slices.controllers.DBConnector;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.models.Invitation;
@@ -76,7 +77,6 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         h.title.setText(n.getTitle());
         h.body.setText(n.getBody());
 
-
         // Tries to fetch the event name and date from the database,
         // if it fails it will set the text to "Event not found"
         db.getEvent(n.getEventId(), new EventCallback() {
@@ -103,6 +103,18 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 h.acceptButton.setOnClickListener(v -> ((Invitation )n).onAccept(new EventCallback() {
                     @Override
                     public void onSuccess(Event event) {
+                        ((Invitation) n).setAccepted(true);
+                        db.updateInvitation(((Invitation) n), new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                Toast.makeText(context, "Error: Couldn't update invitation", Toast.LENGTH_SHORT).show();
+                                Log.e("NotificationAdapter", "Error updating invitation");
+                            }
+                        });
                         items.remove(n);
                         notifyDataSetChanged();
                     }
@@ -115,6 +127,18 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 h.declineButton.setOnClickListener(v ->((Invitation) n).onDecline(new EventCallback() {
                     @Override
                     public void onSuccess(Event event) {
+                        ((Invitation) n).setDeclined(true);
+                        db.updateInvitation(((Invitation) n), new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                Toast.makeText(context, "Error: Couldn't update invitation", Toast.LENGTH_SHORT).show();
+                                Log.e("NotificationAdapter", "Error updating invitation");
+                            }
+                        });
                         items.remove(n);
                         notifyDataSetChanged();
                     }

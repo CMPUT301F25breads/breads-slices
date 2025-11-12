@@ -1,5 +1,6 @@
 package com.example.slices.fragments;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,6 +27,7 @@ import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
 import com.example.slices.testing.DebugLogger;
 import com.example.slices.fragments.Admin_SignIn;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 
 /**
@@ -93,6 +95,7 @@ public class  MenuFragment extends Fragment {
         binding.userModeButton.setOnClickListener(v -> onUserClicked());
         binding.adminModeButton.setOnClickListener(v -> onAdminClicked());
         binding.adminSigninButton.setOnClickListener(v -> onAdminSignInClicked());
+        binding.deleteProfileButton.setOnClickListener(v -> onDeleteProfileClicked());
     }
 
     private void onEditClicked() {
@@ -188,6 +191,21 @@ public class  MenuFragment extends Fragment {
         ((MainActivity) requireActivity()).switchToOrganizer();
     }
     private void onUserClicked() { ((MainActivity) requireActivity()).switchToUser(); }
+
+    private void onDeleteProfileClicked() {
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
+                .setTitle("Are you sure you want to delete your profile?")
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                    }
+                })
+                .setPositiveButton("Yes", (dialogInterface, i) -> deleteProfile())
+                .show();
+    }
+
+    private void deleteProfile() {
+    }
 
     /**
      * Enables or disables the profile editing fields
