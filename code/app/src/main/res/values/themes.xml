@@ -7,5 +7,10 @@
         <item name="android:windowLightStatusBar">@color/black</item>
     </style>
 
+    <style name="ThemeOverlay.App.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/black</item>
+        <item name="android:backgroundTint">@color/white</item>
+    </style>
+
     <style name="Theme.Slices" parent="Base.Theme.Slices" />
 </resources>
