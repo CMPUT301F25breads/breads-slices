@@ -24,6 +24,7 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.R;
 import com.example.slices.controllers.DBConnector;
+import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
@@ -261,15 +262,22 @@ public class OrganizerCreateEventFragment extends Fragment {
             dbConnector.writeEvent(event, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
-                    Toast.makeText(getContext(), "Event created successfully!", Toast.LENGTH_SHORT).show();
-                    // TODO: Generate unique QR Code
+                    // Generate QR code for the event
+                    String qrCodeData = QRCodeManager.generateQRCodeData(event.getId());
+                    Bitmap qrCodeBitmap = QRCodeManager.generateQRCode(event.getId());
+
+                    if (qrCodeBitmap != null) {
+                        Toast.makeText(getContext(), "Event created successfully with QR code!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Event created successfully! (QR code generation failed)", Toast.LENGTH_SHORT).show();
+                    }
+
+                    // Pass event ID and QR code data to edit fragment
                     Bundle bundle = new Bundle();
                     bundle.putString("eventID", String.valueOf(event.getId()));
-                    // TODO: Navigation to OrganizerEditEventFragment
+                    bundle.putString("qrCodeData", qrCodeData);
+
                     navigateToEditFragment(bundle);
-//                    navController.navigate(R.id.action_global_OrganizerEditEventFragment, bundle, options);
-//                    NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
-//                            .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment, bundle);
                 }
 
                 @Override
