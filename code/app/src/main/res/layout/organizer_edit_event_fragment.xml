@@ -98,18 +98,38 @@
                     android:textStyle="bold" />
 
                 <ImageView
-                    android:id="@+id/qrCodeIcon"
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
-                    android:src="@drawable/ic_qr_code"
-                    android:contentDescription="QR Code" />
+                    android:id="@+id/qrCodeImageView"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:padding="4dp"
+                    android:background="#FFFFFF"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Event QR Code" />
             </LinearLayout>
 
+            <!-- Share QR Code Button -->
+
             <!-- Description (TextView + edit button) -->
+            <Button
+                android:id="@+id/buttonShareQRCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="#7E57C2"
+                android:drawableLeft="@drawable/ic_share"
+                android:drawablePadding="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:padding="10dp"
+                android:text="Share QR Code"
+                android:textColor="#FFFFFF" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_marginTop="8dp"
                 android:text="Description"
                 android:textStyle="bold" />
 

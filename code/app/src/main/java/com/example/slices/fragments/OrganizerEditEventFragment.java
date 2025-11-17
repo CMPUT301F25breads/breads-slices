@@ -4,6 +4,9 @@ import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -16,6 +19,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.core.content.FileProvider;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,6 +35,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.bumptech.glide.Glide;
 import com.example.slices.R;
 import com.example.slices.controllers.DBConnector;
+import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
 
@@ -56,11 +64,14 @@ public class OrganizerEditEventFragment extends Fragment {
     private EditText editEventName, editDate, editTime, editRegStart, editRegEnd,
             editMaxWaiting, editMaxParticipants, editMaxDistance;
     private TextView textDescription, textGuidelines, textLocation;
-    private ImageView eventImage, qrCodeIcon;
+    private ImageView eventImage, qrCodeImageView;
+    private Button buttonShareQRCode;
     private SwitchCompat switchEntrantLocation;
     private LinearLayout layoutMaxDistance;
     private DBConnector dbConnector;
     private String eventID; // event being edited
+    private String qrCodeData; // QR code data for the event
+    private Bitmap qrCodeBitmap; // QR code bitmap for sharing
 
     /**
      * Default constructor.
@@ -112,7 +123,8 @@ public class OrganizerEditEventFragment extends Fragment {
         textGuidelines = view.findViewById(R.id.textGuidelines);
         textLocation = view.findViewById(R.id.textLocation);
         eventImage = view.findViewById(R.id.eventImage);
-        qrCodeIcon = view.findViewById(R.id.qrCodeIcon);
+        qrCodeImageView = view.findViewById(R.id.qrCodeImageView);
+        buttonShareQRCode = view.findViewById(R.id.buttonShareQRCode);
         switchEntrantLocation = view.findViewById(R.id.switchEntrantLocation);
         layoutMaxDistance = view.findViewById(R.id.layoutMaxDistance);
         Button buttonViewWaitingList = view.findViewById(R.id.buttonViewWaitingList);
@@ -164,6 +176,9 @@ public class OrganizerEditEventFragment extends Fragment {
             navigateToEntrantsFragment(bundle);
         });
 
+        // --- Share QR Code button ---
+        buttonShareQRCode.setOnClickListener(v -> shareQRCode());
+
         // --- Other buttons (functionality not implemented yet)---
         buttonEditImage.setOnClickListener(v ->
                 Toast.makeText(getContext(), "Edit Image clicked", Toast.LENGTH_SHORT).show()
@@ -173,8 +188,11 @@ public class OrganizerEditEventFragment extends Fragment {
 
         // --- Load event data ---
         eventID = getArguments() != null ? getArguments().getString("eventID") : null;
+        qrCodeData = getArguments() != null ? getArguments().getString("qrCodeData") : null;
+
         if (eventID != null) {
             loadEventData(eventID);
+            loadQRCode();
         } else {
             Toast.makeText(getContext(), "Error: Event ID missing.", Toast.LENGTH_SHORT).show();
         }
@@ -215,11 +233,11 @@ public class OrganizerEditEventFragment extends Fragment {
 
 
                 // To be implemented later
-        //        switchEntrantLocation.setChecked(event.isLocationRequired());
-        //        if (event.isLocationRequired()) {
-        //            layoutMaxDistance.setVisibility(View.VISIBLE);
-        //            editMaxDistance.setText(String.valueOf(event.getMaxDistance()));
-        //        }
+                //        switchEntrantLocation.setChecked(event.isLocationRequired());
+                //        if (event.isLocationRequired()) {
+                //            layoutMaxDistance.setVisibility(View.VISIBLE);
+                //            editMaxDistance.setText(String.valueOf(event.getMaxDistance()));
+                //        }
 
                 Glide.with(requireContext())
                         .load(event.getImageUrl())
@@ -337,5 +355,110 @@ public class OrganizerEditEventFragment extends Fragment {
                 .build();
 
         navController.navigate(R.id.action_OrganizerEditEventFragment_to_EventEntrantsFragment, bundle, options);
+    }
+
+    /**
+     * Loads and displays the QR code for the event.
+     * If qrCodeData is provided via arguments, it uses that.
+     * Otherwise, it generates a new QR code from the event ID.
+     */
+    private void loadQRCode() {
+        if (qrCodeData != null && !qrCodeData.isEmpty()) {
+            // QR code data was passed from event creation
+            int eventIdFromQR = QRCodeManager.decodeQRCode(qrCodeData);
+            if (eventIdFromQR != -1) {
+                displayQRCode(eventIdFromQR);
+            } else {
+                handleMissingQRCode();
+            }
+        } else if (eventID != null) {
+            // Generate QR code from event ID
+            try {
+                int id = Integer.parseInt(eventID);
+                displayQRCode(id);
+            } catch (NumberFormatException e) {
+                handleMissingQRCode();
+            }
+        } else {
+            handleMissingQRCode();
+        }
+    }
+
+    /**
+     * Generates and displays the QR code bitmap for the given event ID.
+     *
+     * @param eventId The event ID to generate QR code for
+     */
+    private void displayQRCode(int eventId) {
+        qrCodeBitmap = QRCodeManager.generateQRCode(eventId);
+
+        if (qrCodeBitmap != null) {
+            qrCodeImageView.setImageBitmap(qrCodeBitmap);
+            qrCodeImageView.setVisibility(View.VISIBLE);
+            buttonShareQRCode.setEnabled(true);
+        } else {
+            handleMissingQRCode();
+        }
+    }
+
+    /**
+     * Handles the case where QR code data is missing or invalid.
+     * Hides the QR code display and disables the share button.
+     */
+    private void handleMissingQRCode() {
+        qrCodeImageView.setVisibility(View.GONE);
+        buttonShareQRCode.setEnabled(false);
+        buttonShareQRCode.setAlpha(0.5f);
+        Toast.makeText(getContext(), "QR code not available", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Shares the QR code using Android ShareSheet.
+     * Saves the QR code bitmap to a temporary file and creates a share intent.
+     */
+    private void shareQRCode() {
+        if (qrCodeBitmap == null) {
+            Toast.makeText(getContext(), "QR code not available to share", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            // Create a temporary file to store the QR code
+            File cachePath = new File(requireContext().getCacheDir(), "images");
+            cachePath.mkdirs();
+
+            String eventName = editEventName.getText().toString();
+            String sanitizedName = eventName.replaceAll("[^a-zA-Z0-9-_]", "_");
+            File qrFile = new File(cachePath, "QR_" + sanitizedName + ".png");
+
+            // Write the bitmap to the file
+            FileOutputStream stream = new FileOutputStream(qrFile);
+            qrCodeBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            stream.close();
+
+            // Get the content URI using FileProvider
+            Uri contentUri = FileProvider.getUriForFile(
+                    requireContext(),
+                    requireContext().getPackageName() + ".fileprovider",
+                    qrFile
+            );
+
+            // Create share intent
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("image/png");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Event QR Code: " + eventName);
+            shareIntent.putExtra(Intent.EXTRA_TEXT, "Scan this QR code to view event details for: " + eventName);
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            // Show the share sheet
+            startActivity(Intent.createChooser(shareIntent, "Share QR Code"));
+
+        } catch (IOException e) {
+            Toast.makeText(getContext(), "Failed to share QR code: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Error sharing QR code", Toast.LENGTH_SHORT).show();
+        }
     }
 }

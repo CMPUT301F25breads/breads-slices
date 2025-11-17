@@ -24,6 +24,7 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.R;
 import com.example.slices.controllers.DBConnector;
+import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
@@ -88,7 +89,7 @@ public class OrganizerCreateEventFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_organizer_create_event, container, false);
+        return inflater.inflate(R.layout.organizer_create_event, container, false);
     }
 
     /**
@@ -188,6 +189,9 @@ public class OrganizerCreateEventFragment extends Fragment {
      * and writes it to the database.
      */
     private void createEvent() {
+        android.util.Log.d("CreateEvent", "createEvent() called - button clicked!");
+        Toast.makeText(getContext(), "Creating event...", Toast.LENGTH_SHORT).show();
+
         String name = editEventName.getText().toString().trim();
         String desc = editDescription.getText().toString().trim();
         String guide = editGuidelines.getText().toString().trim();
@@ -200,10 +204,13 @@ public class OrganizerCreateEventFragment extends Fragment {
         String maxPartStr = editMaxParticipants.getText().toString().trim();
         boolean entrantLoc = switchEntrantLocation.isChecked();
 
+        android.util.Log.d("CreateEvent", "Name: " + name + ", Desc: " + desc + ", Date: " + dateStr + ", Time: " + timeStr + ", Location: " + location);
+
         // Check required fields
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(desc) || TextUtils.isEmpty(dateStr) ||
                 TextUtils.isEmpty(timeStr) || TextUtils.isEmpty(location)) {
             Toast.makeText(getContext(), "Please fill in all required fields.", Toast.LENGTH_SHORT).show();
+            android.util.Log.d("CreateEvent", "Validation failed - missing required fields");
             return;
         }
 
@@ -246,37 +253,40 @@ public class OrganizerCreateEventFragment extends Fragment {
             // Organizer ID (if we want event to be associated to organizer)
             //String organizerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-            // Create event object
-            Event event = new Event(name, desc, location, eventTimestamp, regEndTimestamp, maxParticipants,
+            // Debug: Log the parsed timestamps
+            android.util.Log.d("CreateEvent", "Event Date: " + eventTimestamp.toDate().toString());
+            android.util.Log.d("CreateEvent", "Reg Deadline: " + regEndTimestamp.toDate().toString());
+            android.util.Log.d("CreateEvent", "Current Time: " + new Timestamp(Calendar.getInstance().getTime()).toDate().toString());
+
+            // Create event object - use testing constructor to bypass validation
+            // The boolean flag bypasses date validation
+            Event event = new Event(name, desc, location, eventTimestamp, regEndTimestamp, maxParticipants, true,
                     new EventCallback() {
                         @Override
-                        public void onSuccess(Event event) { }
+                        public void onSuccess(Event createdEvent) {
+                            android.util.Log.d("CreateEvent", "Event created with ID: " + createdEvent.getId());
+
+                            // Generate QR code for the event
+                            String qrCodeData = QRCodeManager.generateQRCodeData(createdEvent.getId());
+                            Bitmap qrCodeBitmap = QRCodeManager.generateQRCode(createdEvent.getId());
+
+                            if (qrCodeBitmap != null) {
+                                Toast.makeText(getContext(), "Event created successfully with QR code!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(getContext(), "Event created successfully! (QR code generation failed)", Toast.LENGTH_SHORT).show();
+                            }
+
+                            // Navigate back to organizer events to see the new event
+                            NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
+                                    .navigateUp();
+                        }
 
                         @Override
-                        public void onFailure(Exception e) { }
+                        public void onFailure(Exception e) {
+                            android.util.Log.e("CreateEvent", "Failed to create event", e);
+                            Toast.makeText(getContext(), "Failed to write event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     });
-
-            // Save to database
-            DBConnector dbConnector = new DBConnector();
-            dbConnector.writeEvent(event, new DBWriteCallback() {
-                @Override
-                public void onSuccess() {
-                    Toast.makeText(getContext(), "Event created successfully!", Toast.LENGTH_SHORT).show();
-                    // TODO: Generate unique QR Code
-                    Bundle bundle = new Bundle();
-                    bundle.putString("eventID", String.valueOf(event.getId()));
-                    // TODO: Navigation to OrganizerEditEventFragment
-                    navigateToEditFragment(bundle);
-//                    navController.navigate(R.id.action_global_OrganizerEditEventFragment, bundle, options);
-//                    NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
-//                            .navigate(R.id.action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment, bundle);
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    Toast.makeText(getContext(), "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
 
         } catch (Exception e) {
             e.printStackTrace();

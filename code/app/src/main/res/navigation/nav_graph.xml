@@ -63,7 +63,7 @@
         android:id="@+id/OrganizerCreateEventFragment"
         android:name="com.example.slices.fragments.OrganizerCreateEventFragment"
         android:label="Create Event"
-        tools:layout="@layout/fragment_organizer_create_event">
+        tools:layout="@layout/organizer_create_event">
     <action
         android:id="@+id/action_OrganizerCreateEventFragment_to_OrganizerEditEventFragment"
         app:destination="@id/OrganizerEditEventFragment"
@@ -77,7 +77,7 @@
         android:id="@+id/OrganizerEventsFragment"
         android:name="com.example.slices.fragments.OrganizerEventsFragment"
         android:label="Create Event"
-        tools:layout="@layout/fragment_organizer_create_event">
+        tools:layout="@layout/organizer_create_event">
         <action
             android:id="@+id/action_OrganizerEventFragment_to_OrganizerEditEventFragment"
             app:destination="@id/OrganizerEditEventFragment"/>
