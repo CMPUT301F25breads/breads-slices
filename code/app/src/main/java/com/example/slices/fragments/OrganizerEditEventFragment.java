@@ -3,7 +3,6 @@ package com.example.slices.fragments;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -38,6 +37,8 @@ import com.example.slices.controllers.DBConnector;
 import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
+import com.example.slices.interfaces.DBWriteCallback;
+import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -72,6 +73,7 @@ public class OrganizerEditEventFragment extends Fragment {
     private String eventID; // event being edited
     private String qrCodeData; // QR code data for the event
     private Bitmap qrCodeBitmap; // QR code bitmap for sharing
+    private Event currentEvent; // The event being edited
 
     /**
      * Default constructor.
@@ -170,6 +172,25 @@ public class OrganizerEditEventFragment extends Fragment {
                 showEditDialog("Edit Location", textLocation)
         );
 
+        // --- Add listeners for direct edit fields ---
+        editEventName.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                saveEventName();
+            }
+        });
+
+        editMaxParticipants.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                saveMaxParticipants();
+            }
+        });
+
+        editMaxWaiting.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                saveMaxWaitingCapacity();
+            }
+        });
+
         buttonViewWaitingList.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putString("eventName", editEventName.getText().toString()); // example data
@@ -220,16 +241,32 @@ public class OrganizerEditEventFragment extends Fragment {
                     return;
                 }
 
+                // Store the event object for later updates
+                currentEvent = event;
+
                 // --- Populate UI ---
                 editEventName.setText(event.getName());
                 textDescription.setText(event.getDescription());
                 textGuidelines.setText("event guidelines");
                 textLocation.setText(event.getLocation());
                 editMaxParticipants.setText(String.valueOf(event.getMaxEntrants()));
-                editMaxWaiting.setText("50");
+
+                // Display waiting list capacity (show empty if unlimited/default)
+                int waitlistCapacity = event.getWaitlist().getMaxCapacity();
+                if (waitlistCapacity == 32768) {
+                    editMaxWaiting.setText(""); // Unlimited
+                } else {
+                    editMaxWaiting.setText(String.valueOf(waitlistCapacity));
+                }
+
+                // Format and display date
                 SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
                 editDate.setText(dateFormat.format(event.getEventDate().toDate()));
                 editRegEnd.setText(dateFormat.format(event.getRegDeadline().toDate()));
+
+                // Format and display time
+                SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+                editTime.setText(timeFormat.format(event.getEventDate().toDate()));
 
 
                 // To be implemented later
@@ -265,6 +302,13 @@ public class OrganizerEditEventFragment extends Fragment {
                 (view, year, month, dayOfMonth) -> {
                     String date = (month + 1) + "/" + dayOfMonth + "/" + year;
                     targetEditText.setText(date);
+
+                    // Save to database based on which field was edited
+                    if (targetEditText == editDate) {
+                        saveEventDateTime();
+                    } else if (targetEditText == editRegEnd) {
+                        saveRegistrationDeadline();
+                    }
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -292,6 +336,11 @@ public class OrganizerEditEventFragment extends Fragment {
                     if (displayHour == 0) displayHour = 12;
                     String time = String.format("%02d:%02d %s", displayHour, selectedMinute, amPm);
                     targetEditText.setText(time);
+
+                    // Save event date/time when time is changed
+                    if (targetEditText == editTime) {
+                        saveEventDateTime();
+                    }
                 },
                 hour,
                 minute,
@@ -330,8 +379,31 @@ public class OrganizerEditEventFragment extends Fragment {
         builder.setView(container);
 
         builder.setPositiveButton("💾 Save", (dialog, which) -> {
-            targetTextView.setText(input.getText().toString());
-            Toast.makeText(getContext(), title + " updated!", Toast.LENGTH_SHORT).show();
+            String newValue = input.getText().toString();
+
+            // Update the TextView
+            targetTextView.setText(newValue);
+
+            // Update the Event object based on which field was edited
+            if (title.equals("Edit Description")) {
+                currentEvent.setDescription(newValue);
+            } else if (title.equals("Edit Location")) {
+                currentEvent.setLocation(newValue);
+            }
+            // Note: Guidelines field doesn't exist in Event model yet
+
+            // Save to database
+            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), title + " saved to database!", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), "Failed to save: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
         });
 
         builder.setNegativeButton("✖ Cancel", (dialog, which) -> dialog.cancel());
@@ -413,8 +485,249 @@ public class OrganizerEditEventFragment extends Fragment {
     }
 
     /**
+     * Saves the event date and time to the database
+     * Combines the date from editDate and time from editTime fields
+     */
+    private void saveEventDateTime() {
+        if (currentEvent == null) return;
+
+        String dateStr = editDate.getText().toString().trim();
+        String timeStr = editTime.getText().toString().trim();
+
+        if (dateStr.isEmpty()) {
+            Toast.makeText(getContext(), "Please select a date", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            // Parse the date (format: MM/dd/yyyy)
+            String[] dateParts = dateStr.split("/");
+            if (dateParts.length != 3) {
+                Toast.makeText(getContext(), "Invalid date format", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            int month = Integer.parseInt(dateParts[0]) - 1; // Calendar months are 0-based
+            int day = Integer.parseInt(dateParts[1]);
+            int year = Integer.parseInt(dateParts[2]);
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(year, month, day);
+
+            // Parse time if available (format: hh:mm AM/PM)
+            if (!timeStr.isEmpty()) {
+                String[] timeParts = timeStr.split(":");
+                if (timeParts.length == 2) {
+                    int hour = Integer.parseInt(timeParts[0]);
+                    String[] minuteAndAmPm = timeParts[1].split(" ");
+                    int minute = Integer.parseInt(minuteAndAmPm[0]);
+
+                    if (minuteAndAmPm.length > 1) {
+                        String amPm = minuteAndAmPm[1];
+                        if (amPm.equals("PM") && hour != 12) {
+                            hour += 12;
+                        } else if (amPm.equals("AM") && hour == 12) {
+                            hour = 0;
+                        }
+                    }
+
+                    calendar.set(Calendar.HOUR_OF_DAY, hour);
+                    calendar.set(Calendar.MINUTE, minute);
+                    calendar.set(Calendar.SECOND, 0);
+                }
+            }
+
+            Timestamp newEventDate = new Timestamp(calendar.getTime());
+            currentEvent.setEventDate(newEventDate);
+
+            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), "Event date/time saved!", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), "Failed to save date/time: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Error parsing date/time: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Saves the registration deadline to the database
+     */
+    private void saveRegistrationDeadline() {
+        if (currentEvent == null) return;
+
+        String dateStr = editRegEnd.getText().toString().trim();
+
+        if (dateStr.isEmpty()) {
+            Toast.makeText(getContext(), "Please select a registration deadline", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            // Parse the date (format: MM/dd/yyyy)
+            String[] dateParts = dateStr.split("/");
+            if (dateParts.length != 3) {
+                Toast.makeText(getContext(), "Invalid date format", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            int month = Integer.parseInt(dateParts[0]) - 1; // Calendar months are 0-based
+            int day = Integer.parseInt(dateParts[1]);
+            int year = Integer.parseInt(dateParts[2]);
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(year, month, day, 23, 59, 59); // Set to end of day
+
+            Timestamp newRegDeadline = new Timestamp(calendar.getTime());
+            currentEvent.setRegDeadline(newRegDeadline);
+
+            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), "Registration deadline saved!", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), "Failed to save deadline: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Error parsing date: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Saves the event name to the database
+     */
+    private void saveEventName() {
+        if (currentEvent == null) return;
+
+        String newName = editEventName.getText().toString().trim();
+        if (newName.isEmpty()) {
+            Toast.makeText(getContext(), "Event name cannot be empty", Toast.LENGTH_SHORT).show();
+            editEventName.setText(currentEvent.getName());
+            return;
+        }
+
+        currentEvent.setName(newName);
+        dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(getContext(), "Event name saved!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(getContext(), "Failed to save event name: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Saves the waiting list capacity to the database
+     */
+    private void saveMaxWaitingCapacity() {
+        if (currentEvent == null) return;
+
+        String maxWaitingStr = editMaxWaiting.getText().toString().trim();
+        if (maxWaitingStr.isEmpty()) {
+            // If empty, set to unlimited (default value)
+            currentEvent.getWaitlist().setMaxCapacity(32768);
+            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), "Waiting list capacity set to unlimited", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), "Failed to save waiting list capacity: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+            return;
+        }
+
+        try {
+            int maxWaiting = Integer.parseInt(maxWaitingStr);
+            if (maxWaiting <= 0) {
+                Toast.makeText(getContext(), "Waiting list capacity must be greater than 0",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            currentEvent.getWaitlist().setMaxCapacity(maxWaiting);
+            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), "Waiting list capacity saved!", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), "Failed to save waiting list capacity: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (NumberFormatException e) {
+            Toast.makeText(getContext(), "Invalid number format", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Saves the max participants to the database
+     */
+    private void saveMaxParticipants() {
+        if (currentEvent == null) return;
+
+        String maxParticipantsStr = editMaxParticipants.getText().toString().trim();
+        if (maxParticipantsStr.isEmpty()) {
+            return; // Don't save if empty
+        }
+
+        try {
+            int maxParticipants = Integer.parseInt(maxParticipantsStr);
+            if (maxParticipants <= 0) {
+                Toast.makeText(getContext(), "Max participants must be greater than 0",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            currentEvent.setMaxEntrants(maxParticipants);
+            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(getContext(), "Max participants saved!", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(getContext(), "Failed to save max participants: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (NumberFormatException e) {
+            Toast.makeText(getContext(), "Invalid number format", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
      * Shares the QR code using Android ShareSheet.
-     * Saves the QR code bitmap to a temporary file and creates a share intent.
+     * Creates a temporary file for the QR code and opens the system share dialog.
      */
     private void shareQRCode() {
         if (qrCodeBitmap == null) {
@@ -423,36 +736,14 @@ public class OrganizerEditEventFragment extends Fragment {
         }
 
         try {
-            // Create a temporary file to store the QR code
-            File cachePath = new File(requireContext().getCacheDir(), "images");
-            cachePath.mkdirs();
+            // Step 1: Save QR code to a temporary file
+            File qrFile = saveQRCodeToTempFile();
 
-            String eventName = editEventName.getText().toString();
-            String sanitizedName = eventName.replaceAll("[^a-zA-Z0-9-_]", "_");
-            File qrFile = new File(cachePath, "QR_" + sanitizedName + ".png");
+            // Step 2: Get a shareable URI for the file
+            Uri shareableUri = getShareableUri(qrFile);
 
-            // Write the bitmap to the file
-            FileOutputStream stream = new FileOutputStream(qrFile);
-            qrCodeBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            stream.close();
-
-            // Get the content URI using FileProvider
-            Uri contentUri = FileProvider.getUriForFile(
-                    requireContext(),
-                    requireContext().getPackageName() + ".fileprovider",
-                    qrFile
-            );
-
-            // Create share intent
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("image/png");
-            shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-            shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Event QR Code: " + eventName);
-            shareIntent.putExtra(Intent.EXTRA_TEXT, "Scan this QR code to view event details for: " + eventName);
-            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-            // Show the share sheet
-            startActivity(Intent.createChooser(shareIntent, "Share QR Code"));
+            // Step 3: Create and launch the share intent
+            launchShareIntent(shareableUri);
 
         } catch (IOException e) {
             Toast.makeText(getContext(), "Failed to share QR code: " + e.getMessage(),
@@ -460,5 +751,64 @@ public class OrganizerEditEventFragment extends Fragment {
         } catch (Exception e) {
             Toast.makeText(getContext(), "Error sharing QR code", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Saves the QR code bitmap to a temporary file in the app's cache directory.
+     * The file is named using the event name to make it identifiable.
+     *
+     * @return The temporary file containing the QR code image
+     * @throws IOException if file creation or writing fails
+     */
+    private File saveQRCodeToTempFile() throws IOException {
+        // Create a folder in the cache directory for temporary images
+        File imageFolder = new File(requireContext().getCacheDir(), "images");
+        imageFolder.mkdirs(); // Create the folder if it doesn't exist
+
+        // Get event name and make it safe for use in a filename
+        String eventName = editEventName.getText().toString();
+
+        // Create the file
+        File qrFile = new File(imageFolder, "QR_" + eventName + ".png");
+
+        // Write the QR code bitmap to the file
+        try (FileOutputStream stream = new FileOutputStream(qrFile)) {
+            qrCodeBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        }
+
+        return qrFile;
+    }
+
+    /**
+     * Gets a shareable URI for a file using FileProvider.
+     *
+     * @param file The file to get a URI for
+     * @return A content:// URI that other apps can access
+     */
+    private Uri getShareableUri(File file) {
+        return FileProvider.getUriForFile(
+                requireContext(),
+                requireContext().getPackageName() + ".fileprovider",
+                file
+        );
+    }
+
+    /**
+     * Creates and launches a share intent to share the QR code with other apps.
+     *
+     * @param imageUri The URI of the QR code image to share
+     */
+    private void launchShareIntent(Uri imageUri) {
+        String eventName = editEventName.getText().toString();
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("image/png");
+        shareIntent.putExtra(Intent.EXTRA_STREAM, imageUri);
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Event QR Code: " + eventName);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, "Scan this QR code to view event details for: " + eventName);
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        // Show Android's share dialog
+        startActivity(Intent.createChooser(shareIntent, "Share QR Code"));
     }
 }
