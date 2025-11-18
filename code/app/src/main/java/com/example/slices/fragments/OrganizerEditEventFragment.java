@@ -33,7 +33,8 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.bumptech.glide.Glide;
 import com.example.slices.R;
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EventController;
 import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
@@ -69,7 +70,7 @@ public class OrganizerEditEventFragment extends Fragment {
     private Button buttonShareQRCode;
     private SwitchCompat switchEntrantLocation;
     private LinearLayout layoutMaxDistance;
-    private DBConnector dbConnector;
+
     private String eventID; // event being edited
     private String qrCodeData; // QR code data for the event
     private Bitmap qrCodeBitmap; // QR code bitmap for sharing
@@ -110,7 +111,7 @@ public class OrganizerEditEventFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         // --- Initialize DB Connector ---
-        dbConnector = new DBConnector();
+
 
         // --- Initialize Views ---
         editEventName = view.findViewById(R.id.editEventName);
@@ -233,7 +234,7 @@ public class OrganizerEditEventFragment extends Fragment {
             return;
         }
 
-        dbConnector.getEvent(id, new EventCallback() {
+        EventController.getEvent(id, new EventCallback() {
             @Override
             public void onSuccess(Event event) {
                 if (event == null) {
@@ -393,7 +394,7 @@ public class OrganizerEditEventFragment extends Fragment {
             // Note: Guidelines field doesn't exist in Event model yet
 
             // Save to database
-            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+            EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getContext(), title + " saved to database!", Toast.LENGTH_SHORT).show();
@@ -540,7 +541,7 @@ public class OrganizerEditEventFragment extends Fragment {
             Timestamp newEventDate = new Timestamp(calendar.getTime());
             currentEvent.setEventDate(newEventDate);
 
-            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+            EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getContext(), "Event date/time saved!", Toast.LENGTH_SHORT).show();
@@ -590,7 +591,7 @@ public class OrganizerEditEventFragment extends Fragment {
             Timestamp newRegDeadline = new Timestamp(calendar.getTime());
             currentEvent.setRegDeadline(newRegDeadline);
 
-            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+            EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getContext(), "Registration deadline saved!", Toast.LENGTH_SHORT).show();
@@ -623,7 +624,7 @@ public class OrganizerEditEventFragment extends Fragment {
         }
 
         currentEvent.setName(newName);
-        dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+        EventController.updateEvent(currentEvent, new DBWriteCallback() {
             @Override
             public void onSuccess() {
                 Toast.makeText(getContext(), "Event name saved!", Toast.LENGTH_SHORT).show();
@@ -647,7 +648,7 @@ public class OrganizerEditEventFragment extends Fragment {
         if (maxWaitingStr.isEmpty()) {
             // If empty, set to unlimited (default value)
             currentEvent.getWaitlist().setMaxCapacity(32768);
-            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+            EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getContext(), "Waiting list capacity set to unlimited", Toast.LENGTH_SHORT).show();
@@ -671,7 +672,7 @@ public class OrganizerEditEventFragment extends Fragment {
             }
 
             currentEvent.getWaitlist().setMaxCapacity(maxWaiting);
-            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+            EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getContext(), "Waiting list capacity saved!", Toast.LENGTH_SHORT).show();
@@ -708,7 +709,7 @@ public class OrganizerEditEventFragment extends Fragment {
             }
 
             currentEvent.setMaxEntrants(maxParticipants);
-            dbConnector.updateEvent(currentEvent, new DBWriteCallback() {
+            EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getContext(), "Max participants saved!", Toast.LENGTH_SHORT).show();

@@ -11,7 +11,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.slices.adapters.OrganizerEventAdapter;
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EventController;
 import com.example.slices.databinding.OrganizerEventsFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
 import com.example.slices.models.Event;
@@ -44,8 +45,7 @@ public class OrganizerEventsFragment extends Fragment {
     private final List<Event> inProgressEvents = new ArrayList<>();
     private final List<Event> pastEvents = new ArrayList<>();
 
-    // Firebase / DB helper
-    private final DBConnector db = new DBConnector();
+
 
     /**
      * Inflates the fragment layout using view binding.
@@ -88,7 +88,7 @@ public class OrganizerEventsFragment extends Fragment {
      */
     private void loadOrganizerEvents() {
         //getAllFutureEvents is a placeholder for the actual organizer's events based on ID
-        db.getAllFutureEvents(new EventListCallback() {
+        EventController.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
                 // Clear old lists

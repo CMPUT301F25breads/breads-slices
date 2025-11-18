@@ -1,7 +1,6 @@
 package com.example.slices.fragments;
 
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,19 +13,17 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
-import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.MainActivity;
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EntrantController;
 import com.example.slices.databinding.MenuFragmentBinding;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
-import com.example.slices.testing.DebugLogger;
-import com.example.slices.fragments.Admin_SignIn;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 
@@ -43,7 +40,7 @@ public class  MenuFragment extends Fragment {
     private String email;
     private String phoneNumber;
     private boolean notifications;
-    private DBConnector db;
+
     private SharedViewModel vm;
 
     @Override
@@ -61,7 +58,7 @@ public class  MenuFragment extends Fragment {
 
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         Entrant user =  vm.getUser();
-        db = new DBConnector();
+
         name = user.getName();
         email = user.getEmail();
         phoneNumber = user.getPhoneNumber();
@@ -144,7 +141,7 @@ public class  MenuFragment extends Fragment {
         binding.profileCancelButton.setEnabled(false);
 
         // Updates the user in the database
-        db.updateEntrant(newUser, new DBWriteCallback() {
+        EntrantController.updateEntrant(newUser, new DBWriteCallback() {
             @Override public void onSuccess() {
                 vm.setUser(newUser);
                 name = newName;

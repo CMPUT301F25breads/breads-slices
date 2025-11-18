@@ -8,8 +8,9 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.example.slices.controllers.EventController;
 import com.example.slices.models.Event;
-import com.example.slices.controllers.DBConnector;
+
 import com.example.slices.controllers.NotificationDialog;
 import com.example.slices.controllers.NotificationService;
 import com.example.slices.databinding.EventEntrantsFragmentBinding;
@@ -26,7 +27,7 @@ public class EventEntrantsFragment extends Fragment {
     private static final String ARG_SENDER_ID = "sender_id";
 
     private EventEntrantsFragmentBinding binding;
-    private DBConnector dbConnector;
+
     private int eventId;
     private String eventName;
     private int senderId;
@@ -61,7 +62,7 @@ public class EventEntrantsFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         // Initialize database connector
-        dbConnector = new DBConnector();
+
 
         // Get arguments passed through navigation
         if (getArguments() != null) {
@@ -150,7 +151,7 @@ public class EventEntrantsFragment extends Fragment {
     private void loadEventData() {
         if (eventId == -1) return;
 
-        dbConnector.getEvent(eventId, new EventCallback() {
+        EventController.getEvent(eventId, new EventCallback() {
             @Override
             public void onSuccess(Event event) {
                 if (getActivity() != null) {

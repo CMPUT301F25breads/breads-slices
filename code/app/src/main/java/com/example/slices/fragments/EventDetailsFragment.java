@@ -13,7 +13,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EventController;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.R;
@@ -98,8 +99,8 @@ public class EventDetailsFragment extends Fragment {
                 return;
             }
 
-            DBConnector db = new DBConnector();
-            db.getEvent(eventId, new EventCallback() {
+
+            EventController.getEvent(eventId, new EventCallback() {
                 @Override
                 public void onSuccess(Event event) {
                     e = event;

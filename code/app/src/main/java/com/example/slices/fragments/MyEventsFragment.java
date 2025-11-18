@@ -11,7 +11,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.slices.SharedViewModel;
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EventController;
 import com.example.slices.interfaces.EntrantEventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.adapters.EventAdapter;
@@ -28,7 +29,7 @@ public class MyEventsFragment extends Fragment {
 
     private MyEventsFragmentBinding binding;
     private SharedViewModel sharedViewModel;
-    private DBConnector db;
+
 
     @Override
     public View onCreateView(
@@ -59,8 +60,8 @@ public class MyEventsFragment extends Fragment {
      * Finds all events for a given entrant and sets the adapters accordingly
      */
     public void setupEvents() {
-        db = new DBConnector();
-        db.getEventsForEntrant(sharedViewModel.getUser(), new EntrantEventCallback() {
+
+        EventController.getEventsForEntrant(sharedViewModel.getUser(), new EntrantEventCallback() {
             @Override
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
                 sharedViewModel.setEvents(events);
@@ -84,7 +85,5 @@ public class MyEventsFragment extends Fragment {
 
     }
 
-    public void setDb(DBConnector db) {
-        this.db = db;
-    }
+
 }

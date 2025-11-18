@@ -6,12 +6,17 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EntrantController;
+import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.Logger;
+import com.example.slices.controllers.NotificationManager;
 import com.example.slices.interfaces.EntrantCallback;
-import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.models.Entrant;
 
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -25,9 +30,39 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class testsEntrant {
-    private DBConnector db;
     private Entrant primaryEntrant;
 
+
+    @BeforeClass
+    public static void globalSetup() throws InterruptedException {
+        EntrantController.setTesting(true);
+        EventController.setTesting(true);
+        Logger.setTesting(true);
+        NotificationManager.setTesting(true);
+        CountDownLatch latch = new CountDownLatch(4);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+    }
+
+
+    @AfterClass
+    public static void tearDown() throws InterruptedException {
+
+        CountDownLatch latch = new CountDownLatch(4);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+        //Revert out of testing mode
+        EntrantController.setTesting(false);
+        EventController.setTesting(false);
+        Logger.setTesting(false);
+        NotificationManager.setTesting(false);
+    }
     /**
      * Setup executed before each test.
      * Initializes the DBConnector and a primary test entrant.
@@ -35,7 +70,7 @@ public class testsEntrant {
 
     @Before
     public void setup() throws InterruptedException {
-        db = new DBConnector();
+
         CountDownLatch latch = new CountDownLatch(1);
 
         primaryEntrant = new Entrant("Primary", "primary@test.com", "780-000-0000", new EntrantCallback() {

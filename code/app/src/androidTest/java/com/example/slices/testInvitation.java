@@ -6,7 +6,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EntrantController;
+import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.Logger;
+import com.example.slices.controllers.NotificationManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EventCallback;
@@ -35,28 +39,36 @@ public class testInvitation {
     private Event testEvent;
     private Entrant recipient;
     private Entrant sender;
-    private DBConnector db = new DBConnector();
+
     @BeforeClass
     public static void globalSetup() throws InterruptedException {
-        DBConnector db = new DBConnector();
+        EntrantController.setTesting(true);
+        EventController.setTesting(true);
+        Logger.setTesting(true);
+        NotificationManager.setTesting(true);
         CountDownLatch latch = new CountDownLatch(4);
-        db.clearEntrants(() -> latch.countDown());
-        db.clearEvents(() -> latch.countDown());
-        db.clearNotifications(() -> latch.countDown());
-        db.clearLogs(() -> latch.countDown());
-        latch.await(15, TimeUnit.SECONDS);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
     }
 
 
     @AfterClass
     public static void tearDown() throws InterruptedException {
-        DBConnector db = new DBConnector();
+
         CountDownLatch latch = new CountDownLatch(4);
-        db.clearEntrants(() -> latch.countDown());
-        db.clearEvents(() -> latch.countDown());
-        db.clearNotifications(() -> latch.countDown());
-        db.clearLogs(() -> latch.countDown());
-        latch.await(15, TimeUnit.SECONDS);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+        //Revert out of testing mode
+        EntrantController.setTesting(false);
+        EventController.setTesting(false);
+        Logger.setTesting(false);
+        NotificationManager.setTesting(false);
     }
 
 

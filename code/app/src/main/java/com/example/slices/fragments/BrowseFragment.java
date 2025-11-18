@@ -17,9 +17,9 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.EntrantEventAdapter;
+import com.example.slices.controllers.EventController;
 import com.example.slices.models.Event;
-import com.example.slices.adapters.EventAdapter;
-import com.example.slices.controllers.DBConnector;
+
 import com.example.slices.databinding.BrowseFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
 
@@ -35,7 +35,7 @@ public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
     private ArrayList<Event> eventList = new ArrayList<>();
     private SharedViewModel vm;
-    private DBConnector db;
+
 
     @Override
     public View onCreateView(
@@ -51,7 +51,7 @@ public class BrowseFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        db = new DBConnector();
+
         setupEvents();
 
         setupListeners();
@@ -59,7 +59,7 @@ public class BrowseFragment extends Fragment {
     }
 
     public void setupEvents() {
-        db.getAllFutureEvents(new EventListCallback() {
+        EventController.getAllFutureEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
                 try {

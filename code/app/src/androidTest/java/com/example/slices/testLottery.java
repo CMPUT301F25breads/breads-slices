@@ -5,16 +5,22 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.example.slices.controllers.EntrantController;
+import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.Logger;
+import com.example.slices.controllers.NotificationManager;
 import com.example.slices.models.Lottery;
-import com.example.slices.controllers.DBConnector;
 import com.example.slices.models.Entrant;
-import com.example.slices.testing.TestUtils;
 
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests for the Lottery class
@@ -24,7 +30,36 @@ import java.util.List;
 public class testLottery {
     private Lottery lottery;
     private List<Entrant> entrants;
+    @BeforeClass
+    public static void globalSetup() throws InterruptedException {
+        EntrantController.setTesting(true);
+        EventController.setTesting(true);
+        Logger.setTesting(true);
+        NotificationManager.setTesting(true);
+        CountDownLatch latch = new CountDownLatch(4);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+    }
 
+
+    @AfterClass
+    public static void tearDown() throws InterruptedException {
+
+        CountDownLatch latch = new CountDownLatch(4);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+        //Revert out of testing mode
+        EntrantController.setTesting(false);
+        EventController.setTesting(false);
+        Logger.setTesting(false);
+        NotificationManager.setTesting(false);
+    }
     /**
      * Setup method to create test entrants before each test
      */

@@ -12,11 +12,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
-import com.google.firebase.firestore.WriteBatch;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -31,7 +27,7 @@ import java.util.function.Consumer;
  */
 public class WaitlistController {
 
-    private static final DBConnector dbConnector = new DBConnector();
+
 
     private static FirebaseFirestore db() {
         return FirebaseFirestore.getInstance();
@@ -73,11 +69,11 @@ public class WaitlistController {
     public static void join(@NonNull String eventId,
                             @NonNull String userid,
                             @NonNull DBWriteCallback callback) {
-        dbConnector.getEvent(Integer.parseInt(eventId), new EventCallback() {
+        EventController.getEvent(Integer.parseInt(eventId), new EventCallback() {
             @Override
             public void onSuccess(Event event) {
                 //If we successfully get the event, get the entrant
-                dbConnector.getEntrant(Integer.parseInt(userid), new EntrantCallback() {
+                EntrantController.getEntrant(Integer.parseInt(userid), new EntrantCallback() {
                     @Override
                     public void onSuccess(Entrant entrant) {
                         //If we successfully get the entrant, add them to the waitlist
@@ -123,11 +119,11 @@ public class WaitlistController {
     public static void leave(@NonNull String eventId,
                              @NonNull String userid,
                              @NonNull DBWriteCallback callback) {
-        dbConnector.getEvent(Integer.parseInt(eventId), new EventCallback() {
+        EventController.getEvent(Integer.parseInt(eventId), new EventCallback() {
             @Override
             public void onSuccess(Event event) {
                 //Now get the entrant
-                dbConnector.getEntrant(Integer.parseInt(userid), new EntrantCallback() {
+                EntrantController.getEntrant(Integer.parseInt(userid), new EntrantCallback() {
                     @Override
                     public void onSuccess(Entrant entrant) {
                         //Now remove them from the waitlist

@@ -10,7 +10,8 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
 
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EntrantController;
 import com.example.slices.databinding.ActivityMainBinding;
 import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.interfaces.EntrantCallback;
@@ -91,8 +92,8 @@ public class MainActivity extends AppCompatActivity {
      */
     public void initializeUser() {
         String deviceId = InstanceUtil.getDeviceId(this);
-        DBConnector db = new DBConnector();
-        db.getEntrantByDeviceId(deviceId, new EntrantCallback() {
+
+        EntrantController.getEntrantByDeviceId(deviceId, new EntrantCallback() {
             @Override
             public void onSuccess(Entrant entrant) {
                 sharedViewModel.setUser(entrant);
