@@ -1,6 +1,7 @@
 package com.example.slices.models;
 
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EntrantController;
 import com.example.slices.testing.DebugLogger;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
@@ -59,10 +60,7 @@ public class Entrant {
      */
     private int parent = 0;
 
-    /**
-     * Database connector for the entrant
-     */
-    private final DBConnector db = new DBConnector();
+
     /**
      * List of sub-entrants of the entrant
      */
@@ -106,11 +104,11 @@ public class Entrant {
         this.deviceId = deviceId;
         this.subEntrants = new ArrayList<Integer>();
 
-        db.getNewEntrantId(new EntrantIDCallback() {
+        EntrantController.getNewEntrantId(new EntrantIDCallback() {
             @Override
             public void onSuccess(int id) {
                 Entrant.this.id = id;
-                db.writeEntrant(Entrant.this, new DBWriteCallback() {
+                EntrantController.writeEntrant(Entrant.this, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
                         DebugLogger.d("Entrant", "Entrant created successfully");
@@ -152,11 +150,11 @@ public class Entrant {
         this.phoneNumber = phoneNumber;
         this.subEntrants = new ArrayList<Integer>();
         this.organizedEvents = new ArrayList<Integer>();
-        db.getNewEntrantId(new EntrantIDCallback() {
+        EntrantController.getNewEntrantId(new EntrantIDCallback() {
             @Override
             public void onSuccess(int id) {
                 Entrant.this.id = id;
-                db.writeEntrant(Entrant.this, new DBWriteCallback() {
+                EntrantController.writeEntrant(Entrant.this, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
                         DebugLogger.d("Entrant", "Entrant created successfully");
@@ -200,16 +198,16 @@ public class Entrant {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.subEntrants = null;
-        db.getNewEntrantId(new EntrantIDCallback() {
+        EntrantController.getNewEntrantId(new EntrantIDCallback() {
             @Override
             public void onSuccess(int id) {
                 Entrant.this.id = id;
-                db.writeEntrant(Entrant.this, new DBWriteCallback() {
+                EntrantController.writeEntrant(Entrant.this, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
                         DebugLogger.d("Entrant", "Entrant created successfully");
                         parent.addSubEntrant(Entrant.this);
-                        db.updateEntrant(parent, new DBWriteCallback() {
+                        EntrantController.updateEntrant(parent, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
                                 DebugLogger.d("Entrant", "Parent updated successfully");
@@ -439,7 +437,7 @@ public class Entrant {
         List<Entrant> retSubEntrants = new ArrayList<>();
         for (int i = 0; i < this.subEntrants.size(); i++) {
             int idToGet = this.subEntrants.get(i);
-            db.getEntrant(idToGet, new EntrantCallback() {
+            EntrantController.getEntrant(idToGet, new EntrantCallback() {
                 @Override
                 public void onSuccess(Entrant entrant) {
                     retSubEntrants.add(entrant);
@@ -466,7 +464,7 @@ public class Entrant {
 
     public void getParent(EntrantCallback callback) {
         //Get the parent of the entrant
-        db.getEntrant(this.parent, new EntrantCallback() {
+        EntrantController.getEntrant(this.parent, new EntrantCallback() {
             @Override
             public void onSuccess(Entrant entrant) {
                 callback.onSuccess(entrant);

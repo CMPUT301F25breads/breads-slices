@@ -5,22 +5,25 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.example.slices.controllers.EntrantController;
+import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.Logger;
+import com.example.slices.controllers.NotificationManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
-import com.example.slices.controllers.DBConnector;
+
 import com.example.slices.interfaces.EventCallback;
 import com.google.firebase.Timestamp;
 
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,10 +54,37 @@ public class testEvent {
      * An invalid registration end time
      */
     private Timestamp PastRegEndTime;
-    /**
-     * The DBConnector instance to use for testing
-     */
-    private DBConnector db = new DBConnector();
+
+    @BeforeClass
+    public static void globalSetup() throws InterruptedException {
+        EntrantController.setTesting(true);
+        EventController.setTesting(true);
+        Logger.setTesting(true);
+        NotificationManager.setTesting(true);
+        CountDownLatch latch = new CountDownLatch(4);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+    }
+
+
+    @AfterClass
+    public static void tearDown() throws InterruptedException {
+
+        CountDownLatch latch = new CountDownLatch(4);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+        //Revert out of testing mode
+        EntrantController.setTesting(false);
+        EventController.setTesting(false);
+        Logger.setTesting(false);
+        NotificationManager.setTesting(false);
+    }
 
 
     /**
@@ -100,7 +130,7 @@ public class testEvent {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Event> ref = new AtomicReference<>();
 
-        db.clearEvents(() -> {
+        EventController.clearEvents(() -> {
             new Event("Foo", "Foo", "Foo", GoodEventTime, GoodRegEndTime, 10, new EventCallback() {
                 @Override
                 public void onSuccess(Event event) {
@@ -128,7 +158,7 @@ public class testEvent {
     @Test
     public void testBadEventTime() {
         CountDownLatch latch = new CountDownLatch(1);
-        db.clearEvents(() -> {
+        EventController.clearEvents(() -> {
             try {
                 Event e = new Event("Foo", "Foo", "Foo", BadEventTime, GoodRegEndTime, 10, new EventCallback() {
                     @Override
@@ -156,7 +186,7 @@ public class testEvent {
     @Test
     public void testBadRegEndTime() {
         CountDownLatch latch = new CountDownLatch(1);
-        db.clearEvents(() -> {
+        EventController.clearEvents(() -> {
             try {
                 Event e = new Event("Foo", "Foo", "Foo", GoodEventTime, BadRegEndTime, 10, new EventCallback() {
                     @Override
@@ -183,7 +213,7 @@ public class testEvent {
     @Test
     public void testPastRegEndTime() {
         CountDownLatch latch = new CountDownLatch(1);
-        db.clearEvents(() -> {
+        EventController.clearEvents(() -> {
             try {
                 Event e = new Event("Foo", "Foo", "Foo", GoodEventTime, PastRegEndTime, 10, new EventCallback() {
                     @Override
@@ -226,7 +256,7 @@ public class testEvent {
                                 //Verify that the entrant is in the waiting list
                                 assertEquals(event.getWaitlist().getEntrants().contains(entrant), true);
                                 //Check the database
-                                db.getEvent(event.getId(), new EventCallback() {
+                                EventController.getEvent(event.getId(), new EventCallback() {
                                     @Override
                                     public void onSuccess(Event event) {
                                         event.removeEntrantFromWaitlist(entrant, new DBWriteCallback() {
@@ -278,16 +308,6 @@ public class testEvent {
         Boolean completed = latch.await(15000, TimeUnit.MILLISECONDS);
         assertEquals(completed, true);
 
-    }
-    @AfterClass
-    public static void tearDown() throws InterruptedException {
-        DBConnector db = new DBConnector();
-        CountDownLatch latch = new CountDownLatch(4);
-        db.clearEntrants(() -> latch.countDown());
-        db.clearEvents(() -> latch.countDown());
-        db.clearNotifications(() -> latch.countDown());
-        db.clearLogs(() -> latch.countDown());
-        latch.await(15, TimeUnit.SECONDS);
     }
 
 }

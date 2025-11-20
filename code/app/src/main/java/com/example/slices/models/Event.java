@@ -1,6 +1,7 @@
 package com.example.slices.models;
 
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EventController;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
@@ -66,7 +67,7 @@ public class Event implements Comparable<Event> {
     /**
      * Database connector object
      */
-    private final DBConnector db = new DBConnector();
+
 
 
     /**
@@ -129,11 +130,11 @@ public class Event implements Comparable<Event> {
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist();
 
-        db.getNewEventId(new EventIDCallback() {
+        EventController.getNewEventId(new EventIDCallback() {
             @Override
             public void onSuccess(int id) {
                 Event.this.id = id;
-                db.writeEvent(Event.this, new DBWriteCallback() {
+                EventController.writeEvent(Event.this, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
                         DebugLogger.d("Event", "Event created successfully");
@@ -183,11 +184,11 @@ public class Event implements Comparable<Event> {
         this.currentEntrants = 0;
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist();
-        db.getNewEventId(new EventIDCallback() {
+        EventController.getNewEventId(new EventIDCallback() {
             @Override
             public void onSuccess(int id) {
                 Event.this.id = id;
-                db.writeEvent(Event.this, new DBWriteCallback() {
+                EventController.writeEvent(Event.this, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
                         DebugLogger.d("Event", "Event created successfully");
@@ -511,8 +512,8 @@ public class Event implements Comparable<Event> {
     private void eventModified(DBWriteCallback callback) {
         //Write to database
         DebugLogger.d("Event", "Event modified");
-        DBConnector db = new DBConnector();
-        db.updateEvent(this, new DBWriteCallback() {
+
+        EventController.updateEvent(this, new DBWriteCallback() {
             @Override
             public void onSuccess() {
                 DebugLogger.d("Event", "Event modified successfully");

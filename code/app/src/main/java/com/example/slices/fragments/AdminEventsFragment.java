@@ -21,7 +21,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.slices.R;
 import com.example.slices.adapters.AdminEventAdapter;
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EventController;
 import com.example.slices.interfaces.EventListCallback;
 import com.example.slices.models.Event;
 import com.example.slices.testing.DebugLogger;
@@ -40,7 +41,7 @@ public class AdminEventsFragment extends Fragment {
     private AdminEventAdapter eventAdapter;
     private List<Event> eventList = new ArrayList<>();
     private EditText searchBar;
-    private DBConnector dbConnector;
+
 
     @Nullable
     @Override
@@ -90,7 +91,7 @@ public class AdminEventsFragment extends Fragment {
         });
 
         //Load Events from Database
-        dbConnector = new DBConnector();
+
         loadEventsFromDB();
     }
 
@@ -98,7 +99,7 @@ public class AdminEventsFragment extends Fragment {
      * Fetch all events from Firestore via DBConnector
      */
     private void loadEventsFromDB() {
-        dbConnector.getAllEvents(new EventListCallback() {
+        EventController.getAllEvents(new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
                 eventList.clear();

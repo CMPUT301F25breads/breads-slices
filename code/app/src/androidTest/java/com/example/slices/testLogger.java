@@ -3,15 +3,20 @@ package com.example.slices;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EntrantController;
+import com.example.slices.controllers.EventController;
 import com.example.slices.controllers.Logger;
+import com.example.slices.controllers.NotificationManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.LogListCallback;
 import com.example.slices.models.LogEntry;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationLogEntry;
 
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
@@ -28,18 +33,44 @@ public class testLogger {
      * The Logger instance to test
      */
     private Logger logger;
-    /**
-     * The DBConnector instance to use for testing
-     */
-    private DBConnector db;
 
+    @BeforeClass
+    public static void globalSetup() throws InterruptedException {
+        EntrantController.setTesting(true);
+        EventController.setTesting(true);
+        Logger.setTesting(true);
+        NotificationManager.setTesting(true);
+        CountDownLatch latch = new CountDownLatch(4);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+    }
+
+
+    @AfterClass
+    public static void tearDown() throws InterruptedException {
+
+        CountDownLatch latch = new CountDownLatch(4);
+        EntrantController.clearEntrants(latch::countDown);
+        EventController.clearEvents(latch::countDown);
+        NotificationManager.clearNotifications(latch::countDown);
+        Logger.clearLogs(latch::countDown);
+        boolean success = latch.await(15, TimeUnit.SECONDS);
+        //Revert out of testing mode
+        EntrantController.setTesting(false);
+        EventController.setTesting(false);
+        Logger.setTesting(false);
+        NotificationManager.setTesting(false);
+    }
     /**
      * Sets up the test by creating a new Logger instance and a new DBConnector instance
      */
     @Before
     public void setup() {
         logger = Logger.getInstance();
-        db = new DBConnector();
+
     }
 
     /**
@@ -50,10 +81,10 @@ public class testLogger {
     private void clearAll() throws InterruptedException {
         // Clear all collections before each test
         CountDownLatch latch = new CountDownLatch(4);
-        db.clearEntrants(() -> latch.countDown());
-        db.clearEvents(() -> latch.countDown());
-        db.clearNotifications(() -> latch.countDown());
-        db.clearLogs(() -> latch.countDown());
+        EntrantController.clearEntrants(() -> latch.countDown());
+        EventController.clearEvents(() -> latch.countDown());
+        NotificationManager.clearNotifications(() -> latch.countDown());
+        Logger.clearLogs(() -> latch.countDown());
         latch.await(15, TimeUnit.SECONDS);
     }
 
@@ -70,7 +101,7 @@ public class testLogger {
             @Override
             public void onSuccess() {
                 System.out.println("Notification logged successfully");
-                db.getAllNotificationLogs(new LogListCallback() {
+                Logger.getAllNotificationLogs(new LogListCallback() {
                     @Override
                     public void onSuccess(List<LogEntry> notifications) {
                         NotificationLogEntry logEntry = (NotificationLogEntry) notifications.get(0);

@@ -23,13 +23,10 @@ import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.R;
-import com.example.slices.controllers.DBConnector;
 import com.example.slices.controllers.QRCodeManager;
-import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.google.firebase.Timestamp;
-import com.google.firebase.auth.FirebaseAuth;
 
 import java.io.IOException;
 import java.util.Calendar;

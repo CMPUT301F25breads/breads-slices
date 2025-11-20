@@ -6,16 +6,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.example.slices.controllers.DBConnector;
-import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Waitlist;
-import com.example.slices.testing.TestUtils;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * Tests for the Waitlist class

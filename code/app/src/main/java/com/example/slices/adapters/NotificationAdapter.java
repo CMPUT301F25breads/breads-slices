@@ -12,13 +12,14 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.NotificationManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.models.Invitation;
 import com.example.slices.models.Notification;
-import com.example.slices.models.NotificationType;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import java.util.List;
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.VH> {
     private final Context context;
     private final List<Notification> items = new ArrayList<>();
-    private final DBConnector db = new DBConnector();
+
 
     /**
      * Creates a new NotificationAdapter.
@@ -79,7 +80,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
         // Tries to fetch the event name and date from the database,
         // if it fails it will set the text to "Event not found"
-        db.getEvent(n.getEventId(), new EventCallback() {
+        EventController.getEvent(n.getEventId(), new EventCallback() {
             @Override
             public void onSuccess(Event event) {
                 h.eventName.setText(event.getName());
@@ -104,7 +105,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                     @Override
                     public void onSuccess(Event event) {
                         ((Invitation) n).setAccepted(true);
-                        db.updateInvitation(((Invitation) n), new DBWriteCallback() {
+                        NotificationManager.updateInvitation(((Invitation) n), new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
                             }
@@ -128,7 +129,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                     @Override
                     public void onSuccess(Event event) {
                         ((Invitation) n).setDeclined(true);
-                        db.updateInvitation(((Invitation) n), new DBWriteCallback() {
+                        NotificationManager.updateInvitation(((Invitation) n), new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
                             }

@@ -1,6 +1,8 @@
 package com.example.slices.models;
 
-import com.example.slices.controllers.DBConnector;
+
+import com.example.slices.controllers.EntrantController;
+import com.example.slices.controllers.EventController;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EventCallback;
@@ -63,11 +65,10 @@ public class Invitation extends Notification {
      * Removes the entrant from the event waitlist and adds them to the event
      */
     public void onAccept(EventCallback callback) {
-        DBConnector db = new DBConnector();
-        db.getEvent(eventId, new EventCallback() {
+        EventController.getEvent(eventId, new EventCallback() {
             @Override
             public void onSuccess(Event event) {
-                db.getEntrant(recipientId, new EntrantCallback() {
+                EntrantController.getEntrant(recipientId, new EntrantCallback() {
                     @Override
                     public void onSuccess(Entrant entrant) {
                         event.getWaitlist().removeEntrant(entrant);
@@ -103,11 +104,11 @@ public class Invitation extends Notification {
      * Removes the entrant from the event waitlist
      */
     public void onDecline(EventCallback callback) {
-        DBConnector db = new DBConnector();
-        db.getEvent(eventId, new EventCallback() {
+
+        EventController.getEvent(eventId, new EventCallback() {
             @Override
             public void onSuccess(Event event) {
-                db.getEntrant(recipientId, new EntrantCallback() {
+                EntrantController.getEntrant(recipientId, new EntrantCallback() {
                     @Override
                     public void onSuccess(Entrant entrant) {
                         event.removeEntrantFromWaitlist(entrant, new DBWriteCallback() {
