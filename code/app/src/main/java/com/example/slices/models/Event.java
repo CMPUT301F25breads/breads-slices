@@ -1,22 +1,20 @@
 package com.example.slices.models;
 
 
-import com.example.slices.controllers.EventController;
-import com.example.slices.interfaces.DBWriteCallback;
-import com.example.slices.interfaces.EventCallback;
-import com.example.slices.interfaces.EventIDCallback;
-import com.example.slices.testing.DebugLogger;
+import com.example.slices.exceptions.DuplicateEntry;
+import com.example.slices.exceptions.EntrantNotFound;
+import com.example.slices.exceptions.EventFull;
+import com.example.slices.exceptions.WaitlistFull;
 import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * Class representing an event
  * @author Ryan Haubrich
- * @version 1.0
+ * @version 1.5
  *
  */
 public class Event implements Comparable<Event> {
@@ -44,88 +42,24 @@ public class Event implements Comparable<Event> {
      */
     public Event(){}
 
-    /**
-     * Event constructor
-     * @param name
-     *      Name of the event
-     * @param description
-     *      Description of the event
-     * @param location
-     *      Location of the event
-     * @param eventDate
-     *      Date of the event
-     * @param regDeadline
-     *      Deadline for registering for the event
-     * @param maxEntrants
-     *      Maximum number of entrants in the event
-     * @param callback
-     *      Callback for when the event is created
-     * @throws IllegalArgumentException
-     *      If the event time is in the past or the registration deadline is in the past or after the event time
-     */
-    public Event(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, EventCallback callback) throws IllegalArgumentException {
-        //Check if the eventTime is in the past
-        //Get the current timestamp
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(System.currentTimeMillis());
-        Timestamp currentTime = new Timestamp(cal.getTime());
 
-        if (eventDate.compareTo(currentTime) < 0) {
-            //Throw exception
-            DebugLogger.d("Event", "Event time is in the past");
-            throw new IllegalArgumentException("Event time is in the past");
-        }
 
-        //Check if the registration deadline is in the past
-        if (regDeadline.compareTo(currentTime) < 0) {
-            //Throw exception
-            DebugLogger.d("Event", "Registration deadline is in the past");
-            throw new IllegalArgumentException("Registration deadline is in the past");
-        }
-
-        //Check if the registration deadline is after the event time
-        if (regDeadline.compareTo(eventDate) > 0) {
-            //Throw exception
-            DebugLogger.d("Event", "Registration deadline is after event time");
-            throw new IllegalArgumentException("Registration deadline is after event time");
-        }
-
+    public Event(String name, String description, String location, String guidelines, String imgUrl,
+                 Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
+                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, String organizerID) {
+        this.eventInfo = new EventInfo(name, description, location, guidelines, imgUrl,
+                eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
+        this.id = id;
         this.entrants = new ArrayList<Entrant>();
-        this.waitlist = new Waitlist();
-
-        EventController.getNewEventId(new EventIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                Event.this.id = id;
-                Event.this.eventInfo = new EventInfo(name, description, location, eventDate, regDeadline, maxEntrants, id);
-                Event.this.eventInfo.setChangeListener((info, callback) -> eventModified(callback));
-
-                EventController.writeEvent(Event.this, new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        DebugLogger.d("Event", "Event created successfully");
-                        callback.onSuccess(Event.this);
-                    }
-                    @Override
-                    public void onFailure(Exception e) {
-                        DebugLogger.d("Event", "Event creation failed");
-                        callback.onFailure(e);
-                    }
-                });
-            }
-            @Override
-            public void onFailure(Exception e) {
-                DebugLogger.d("Event", "Event failed to get new id");
-            }
-        });
+        this.waitlist = new Waitlist(maxWaiting);
     }
 
-
-
-
-
-
-
+    public Event(EventInfo eventInfo) {
+        this.eventInfo = eventInfo;
+        this.id = eventInfo.getId();
+        this.entrants = new ArrayList<Entrant>();
+        this.waitlist = new Waitlist(eventInfo.getMaxWaiting());
+    }
     /**
      * Getter for the ID of the event
      * @return
@@ -134,7 +68,6 @@ public class Event implements Comparable<Event> {
     public int getId() {
         return id;
     }
-
 
     /**
      * Getter for the list of entrants currently in the event
@@ -153,145 +86,77 @@ public class Event implements Comparable<Event> {
     public Waitlist getWaitlist() {
         return waitlist;
     }
-
-
-
-
-
     /**
      * Adds an entrant directly to the event
      * This should only be used internally for testing or by the lottery
      * @param entrant
      *      Entrant to add
-     * @param callback
-     *      Callback for database write completion
      */
-    public void addEntrant(Entrant entrant, DBWriteCallback callback) {
+    public boolean addEntrant(Entrant entrant) {
         //This should never be called directly from somewhere else in the code
         //It only is used for testing and by the lottery
         //Check if the event is full
         if (eventInfo.getCurrentEntrants() >= eventInfo.getMaxEntrants()) {
-            return;
+            throw new EventFull("Event is full");
         }
         //Check if the entrant is already in the event
         if (entrants.contains(entrant)) {
-            return;
+            throw new DuplicateEntry("Entrant is already in the event");
         }
         //Add the entrant to the event
         entrants.add(entrant);
         //Increment the current entrants
-        eventInfo.updateCurrentEntrants(eventInfo.getCurrentEntrants() + 1, callback);
-
+        eventInfo.setCurrentEntrants(eventInfo.getCurrentEntrants() + 1);
+        return true;
     }
 
-    public void removeEntrant(Entrant entrant, DBWriteCallback callback) {
+    public boolean removeEntrant(Entrant entrant) {
         if (!entrants.contains(entrant)) {
-            DebugLogger.d("Event", "Entrant not in event");
-            callback.onFailure(new Exception("Entrant not in event"));
+            throw new EntrantNotFound("Entrant not in event", String.valueOf(entrant.getId()));
         }
         entrants.remove(entrant);
-        eventInfo.updateCurrentEntrants(eventInfo.getCurrentEntrants() - 1, callback);
-
-
-
-
+        eventInfo.setCurrentEntrants(eventInfo.getCurrentEntrants() - 1);
+        return true;
     }
 
     /**
      * Adds an entrant to the event's waitlist
      * @param entrant
      *      Entrant to add to the waitlist
-     * @param callback
-     *      Callback for database write completion
      */
-    public void addEntrantToWaitlist(Entrant entrant, DBWriteCallback callback) {
-        //Add the entrant to the waitlist
+    public boolean addEntrantToWaitlist(Entrant entrant) {
+        //Check if the waitlist is full
+        if (waitlist.getEntrants().size() >= waitlist.getMaxCapacity()) {
+            throw new WaitlistFull("Waitlist is full");
+        }
+        //Check if the entrant is already in the waitlist
+        if (waitlist.getEntrants().contains(entrant)) {
+            throw new DuplicateEntry("Entrant is already in the waitlist");
+        }
+        //Otherwise add the entrant to the waitlist
         waitlist.addEntrant(entrant);
-        //Increment the current entrants
-        eventInfo.updateCurrentEntrants(eventInfo.getCurrentEntrants() + 1, callback);
+        //Increment the waitlist current entrants
+        waitlist.setCurrentEntrants(waitlist.getCurrentEntrants() + 1);
+        return true;
     }
 
     /**
      * Removes an entrant from the event's waitlist
      * @param entrant
      *      Entrant to remove from the waitlist
-     * @param callback
-     *      Callback for database write completion
      */
-    public void removeEntrantFromWaitlist(Entrant entrant, DBWriteCallback callback) {
+    public boolean removeEntrantFromWaitlist(Entrant entrant) {
         if(!waitlist.getEntrants().contains(entrant)) {
-            DebugLogger.d("Event", "Entrant not in waitlist");
-            callback.onFailure(new Exception("Entrant not in waitlist"));
+            return false;
         }
-        //Remove the entrant from the waitlist
+        //Should not be possible to get to this one
+        if(waitlist.getEntrants().isEmpty()) {
+            return false;
+        }
+        //Otherwise remove the entrant from the waitlist)
         waitlist.removeEntrant(entrant);
-        //Decrement the current entrants
-        eventInfo.updateCurrentEntrants(eventInfo.getCurrentEntrants() - 1, callback);
-    }
-
-    /**
-     * Method that does the lottery
-     * May have issues with robustness specifically in restoring the lists in the event of a failure
-     *
-     * @param callback
-     *      Callback to call when the lottery is complete
-     */
-    public void doLottery(DBWriteCallback callback) {
-        //Create a lottery object
-        Lottery lottery = new Lottery();
-        //Get the winners
-        List<Entrant> winners = lottery.getWinners(waitlist.getEntrants(), eventInfo.getMaxEntrants());
-        //Add the winners to the event
-        if (winners.isEmpty()) {
-            DebugLogger.d("Event", "No winners");
-            return;
-        }
-        final int[] completedCount = {0};
-        final int totalWinners = winners.size();
-        for (Entrant winner : winners) {
-            addEntrant(winner, new DBWriteCallback() {
-                @Override
-                public void onSuccess() {
-                    DebugLogger.d("Event", "Winner added to event");
-                    completedCount[0]++;
-                    waitlist.removeEntrant(winner);
-                    if (completedCount[0] == totalWinners) {
-                        DebugLogger.d("Event", "Lottery complete");
-                        callback.onSuccess();
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    DebugLogger.d("Event", "Winner not added to event");
-                    callback.onFailure(e);
-                }
-            });
-        }
-    }
-
-    /**
-     * Updates the event in the database whenever a modification occurs
-     * @param callback
-     *      Callback for database write completion
-     */
-    private void eventModified(DBWriteCallback callback) {
-        //Write to database
-        DebugLogger.d("Event", "Event modified");
-
-        EventController.updateEvent(this, new DBWriteCallback() {
-            @Override
-            public void onSuccess() {
-                DebugLogger.d("Event", "Event modified successfully");
-                callback.onSuccess();
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                DebugLogger.d("Event", "Event modified failed");
-                callback.onFailure(e);
-            }
-        });
+        eventInfo.setCurrentEntrants(eventInfo.getCurrentEntrants() - 1);
+        return true;
     }
 
     /**
@@ -345,6 +210,5 @@ public class Event implements Comparable<Event> {
     }
     public void setEventInfo(EventInfo eventInfo) {
         this.eventInfo = eventInfo;
-        this.eventInfo.setChangeListener((info, callback) -> eventModified(callback));
     }
 }

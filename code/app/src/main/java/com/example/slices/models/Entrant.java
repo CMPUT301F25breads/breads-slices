@@ -2,7 +2,6 @@ package com.example.slices.models;
 
 
 import com.example.slices.controllers.EntrantController;
-import com.example.slices.interfaces.ProfileChangeListener;
 import com.example.slices.testing.DebugLogger;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
@@ -45,62 +44,21 @@ public class Entrant {
     /**
      * Default constructor for the Entrant class, need for serialization
      */
-    public Entrant() {}
-
-    /**
-     * Test constructor for the Entrant class
-     * @param name
-     *      Name of the entrant
-     * @param email
-     *      Email of the entrant
-     * @param phoneNumber
-     *      Phone number of the entrant
-     * @param id
-     *      ID of the entrant
-     */
-    public Entrant(String name, String email, String phoneNumber, int id) {
-        this.profile = new Profile(name, email, phoneNumber, true, id);
-        this.id = id;
-        this.subEntrants = new ArrayList<>();
+    public Entrant() {
+        this.profile = new Profile();
     }
+
 
     /**
      * Primary constructor for the Entrant class for creating a primary entrant
      * @param deviceId
      *      Device ID of the entrant
-     * @param callback
-     *      Callback for when the entrant is created
      */
-    public Entrant(String deviceId, EntrantCallback callback) {
+    public Entrant(String deviceId, int id) {
         this.deviceId = deviceId;
         this.subEntrants = new ArrayList<Integer>();
-
-        EntrantController.getNewEntrantId(new EntrantIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                Entrant.this.id = id;
-                Entrant.this.profile = new Profile(id);
-                EntrantController.writeEntrant(Entrant.this, new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        DebugLogger.d("Entrant", "Entrant created successfully");
-                        callback.onSuccess(Entrant.this);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        DebugLogger.d("Entrant", "Entrant creation failed");
-                        callback.onFailure(e);
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                DebugLogger.d("Entrant", "Entrant creation failed");
-            }
-        });
-
+        this.organizedEvents = new ArrayList<Integer>();
+        this.id = id;
     }
 
 
@@ -112,99 +70,19 @@ public class Entrant {
      *      Email of the entrant
      * @param phoneNumber
      *      Phone number of the entrant
-     * @param callback
-     *      Callback for when the entrant is created
+     * @param id
+     *      ID of the entrant
      */
 
-    public Entrant(String name, String email, String phoneNumber, EntrantCallback callback) {
-
+    public Entrant(String name, String email, String phoneNumber, int id) {
         this.subEntrants = new ArrayList<Integer>();
         this.organizedEvents = new ArrayList<Integer>();
-        EntrantController.getNewEntrantId(new EntrantIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                Entrant.this.id = id;
-                Entrant.this.profile = new Profile(name, email, phoneNumber, true, id);
-                EntrantController.writeEntrant(Entrant.this, new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        DebugLogger.d("Entrant", "Entrant created successfully");
-                        callback.onSuccess(Entrant.this);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        DebugLogger.d("Entrant", "Entrant creation failed");
-                        callback.onFailure(e);
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                DebugLogger.d("Entrant", "Entrant creation failed");
-            }
-        });
+        this.id = id;
+        this.profile = new Profile(name, email, phoneNumber, true, id);
     }
 
 
-    /**
-     * Constructor for the Entrant class for creating a secondary entrant
-     * INCOMPLETE!!
-     * @param name
-     *      Name of the entrant
-     * @param email
-     *      Email of the entrant
-     * @param phoneNumber
-     *      Phone number of the entrant
-     * @param parent
-     *      Parent of the entrant
-     */
-    public Entrant(String name, String email, String phoneNumber, Entrant parent, EntrantCallback callback) {
-        if (parent.parent != 0 ) {
-            throw new IllegalArgumentException("Cant have parent with parent");
-        }
 
-        this.subEntrants = null;
-        EntrantController.getNewEntrantId(new EntrantIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                Entrant.this.id = id;
-                Entrant.this.profile = new Profile(name, email, phoneNumber, true, id);
-                EntrantController.writeEntrant(Entrant.this, new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        DebugLogger.d("Entrant", "Entrant created successfully");
-                        parent.addSubEntrant(Entrant.this);
-                        EntrantController.updateEntrant(parent, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                DebugLogger.d("Entrant", "Parent updated successfully");
-                                Entrant.this.parent = parent.getId();
-                                callback.onSuccess(Entrant.this);
-
-                            }
-
-                            @Override
-                            public void onFailure(Exception e) {
-                                DebugLogger.d("Entrant", "Parent update failed");
-                            }
-                        });
-
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        DebugLogger.d("Entrant", "Entrant write failed");
-                    }
-                });
-            }
-            public void onFailure(Exception e) {
-                DebugLogger.d("Entrant", "Entrant creation failed");
-            }
-        });
-
-    }
 
     /**
      * Test constructor for the Entrant class for creating a secondary entrant
@@ -224,9 +102,6 @@ public class Entrant {
             throw new IllegalArgumentException("Cant have parent with parent");
         }
         this.profile = new Profile(name, email, phoneNumber, true, id);
-        this.profile.setChangeListener((profile, callback) ->
-            entrantModified(callback));
-
         this.id = id;
         this.parent = parent.getId();
         this.subEntrants = new ArrayList<Integer>();
@@ -290,12 +165,13 @@ public class Entrant {
      */
     public void setId(int id) {
         this.id = id;
+        if (this.profile == null) {
+            this.profile = new Profile();
+        }
         this.profile.setId(id);
 
 
     }
-
-
 
 
     /**
@@ -318,55 +194,6 @@ public class Entrant {
         organizedEvents.add(eventId);
     }
 
-    /**
-     * Gets the sub entrants of the entrant
-     * @param callback
-     *      Callback for when the sub entrants are retrieved
-     */
-    public void getSubEntrants(EntrantListCallback callback) {
-        List<Entrant> retSubEntrants = new ArrayList<>();
-        for (int i = 0; i < this.subEntrants.size(); i++) {
-            int idToGet = this.subEntrants.get(i);
-            EntrantController.getEntrant(idToGet, new EntrantCallback() {
-                @Override
-                public void onSuccess(Entrant entrant) {
-                    retSubEntrants.add(entrant);
-
-                    if (retSubEntrants.size() == Entrant.this.subEntrants.size()) {
-                        callback.onSuccess(retSubEntrants);
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    callback.onFailure(e);
-                }
-            });
-        }
-
-    }
-
-    /**
-     * Gets the parent of the entrant
-     * @param callback
-     *      Callback for when the parent is retrieved
-     */
-
-    public void getParent(EntrantCallback callback) {
-        //Get the parent of the entrant
-        EntrantController.getEntrant(this.parent, new EntrantCallback() {
-            @Override
-            public void onSuccess(Entrant entrant) {
-                callback.onSuccess(entrant);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                callback.onFailure(e);
-            }
-        });
-
-    }
 
 
 

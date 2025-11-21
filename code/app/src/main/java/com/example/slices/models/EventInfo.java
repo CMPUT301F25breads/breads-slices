@@ -1,7 +1,6 @@
 package com.example.slices.models;
 
 import com.example.slices.interfaces.DBWriteCallback;
-import com.example.slices.interfaces.EventInfoChangeListener;
 import com.google.firebase.Timestamp;
 
 public class EventInfo {
@@ -25,7 +24,9 @@ public class EventInfo {
     /**
      * Deadline for registering for the event
      */
-    private Timestamp regDeadline;
+    private Timestamp regStart;
+
+    private Timestamp regEnd;
 
     /**
      * ID of the event
@@ -46,74 +47,44 @@ public class EventInfo {
     private String guidelines;
     private String imageUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
-    private transient EventInfoChangeListener changeListener;
+    private int maxWaiting;
+    private boolean entrantLoc;
+
+    private String entrantDist;
+
+    private String organizerID;
+
+
+
+
+
 
 
     public EventInfo(){
 
     }
 
-    public EventInfo(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, int id) {
+    public EventInfo(String name, String description, String location, String guidelines,
+                     String imgUrl, Timestamp eventDate, Timestamp regStart, Timestamp regEnd,
+                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, String organizerID) {
         this.name = name;
         this.description = description;
         this.location = location;
         this.eventDate = eventDate;
-        this.regDeadline = regDeadline;
+        this.regStart = regStart;
+        this.regEnd = regEnd;
         this.maxEntrants = maxEntrants;
         this.currentEntrants = 0;
-    }
-
-    public EventInfo(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, int id, String imageUrl) {
-        this.name = name;
-        this.description = description;
-        this.location = location;
-        this.eventDate = eventDate;
-        this.regDeadline = regDeadline;
-        this.maxEntrants = maxEntrants;
-        this.currentEntrants = 0;
-        this.imageUrl = imageUrl;
-    }
-
-    public EventInfo(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, int id, String imageUrl, String guidelines) {
-        this.name = name;
-        this.description = description;
-        this.location = location;
-        this.eventDate = eventDate;
-        this.regDeadline = regDeadline;
-        this.maxEntrants = maxEntrants;
-        this.currentEntrants = 0;
-        this.imageUrl = imageUrl;
+        this.id = id;
         this.guidelines = guidelines;
-    }
-
-    public void updateEventInfo(String name, String description, String location, Timestamp eventDate, Timestamp regDeadline, int maxEntrants, String imageUrl, String guidelines, DBWriteCallback callback) {
-        if (name != null) {
-            this.name = name;
-        }
-        if (description != null) {
-            this.description = description;
-        }
-        if (location != null) {
-            this.location = location;
-        }
-        if (eventDate != null) {
-            this.eventDate = eventDate;
-        }
-        if (regDeadline != null) {
-            this.regDeadline = regDeadline;
-        }
-        if (maxEntrants != 0) {
-            this.maxEntrants = maxEntrants;
-        }
-        if (imageUrl != null) {
-            this.imageUrl = imageUrl;
-        }
-        if (guidelines != null) {
-            this.guidelines = guidelines;
-        }
-        notifyModified(callback);
+        this.imageUrl = imgUrl;
+        this.maxWaiting = maxWaiting;
+        this.entrantLoc = entrantLoc;
+        this.entrantDist = entrantDist;
+        this.organizerID = organizerID;
 
     }
+
 
     public String getName() {
         return name;
@@ -125,15 +96,11 @@ public class EventInfo {
      * @param name
      *      Name to set
      */
-    @Deprecated
+
     public void setName(String name) {
         this.name = name;
     }
 
-    public void updateName(String name, DBWriteCallback callback) {
-        this.name = name;
-        notifyModified(callback);
-    }
 
     public String getDescription() {
         return description;
@@ -146,24 +113,16 @@ public class EventInfo {
      * @param description
      *      Description to set
      */
-    @Deprecated
+
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public void updateDescription(String description, DBWriteCallback callback) {
-        this.description = description;
-        notifyModified(callback);
     }
 
     public String getGuidelines() {
         return guidelines;
     }
 
-    public void updateGuidelines(String guidelines, DBWriteCallback callback) {
-        this.guidelines = guidelines;
-        notifyModified(callback);
-    }
+
 
     /**
      * INTERNAL USE ONLY - Firestore requires this setter
@@ -171,7 +130,6 @@ public class EventInfo {
      * @param guidelines
      *      Guidelines to set
      */
-    @Deprecated
     public void setGuidelines(String guidelines) {
         this.guidelines = guidelines;
     }
@@ -188,15 +146,10 @@ public class EventInfo {
      * @param location
      *      Location to set
      */
-    @Deprecated
+
     public void setLocation(String location) {
         this.location = location;
 
-    }
-
-    public void updateLocation(String location, DBWriteCallback callback) {
-        this.location = location;
-        notifyModified(callback);
     }
 
     public Timestamp getEventDate() {
@@ -209,37 +162,35 @@ public class EventInfo {
      * @param eventDate
      *      Event date to set
      */
-    @Deprecated
+
     public void setEventDate(Timestamp eventDate) {
         this.eventDate = eventDate;
 
     }
 
-    public void updateEventDate(Timestamp eventDate, DBWriteCallback callback) {
-        this.eventDate = eventDate;
-        notifyModified(callback);
+
+
+    public Timestamp getRegStart() {
+        return regStart;
     }
 
-    public Timestamp getRegDeadline() {
-        return regDeadline;
+    public Timestamp getRegEnd() {
+        return regEnd;
     }
 
-    /**
-     * INTERNAL USE ONLY - Firestore requires this setter
-     * Do NOT call this method directly. Use the update counterpart instead.
-     * @param regDeadline
-     *      Registration deadline to set
-     */
-    @Deprecated
-    public void setRegDeadline(Timestamp regDeadline) {
-        this.regDeadline = regDeadline;
+
+
+
+
+    public void setRegStart(Timestamp regStart) {
+        this.regStart = regStart;
 
     }
 
-    public void updateRegDeadline(Timestamp regDeadline, DBWriteCallback callback) {
-        this.regDeadline = regDeadline;
-        notifyModified(callback);
+    public void setRegEnd(Timestamp regEnd) {
+        this.regEnd = regEnd;
     }
+
 
 
     public int getMaxEntrants() {
@@ -252,7 +203,7 @@ public class EventInfo {
      * @param maxEntrants
      *      Maximum number of entrants to set
      */
-    @Deprecated
+
     public void setMaxEntrants(int maxEntrants) {
         this.maxEntrants = maxEntrants;
 
@@ -268,15 +219,10 @@ public class EventInfo {
      * @param currentEntrants
      *      Current number of entrants to set
      */
-    @Deprecated
     public void setCurrentEntrants(int currentEntrants) {
         this.currentEntrants = currentEntrants;
     }
 
-    public void updateCurrentEntrants(int currentEntrants, DBWriteCallback callback) {
-        this.currentEntrants = currentEntrants;
-        notifyModified(callback);
-    }
 
 
     public String getImageUrl() {
@@ -289,16 +235,10 @@ public class EventInfo {
      * @param imageUrl
      *      Image URL to set
      */
-    @Deprecated
+
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
-
-    public void updateImageUrl(String imageUrl, DBWriteCallback callback) {
-        this.imageUrl = imageUrl;
-        notifyModified(callback);
-    }
-
 
     public int getId() {
         return id;
@@ -310,28 +250,48 @@ public class EventInfo {
      * @param id
      *      ID to set
      */
-    @Deprecated
+
     public void setId(int id) {
         this.id = id;
     }
 
-    public void updateId(int id, DBWriteCallback callback) {
-        this.id = id;
-        notifyModified(callback);
+    public int getMaxWaiting() {
+        return maxWaiting;
+    }
+
+    public void setMaxWaiting(int maxWaiting) {
+        this.maxWaiting = maxWaiting;
+    }
+
+    public boolean getEntrantLoc() {
+        return entrantLoc;
+    }
+
+    public void setEntrantLoc(boolean entrantLoc) {
+        this.entrantLoc = entrantLoc;
+    }
+
+    public String getEntrantDist() {
+        return entrantDist;
+    }
+
+    public void setEntrantDist(String entrantDist) {
+        this.entrantDist = entrantDist;
+    }
+
+    public String getOrganizerID() {
+        return organizerID;
+    }
+
+    public void setOrganizerID(String organizerID) {
+        this.organizerID = organizerID;
     }
 
 
-    public void setChangeListener(EventInfoChangeListener listener) {
-        this.changeListener = listener;
-    }
 
-    public void notifyModified(DBWriteCallback callback) {
-        if (changeListener != null) {
-            changeListener.onEventInfoChanged(this, callback);
-        } else {
-            callback.onFailure(new Exception("No change listener set for EventInfo"));
-        }
-    }
+
+
+
 
 
 

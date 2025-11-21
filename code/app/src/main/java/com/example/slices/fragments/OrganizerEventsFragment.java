@@ -105,7 +105,7 @@ public class OrganizerEventsFragment extends Fragment {
                 for (Event e : events) {
                     EventInfo eventInfo = e.getEventInfo();
                     long eventTime = eventInfo.getEventDate().toDate().getTime();
-                    long regDeadline = eventInfo.getRegDeadline().toDate().getTime();
+                    long regDeadline = eventInfo.getRegEnd().toDate().getTime();
 
                     if (now < regDeadline) {
                         upcomingEvents.add(e);

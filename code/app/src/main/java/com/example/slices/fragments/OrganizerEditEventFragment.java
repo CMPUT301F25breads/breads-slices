@@ -266,7 +266,7 @@ public class OrganizerEditEventFragment extends Fragment {
                 // Format and display date
                 SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
                 editDate.setText(dateFormat.format(eventInfo.getEventDate().toDate()));
-                editRegEnd.setText(dateFormat.format(eventInfo.getRegDeadline().toDate()));
+                editRegEnd.setText(dateFormat.format(eventInfo.getRegEnd().toDate()));
 
                 // Format and display time
                 SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
@@ -388,26 +388,34 @@ public class OrganizerEditEventFragment extends Fragment {
             // Update the TextView
             targetTextView.setText(newValue);
 
+            // First get the existing event info
+            EventInfo currentEventInfo = currentEvent.getEventInfo();
 
-            String newTitle = null;
-            String newLocation = null;
-            String newDescription = null;
-            String newGuidelines = null;
-            String newImageUrl = null;
-            Timestamp newEventDate = null;
-            Timestamp newRegDeadline = null;
-            int newMaxEntrants = 0;
+            // ------------------------------------------
+            // I added logic for all fields but I dont know what the UI looks like
+            // -Ryan
+            // ------------------------------------------
 
-            // Update the Event object based on which field was edited
+            // Update the EventInfo object based on which field was edited
             if (title.equals("Edit Description")) {
-                newDescription = newValue;
+                currentEventInfo.setDescription(newValue);
             } else if (title.equals("Edit Location")) {
-                newLocation = newValue;
+                currentEventInfo.setLocation(newValue);
+            } else if (title.equals("Edit Guidelines")) {
+                currentEventInfo.setGuidelines(newValue);
+            } else if (title.equals("Edit Image")) {
+                currentEventInfo.setImageUrl(newValue);
+            } else if (title.equals("Edit Name")) {
+                currentEventInfo.setName(newValue);
+            } else if (title.equals("Edit Max Participants")) {
+                currentEventInfo.setMaxEntrants(Integer.parseInt(newValue));
             }
 
 
+
+
             // Save to database
-            currentEvent.getEventInfo().updateEventInfo(newTitle, newDescription, newLocation, newEventDate, newRegDeadline, newMaxEntrants, newImageUrl, newGuidelines, new DBWriteCallback() {
+            EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getContext(), title + " saved to database!", Toast.LENGTH_SHORT).show();
@@ -602,7 +610,8 @@ public class OrganizerEditEventFragment extends Fragment {
             calendar.set(year, month, day, 23, 59, 59); // Set to end of day
 
             Timestamp newRegDeadline = new Timestamp(calendar.getTime());
-            currentEvent.getEventInfo().setRegDeadline(newRegDeadline);
+
+            currentEvent.getEventInfo().setRegEnd(newRegDeadline);
 
             EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
@@ -636,7 +645,9 @@ public class OrganizerEditEventFragment extends Fragment {
             return;
         }
 
-        currentEvent.getEventInfo().updateName(newName, new DBWriteCallback() {
+        EventInfo currentEventInfo = currentEvent.getEventInfo();
+        currentEventInfo.setName(newName);
+        EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
             @Override
             public void onSuccess() {
                 Toast.makeText(getContext(), "Event name saved!", Toast.LENGTH_SHORT).show();

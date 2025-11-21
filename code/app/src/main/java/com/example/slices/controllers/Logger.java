@@ -78,19 +78,25 @@ public class Logger {
      * @param notification
      *      Notification to log
      */
-    public static void log(Notification notification, DBWriteCallback ignoredCallback) {
+    public static void log(Notification notification, DBWriteCallback callback) {
         if (largestId > 0) {
             int idToUse = ++largestId;
             writeLog(new NotificationLogEntry(notification, idToUse), new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     System.out.println("Logged notification successfully");
-                    // Do NOT call any callback here to prevent duplicate completion
+                    if (callback != null) {
+                        callback.onSuccess();
+                    }
                 }
 
                 @Override
                 public void onFailure(Exception e) {
                     System.out.println("Failed to log notification: " + e.getMessage());
+                    if (callback != null) {
+                        callback.onFailure(e);
+                    }
+
                 }
             });
         } else {
@@ -98,7 +104,7 @@ public class Logger {
                 @Override
                 public void onSuccess(int id) {
                     largestId = id;
-                    log(notification, ignoredCallback); // recursion safe, largestId > 0 next time
+                    log(notification, callback); // recursion safe, largestId > 0 next time
                 }
 
                 @Override

@@ -11,9 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.example.slices.controllers.EventController;
 import com.example.slices.models.Event;
 import com.example.slices.R;
-import com.example.slices.controllers.WaitlistController;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventActions;
 import com.example.slices.SharedViewModel;
@@ -154,7 +154,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                     // switch to Join
                     updateWaitlistButton(actionBtn, false);
 
-                    WaitlistController.leave(eventIdStr, userId, new DBWriteCallback() {
+                    EventController.removeEntrantFromWaitlist(event, vm.getUser(), new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             vm.removeWaitlistedId(eventIdStr);
@@ -173,7 +173,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                     // switch to Leave
                     updateWaitlistButton(actionBtn, true);
 
-                    WaitlistController.join(eventIdStr, userId, new DBWriteCallback() {
+                    EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             vm.addWaitlistedId(eventIdStr);

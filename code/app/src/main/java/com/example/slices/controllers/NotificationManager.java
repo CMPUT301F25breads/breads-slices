@@ -5,10 +5,13 @@ import androidx.annotation.NonNull;
 import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.exceptions.NotificationNotFound;
 import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.NotificationCallback;
 import com.example.slices.interfaces.NotificationIDCallback;
 import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.Entrant;
+import com.example.slices.models.Event;
 import com.example.slices.models.Invitation;
 import com.example.slices.models.LogType;
 import com.example.slices.models.Notification;
@@ -176,66 +179,65 @@ public class NotificationManager {
 
 
 
-        /**
-         * Sends an invitation notification for an event.
-         * Creates an Invitation object, writes it to the database, and logs it.
-         *
-         * @param title Title of the invitation
-         * @param body Body text of the invitation
-         * @param recipientId ID of the recipient entrant
-         * @param senderId ID of the sender entrant
-         * @param eventId ID of the associated event
-         */
-        public static void sendInvitation(String title, String body, int recipientId, int senderId,
-                                          int eventId, DBWriteCallback callback) {
+    /**
+     * Sends an invitation notification for an event.
+     * Creates an Invitation object, writes it to the database, and logs it.
+     *
+     * @param title Title of the invitation
+     * @param body Body text of the invitation
+     * @param recipientId ID of the recipient entrant
+     * @param senderId ID of the sender entrant
+     * @param eventId ID of the associated event
+     */
+    public static void sendInvitation(String title, String body, int recipientId, int senderId,
+                                      int eventId, DBWriteCallback callback) {
 
-            getNextNotificationId(new NotificationIDCallback() {
-                @Override
-                public void onSuccess(int id) {
-                    // Use the ID directly, no recursion
-                    Invitation invitation = new Invitation(title, body, id, recipientId, senderId, eventId);
+        getNextNotificationId(new NotificationIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                // Use the ID directly, no recursion
+                Invitation invitation = new Invitation(title, body, id, recipientId, senderId, eventId);
+                NotificationManager.writeNotification(invitation, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Logger.log(invitation, callback);
+                    }
 
-                    NotificationManager.writeNotification(invitation, new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {
-                            Logger.log(invitation, callback);
+                    @Override
+                    public void onFailure(Exception e) {
+                        System.out.println("Failed to write invitation: " + e.getMessage());
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                System.out.println("Failed to get notification ID: " + e.getMessage());
+                callback.onFailure(e);
+            }
+        });
+    }
+    /**
+     * Gets the next available notification ID
+     * @param callback
+     *      Callback to call when the operation is complete
+     *      */
+    public static void getNotificationId(NotificationIDCallback callback) {
+        notificationRef.get()
+                .addOnSuccessListener(querySnapshot -> {
+                    int highestId = 0;
+                    if (!querySnapshot.isEmpty()) {
+                        for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                            int id = doc.getLong("id").intValue();
+                            if (id > highestId) highestId = id;
                         }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            System.out.println("Failed to write invitation: " + e.getMessage());
-                            callback.onFailure(e);
-                        }
-                    });
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    System.out.println("Failed to get notification ID: " + e.getMessage());
-                    callback.onFailure(e);
-                }
-            });
-        }
-        /**
-         * Gets the next available notification ID
-         * @param callback
-         *      Callback to call when the operation is complete
-         *      */
-        public static void getNotificationId(NotificationIDCallback callback) {
-            notificationRef.get()
-                    .addOnSuccessListener(querySnapshot -> {
-                        int highestId = 0;
-                        if (!querySnapshot.isEmpty()) {
-                            for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                                int id = doc.getLong("id").intValue();
-                                if (id > highestId) highestId = id;
-                            }
-                        }
-                        // Always call callback once
-                        callback.onSuccess(highestId + 1);
-                    })
-                    .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to get next notification ID")));
-        }
+                    }
+                    // Always call callback once
+                    callback.onSuccess(highestId + 1);
+                })
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to get next notification ID")));
+    }
 
         /**
          * Gets all notifications from the database asynchronously
@@ -276,9 +278,13 @@ public class NotificationManager {
          *      Notification ID to delete
          */
 
-        public static void deleteNotification (String id){
-            notificationRef.document(id).delete();
+        public static void deleteNotification (int id, DBWriteCallback callback){
+            notificationRef.document(String.valueOf(id))
+                    .delete()
+                    .addOnSuccessListener(aVoid -> callback.onSuccess())
+                    .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to delete notification")));
         }
+
 
         /**
          * Writes a notification to the database
@@ -378,7 +384,7 @@ public class NotificationManager {
          * @param callback
          *      Callback to call when the operation is complete
          */
-        public static void getNotificationByRecipientId ( int recipientId, NotificationListCallback
+        public static void getNotificationsByRecipientId ( int recipientId, NotificationListCallback
         callback){
             notificationRef.get().addOnSuccessListener(querySnapshot -> {
                 for (DocumentSnapshot doc : querySnapshot) {
@@ -590,6 +596,128 @@ public class NotificationManager {
                     }
                 });
 
+    }
+
+    public static void acceptInvitation(Invitation invitation, DBWriteCallback callback) {
+
+        // Mark accepted immediately
+        invitation.setAccepted(true);
+        invitation.setDeclined(false);
+
+        // 1. Get the event
+        EventController.getEvent(invitation.getEventId(), new EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+
+                // 2. Get the entrant
+                EntrantController.getEntrant(invitation.getRecipientId(), new EntrantCallback() {
+                    @Override
+                    public void onSuccess(Entrant entrant) {
+
+                        // 3. Remove from waitlist
+                        EventController.removeEntrantFromWaitlist(event, entrant, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+
+                                // 4. Add to event
+                                EventController.addEntrantToEvent(event, entrant, new DBWriteCallback() {
+                                    @Override
+                                    public void onSuccess() {
+
+                                        // 5. Update invitation in DB
+                                        updateInvitation(invitation, new DBWriteCallback() {
+                                            @Override
+                                            public void onSuccess() {
+                                                callback.onSuccess();
+                                            }
+
+                                            @Override
+                                            public void onFailure(Exception e) {
+                                                callback.onFailure(e);
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        callback.onFailure(e);
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                callback.onFailure(e);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+    }
+    public static void declineInvitation(Invitation invitation, DBWriteCallback callback) {
+
+        invitation.setDeclined(true);
+        invitation.setAccepted(false);
+
+        // 1. Get event
+        EventController.getEvent(invitation.getEventId(), new EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+
+                // 2. Get entrant
+                EntrantController.getEntrant(invitation.getRecipientId(), new EntrantCallback() {
+                    @Override
+                    public void onSuccess(Entrant entrant) {
+
+                        // 3. Remove from waitlist only
+                        EventController.removeEntrantFromWaitlist(event, entrant, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+
+                                // 4. Update invitation in DB
+                                updateInvitation(invitation, new DBWriteCallback() {
+                                    @Override
+                                    public void onSuccess() {
+                                        callback.onSuccess();
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        callback.onFailure(e);
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                callback.onFailure(e);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
 
 }

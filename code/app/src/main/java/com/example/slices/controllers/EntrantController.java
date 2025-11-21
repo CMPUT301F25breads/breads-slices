@@ -12,6 +12,7 @@ import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EntrantEventCallback;
 import com.example.slices.interfaces.EntrantIDCallback;
 import com.example.slices.interfaces.ProfileCallback;
+import com.example.slices.models.AsyncBatchExecutor;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.Profile;
@@ -26,7 +27,11 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class EntrantController {
     private static EntrantController instance;
@@ -55,6 +60,13 @@ public class EntrantController {
         }
     }
 
+    /**
+     * Gets an entrant from the database asynchronously
+     * @param id
+     *      Entrant ID to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void getEntrant(int id, EntrantCallback callback) {
         entrantRef
                 .whereEqualTo("id", id)
@@ -65,7 +77,13 @@ public class EntrantController {
                         if (!queryDocumentSnapshots.isEmpty()) {
                             DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
                             Entrant entrant = doc.toObject(Entrant.class);
-                            callback.onSuccess(entrant);
+                            if (entrant != null) {
+                                callback.onSuccess(entrant);
+                            }
+                            else{
+                                callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(id)));
+                            }
+
                         } else {
                             callback.onFailure(new EntrantNotFound("Entrant not found", String.valueOf(id)));
 
@@ -122,8 +140,6 @@ public class EntrantController {
 
     /**
      * Gets the next available entrant ID
-     * @return
-     *      The next available entrant ID
      * @param callback
      *      Callback to call when the operation is complete
      */
@@ -189,13 +205,6 @@ public class EntrantController {
 
 
 
-    /*public void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
-        entrantRef.document(entrant.getDeviceId())
-                .set(entrant)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
-
-    }*/
 
     /**
      * Updates an entrant in the database asynchronously
@@ -214,112 +223,152 @@ public class EntrantController {
 
 
     /**
-     * Deletes an entrant from the database asynchronously
+     * Deletes an entrant from the database asynchronously.
+     *
+     * This method:
+     *  1. Retrieves the entrant using their ID
+     *  2. Removes them from all events and waitlists they belong to
+     *  3. Deletes the entrant document from Firestore
+     *  4. Verifies that deletion succeeded
+     *
+     * The deletion only occurs after all event removals succeed.
+     *
      * @param id
      *      Entrant ID to delete
+     * @param callback
+     *      Callback called when the delete operation completes
+     *
+     * @throws Exception
+     *      If the initial fetch call cannot be made
      */
     public static void deleteEntrant(String id, DBWriteCallback callback) throws Exception {
-        //First get the entrant
-        EntrantController.getEntrant(Integer.parseInt(id), new EntrantCallback() {
+
+        int entrantId = Integer.parseInt(id);
+
+        // First get the entrant
+        EntrantController.getEntrant(entrantId, new EntrantCallback() {
             @Override
             public void onSuccess(Entrant entrant) {
-                //Now remove them from all events
-                EventController.getEventsForEntrant(entrant, new EntrantEventCallback(){
+
+                // Now get all events they belong to
+                EventController.getEventsForEntrant(entrant, new EntrantEventCallback() {
                     @Override
                     public void onSuccess(List<Event> events, List<Event> waitEvents) {
-                        //Set up storage for removed from events
-                        ArrayList<Event> remEvents = new ArrayList<>();
-                        ArrayList<Event> remWaitEvents = new ArrayList<>();
-                        //Remove them from all events
-                        for(Event event : events){
-                            event.removeEntrant(entrant, new DBWriteCallback() {
-                                @Override
-                                public void onSuccess() {
-                                    DebugLogger.d("Event", "Entrant removed from event");
-                                    remEvents.add(event);
 
+                        //Total async operations to complete (events + waitlists)
+                        List<Consumer<DBWriteCallback>> operations = new ArrayList<>();
 
-                                }
+                        for (Event event : events) {
+                            operations.add(batchCallback ->
+                                    EventController.removeEntrantFromEvent(event, entrant, batchCallback));
+                        }
 
-                                @Override
-                                public void onFailure(Exception e) {
-                                    //Revert the changes
-                                    try {
-                                        EntrantController.reEnroll(entrant, remEvents, null);
-                                    } catch (Exception ex) {
-                                        DebugLogger.d("Event", "Failed to re-enroll entrant");
+                        for (Event event : waitEvents) {
+                            operations.add(batchCallback ->
+                                    EventController.removeEntrantFromWaitlist(event, entrant, batchCallback));
+                        }
+
+                        //If they are not in any events, delete directly
+                        if (operations.isEmpty()) {
+                            deleteEntrantDoc(entrant, callback);
+                            return;
+                        }
+
+                        //Run batch removals using AsyncBatchExecutor
+                        AsyncBatchExecutor.runBatch(operations, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                // All removals succeeded — delete the entrant
+                                deleteEntrantDoc(entrant, callback);
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                // Attempt to re-enroll entrant into original events/waitlists
+                                List<Event> allEvents = new ArrayList<>();
+                                allEvents.addAll(events);
+                                allEvents.addAll(waitEvents);
+
+                                reEnroll(entrant, allEvents, new DBWriteCallback() {
+                                    @Override
+                                    public void onSuccess() {
+                                        callback.onFailure(new Exception("Failed to remove entrant from all events"));
                                     }
 
-                                    throw new EntrantNotFound("Entrant not found when attempting to remove from event", String.valueOf(id));
-
-
-                                }
-
+                                    @Override
+                                    public void onFailure(Exception ex) {
+                                        DebugLogger.d("Event", "Failed to re-enroll entrant after batch removal failure");
+                                        callback.onFailure(new Exception("Failed to remove entrant from all events and re-enroll"));
+                                    }
                                 });
-                        }
-                        for(Event event : waitEvents){
-                            event.removeEntrantFromWaitlist(entrant, new DBWriteCallback() {
-                                @Override
-                                public void onSuccess() {
-                                    DebugLogger.d("Event", "Entrant removed from waitlist");
-                                    remWaitEvents.add(event);
-                                    //If removed from all events, delete the entrant
-                                    if(remEvents.size() == events.size() && remWaitEvents.size() == waitEvents.size()) {
-                                        //Now delete the entrant
-                                        entrantRef.document(String.valueOf(entrant.getId())).delete()
-                                                .addOnSuccessListener(aVoid -> {
-                                                    DebugLogger.d("Event", "Entrant deleted");
-                                                    //Now check if the entrant is still in the database
-                                                    EntrantController.verifyDeleteEntrant(entrant, new DBWriteCallback() {
-                                                        @Override
-                                                        public void onSuccess() {
-                                                            DebugLogger.d("Event", "Entrant deleted successfully");
-                                                        }
-                                                        @Override
-                                                        public void onFailure(Exception e) {
-                                                            DebugLogger.d("Event", "Entrant not deleted");
-                                                            throw new EntrantNotFound("Entrant not found when attempting to delete", id);
-                                                        }
-                                                    });
-                                                })
-                                                .addOnFailureListener(e -> {
-                                                    DebugLogger.d("Event", "Failed to delete entrant");
-                                                    throw new EntrantNotFound("Entrant not found when attempting to delete", id);
-                                                });
-                                    }
-
-                                }
-
-                                @Override
-                                public void onFailure(Exception e) {
-                                    //Revert the changes
-                                    try {
-                                        EntrantController.reEnroll(entrant, remWaitEvents, null);
-                                    } catch (Exception ex) {
-                                        DebugLogger.d("Event", "Failed to re-enroll entrant");
-                                    }
-
-                                    throw new EntrantNotFound("Entrant not found when attempting to remove from waitlist", String.valueOf(id));
-
-                                }
-                            });
-                        }
-
+                            }
+                        });
                     }
+
                     @Override
                     public void onFailure(Exception e) {
-                        throw new EventNotFound("Events not found when attempting to remove entrants from events", String.valueOf(id));
+                        callback.onFailure(
+                                new EventNotFound("Events not found when attempting to remove entrants", id)
+                        );
                     }
                 });
             }
 
             @Override
             public void onFailure(Exception e) {
-                throw new EntrantNotFound("Entrant not found when attempting to delete", String.valueOf(id));
+                callback.onFailure(
+                        new EntrantNotFound("Entrant not found when attempting to delete", id)
+                );
             }
-
         });
+    }
 
+
+    /**
+     * Deletes the entrant document from Firestore and verifies deletion.
+     *
+     * @param entrant
+     *      Entrant to delete
+     * @param callback
+     *      Callback to call when deletion completes
+     */
+    private static void deleteEntrantDoc(Entrant entrant, DBWriteCallback callback) {
+
+        entrantRef.document(String.valueOf(entrant.getId()))
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+
+                    DebugLogger.d("Event", "Entrant deleted");
+
+                    // Now verify deletion
+                    EntrantController.verifyDeleteEntrant(entrant, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            DebugLogger.d("Event", "Entrant deleted successfully");
+                            callback.onSuccess();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            DebugLogger.d("Event", "Entrant deletion verification failed");
+                            callback.onFailure(
+                                    new EntrantNotFound(
+                                            "Entrant not found after delete() call",
+                                            String.valueOf(entrant.getId())
+                                    )
+                            );
+                        }
+                    });
+
+                })
+                .addOnFailureListener(e ->
+                        callback.onFailure(
+                                new EntrantNotFound(
+                                        "Failed to delete entrant",
+                                        String.valueOf(entrant.getId())
+                                )
+                        )
+                );
     }
 
     /**
@@ -345,11 +394,53 @@ public class EntrantController {
                 });
     }
 
-    private static void reEnroll(Entrant entrant, ArrayList<Event> events, DBWriteCallback callback) {
-        for(Event event : events) {
-            event.addEntrant(entrant, callback);
+    /**
+     * Re-enrolls an entrant into multiple events asynchronously.
+     * This method attempts to add the entrant back into each event provided.
+     * The callback is only invoked once all operations complete.
+     * If any add operation fails, the callback will return a failure.
+     *
+     * @param entrant
+     *      Entrant to re-enroll
+     * @param events
+     *      List of events the entrant should be re-added to
+     * @param callback
+     *      Callback to call when the re-enroll operation completes
+     */
+    /**
+     * Re-enrolls an entrant into multiple events asynchronously.
+     *
+     * This method attempts to add the entrant back into each event provided.
+     * The callback is only invoked once all operations complete.
+     * If any add operation fails, the callback will return a failure.
+     *
+     * @param entrant
+     *      Entrant to re-enroll
+     * @param events
+     *      List of events the entrant should be re-added to
+     * @param callback
+     *      Callback to call when the re-enroll operation completes
+     */
+    private static void reEnroll(Entrant entrant, List<Event> events, DBWriteCallback callback) {
+
+        // If no events, nothing to do
+        if (events == null || events.isEmpty()) {
+            if (callback != null) {
+                callback.onSuccess();
+            }
+            return;
         }
+
+        List<Consumer<DBWriteCallback>> operations = new ArrayList<>();
+
+        for (Event event : events) {
+            operations.add(batchCallback ->
+                    EventController.addEntrantToEvent(event, entrant, batchCallback));
+        }
+
+        AsyncBatchExecutor.runBatch(operations, callback);
     }
+
 
     private static void verifyDeleteEntrant(Entrant entrant, DBWriteCallback callback) {
         //Check if entrant or profile is in the database
@@ -364,9 +455,73 @@ public class EntrantController {
 
     }
 
+    public static void createEntrant(String deviceId, EntrantCallback callback) {
+        //First check if the entrant already exists
+        EntrantController.getEntrantByDeviceId(deviceId, new EntrantCallback() {
+            @Override
+            public void onSuccess(Entrant entrant) {
+                callback.onFailure(new DBOpFailed("Entrant already exists"));
+            }
+            @Override
+            public void onFailure(Exception e) {
+                //If it doesn't exist, create it
+                //Start by getting a new id
+                EntrantController.getNewEntrantId(new EntrantIDCallback() {
+                    @Override
+                    public void onSuccess(int id) {
+                        Entrant newEntrant = new Entrant(deviceId, id);
+                        EntrantController.writeEntrant(newEntrant, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                callback.onSuccess(newEntrant);
+                            }
 
+                            @Override
+                            public void onFailure(Exception e) {
+                                callback.onFailure(e);
+                            }
+                        });
+                    }
 
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+        });
+    }
 
+    public static void createEntrant(String name, String email, String phoneNumber, EntrantCallback callback) {
+        //Start by getting a new id
+        EntrantController.getNewEntrantId(new EntrantIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                Entrant newEntrant = new Entrant(name, email, phoneNumber, id);
+                EntrantController.writeEntrant(newEntrant, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        callback.onSuccess(newEntrant);
+                    }
 
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+
+        });
+    }
+
+    public static void updateProfile(Entrant entrant, Profile profile, DBWriteCallback callback) {
+        entrant.setProfile(profile);
+        EntrantController.updateEntrant(entrant, callback);
+    }
 
 }

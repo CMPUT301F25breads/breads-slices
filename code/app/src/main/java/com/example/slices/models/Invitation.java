@@ -49,7 +49,7 @@ public class Invitation extends Notification {
     public Invitation(String title, String body, int notificationId, int recipient, int sender, int eventId) {
         this.title = title;
         this.body = body;
-        this.notificationId = notificationId;
+        this.id = notificationId;
         this.recipientId = recipient;
         this.senderId = sender;
         this.eventId = eventId;
@@ -60,83 +60,6 @@ public class Invitation extends Notification {
         this.declined = false;
     }
 
-    /**
-     * Handles the acceptance of the invitation by the recipient
-     * Removes the entrant from the event waitlist and adds them to the event
-     */
-    public void onAccept(EventCallback callback) {
-        EventController.getEvent(eventId, new EventCallback() {
-            @Override
-            public void onSuccess(Event event) {
-                EntrantController.getEntrant(recipientId, new EntrantCallback() {
-                    @Override
-                    public void onSuccess(Entrant entrant) {
-                        event.getWaitlist().removeEntrant(entrant);
-                        event.addEntrant(entrant, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                callback.onSuccess(event);
-                            }
-
-                            @Override
-                            public void onFailure(Exception e) {
-                                callback.onFailure(e);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        callback.onFailure(e);
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                callback.onFailure(e);
-            }
-        });
-    }
-
-    /**
-     * Handles the decline of the invitation by the recipient
-     * Removes the entrant from the event waitlist
-     */
-    public void onDecline(EventCallback callback) {
-
-        EventController.getEvent(eventId, new EventCallback() {
-            @Override
-            public void onSuccess(Event event) {
-                EntrantController.getEntrant(recipientId, new EntrantCallback() {
-                    @Override
-                    public void onSuccess(Entrant entrant) {
-                        event.removeEntrantFromWaitlist(entrant, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                callback.onSuccess(event);
-                            }
-
-                            @Override
-                            public void onFailure(Exception e) {
-                                callback.onFailure(e);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        callback.onFailure(e);
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                callback.onFailure(e);
-            }
-        });
-    }
 
     /**
      * Getter for whether the invitation has been accepted

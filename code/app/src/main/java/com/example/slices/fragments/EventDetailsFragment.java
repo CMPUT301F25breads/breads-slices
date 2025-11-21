@@ -19,7 +19,6 @@ import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
-import com.example.slices.controllers.WaitlistController;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.databinding.EventDetailsFragmentBinding;
 import com.example.slices.models.EventInfo;
@@ -151,7 +150,7 @@ public class EventDetailsFragment extends Fragment {
                 isWaitlisted = false;
                 vm.removeWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
-                WaitlistController.leave(eventIdStr, entrantId, new DBWriteCallback() {
+                EventController.removeEntrantFromWaitlist(e, vm.getUser(), new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
                         // success means do nothing else
@@ -172,8 +171,7 @@ public class EventDetailsFragment extends Fragment {
                 isWaitlisted = true;
                 vm.addWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
-
-                WaitlistController.join(eventIdStr, entrantId, new DBWriteCallback() {
+                EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
                         // success means do nothing else

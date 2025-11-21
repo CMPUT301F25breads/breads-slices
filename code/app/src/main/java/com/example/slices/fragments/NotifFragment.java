@@ -70,7 +70,7 @@ public class NotifFragment extends Fragment {
                         recyclerNotifications.add(invitation);
                     }
                 }
-                NotificationManager.getNotificationByRecipientId(vm.getUser().getId(), new NotificationListCallback() {
+                NotificationManager.getNotificationsByRecipientId(vm.getUser().getId(), new NotificationListCallback() {
                     // Adds the notifications to the recycler view,
                     // This is inside since we want invitations to come before notifications
                     @Override

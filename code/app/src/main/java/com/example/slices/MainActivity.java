@@ -105,14 +105,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Exception e) {
                 if(e instanceof EntrantNotFound) {
-                    new Entrant(deviceId, new EntrantCallback() {
+                    EntrantController.createEntrant(deviceId, new EntrantCallback() {
                         @Override
                         public void onSuccess(Entrant entrant) {
                             sharedViewModel.setUser(entrant);
                             NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
                             navController.navigate(R.id.action_to_MenuFragment);
                         }
-
                         @Override
                         public void onFailure(Exception e) {
 

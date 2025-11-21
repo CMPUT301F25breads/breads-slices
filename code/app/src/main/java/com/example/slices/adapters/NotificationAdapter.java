@@ -103,54 +103,39 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 h.acceptButton.setText("Accept");
                 h.declineButton.setVisibility(View.VISIBLE);
                 h.acceptButton.setVisibility(View.VISIBLE);
-                h.acceptButton.setOnClickListener(v -> ((Invitation )n).onAccept(new EventCallback() {
-                    @Override
-                    public void onSuccess(Event event) {
-                        ((Invitation) n).setAccepted(true);
-                        NotificationManager.updateInvitation(((Invitation) n), new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                            }
+                // Ryan changed this
+                h.acceptButton.setOnClickListener(v -> {
+                    NotificationManager.acceptInvitation((Invitation) n, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            items.remove(n);
+                            notifyDataSetChanged();
+                        }
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                Toast.makeText(context, "Error: Couldn't update invitation", Toast.LENGTH_SHORT).show();
-                                Log.e("NotificationAdapter", "Error updating invitation");
-                            }
-                        });
-                        items.remove(n);
-                        notifyDataSetChanged();
-                    }
-                    @Override
-                    public void onFailure(Exception e) {
-                        Toast.makeText(context, "Error: Couldn't accept event", Toast.LENGTH_SHORT).show();
-                        Log.e("NotificationAdapter", "Error accepting event", e);
-                    }
-                }));
-                h.declineButton.setOnClickListener(v ->((Invitation) n).onDecline(new EventCallback() {
-                    @Override
-                    public void onSuccess(Event event) {
-                        ((Invitation) n).setDeclined(true);
-                        NotificationManager.updateInvitation(((Invitation) n), new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                            }
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(context, "Error: Couldn't accept invitation", Toast.LENGTH_SHORT).show();
+                            Log.e("NotificationAdapter", "Error accepting invitation", e);
+                        }
+                    });
+                });
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                Toast.makeText(context, "Error: Couldn't update invitation", Toast.LENGTH_SHORT).show();
-                                Log.e("NotificationAdapter", "Error updating invitation");
-                            }
-                        });
-                        items.remove(n);
-                        notifyDataSetChanged();
-                    }
-                    @Override
-                    public void onFailure(Exception e) {
-                        Toast.makeText(context, "Error: Couldn't decline event", Toast.LENGTH_SHORT).show();
-                        Log.e("NotificationAdapter", "Error declining event", e);
-                    }
-                }));
+                h.declineButton.setOnClickListener(v -> {
+                    NotificationManager.declineInvitation((Invitation) n, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            items.remove(n);
+                            notifyDataSetChanged();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(context, "Error: Couldn't decline invitation", Toast.LENGTH_SHORT).show();
+                            Log.e("NotificationAdapter", "Error declining invitation", e);
+                        }
+                    });
+                });
+
                 break;
             case NOT_SELECTED:
                 h.acceptButton.setText("Stay Registered");
@@ -160,18 +145,22 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                     items.remove(n);
                     notifyDataSetChanged();
                 });
-                h.declineButton.setOnClickListener(v ->((Invitation) n).onDecline(new EventCallback() {
-                    @Override
-                    public void onSuccess(Event event) {
-                        items.remove(n);
-                        notifyDataSetChanged();
-                    }
-                    @Override
-                    public void onFailure(Exception e) {
-                        Toast.makeText(context, "Error: Couldn't decline event", Toast.LENGTH_SHORT).show();
-                        Log.e("NotificationAdapter", "Error declining event", e);
-                    }
-                }));
+                // Ryan changed this
+                h.declineButton.setOnClickListener(v -> {
+                    NotificationManager.declineInvitation((Invitation) n, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            items.remove(n);
+                            notifyDataSetChanged();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(context, "Error: Couldn't decline event", Toast.LENGTH_SHORT).show();
+                            Log.e("NotificationAdapter", "Error declining", e);
+                        }
+                    });
+                });
                 break;
             case NOTIFICATION:
                 h.acceptButton.setVisibility(View.GONE);

@@ -1,7 +1,6 @@
 package com.example.slices.models;
 
 import com.example.slices.interfaces.DBWriteCallback;
-import com.example.slices.interfaces.ProfileChangeListener;
 
 public class Profile {
     /**
@@ -25,8 +24,6 @@ public class Profile {
      */
 
     private int id;
-
-    private transient ProfileChangeListener changeListener;
 
 
     /**
@@ -73,115 +70,64 @@ public class Profile {
     }
 
 
-    public void updateProfile(String name, String email, String phoneNumber, boolean sendNotifications, DBWriteCallback callback) {
-        if (name != null) {
-            this.name = name;
-        }
-        if (email != null) {
-            this.email = email;
-        }
-        if (phoneNumber != null) {
-            this.phoneNumber = phoneNumber;
-        }
-        this.sendNotifications = sendNotifications;
-        notifyChange(callback);
-    }
     /**
      * INTERNAL USE ONLY - Firestore requires this setter
-     * Do NOT call this method directly. Use the update counterpart instead.
      * @param name
      *      Name to set
      */
-    @Deprecated
+
     public void setName(String name) {
         this.name = name;
     }
 
-    public void updateName(String name, DBWriteCallback callback) {
-        this.name = name;
-        notifyChange(callback);
-
-    }
 
     /**
      * INTERNAL USE ONLY - Firestore requires this setter
-     * Do NOT call this method directly. Use the update counterpart instead.
      * @param email
      *      Email to set
      */
-    @Deprecated
+
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public void updateEmail(String email, DBWriteCallback callback) {
-        this.email = email;
-        notifyChange(callback);
 
-    }
 
     /**
      * INTERNAL USE ONLY - Firestore requires this setter
-     * Do NOT call this method directly. Use the update counterpart instead.
      * @param phoneNumber
      *      Phone number to set
      */
-    @Deprecated
+
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
 
-    /**
-     * Updates the phone number of the entrant
-     * @param phoneNumber
-     *      New phone number
-     * @param callback
-     *      Callback for database write completion
-     */
-    public void updatePhoneNumber(String phoneNumber, DBWriteCallback callback) {
-        this.phoneNumber = phoneNumber;
-        notifyChange(callback);
 
-    }
+
 
     /**
      * INTERNAL USE ONLY - Firestore requires this setter
-     * Do NOT call this method directly. Use the update counterpart instead.
      * @param sendNotifications
      *      Notification preference to set
      */
-    @Deprecated
+
     public void setSendNotifications(boolean sendNotifications) {
         this.sendNotifications = sendNotifications;
     }
 
-    public void updateSendNotifications(boolean sendNotifications, DBWriteCallback callback) {
-        this.sendNotifications = sendNotifications;
-        notifyChange(callback);
-    }
 
     /**
      * INTERNAL USE ONLY - Firestore requires this setter
-     * Do NOT call this method directly. Use the update counterpart instead.
      * @param id
+     *      ID to set
      */
-    @Deprecated
+
     public void setId(int id) {
         this.id = id;
     }
 
-    public void setChangeListener(ProfileChangeListener changeListener) {
-        this.changeListener = changeListener;
-    }
 
-    public void notifyChange(DBWriteCallback callback) {
-        if (changeListener != null) {
-            changeListener.onProfileChanged(this, callback);
-        }
-        else {
-            callback.onFailure(new Exception("No change listener set"));
-        }
-    }
 
 
 

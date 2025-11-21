@@ -138,13 +138,18 @@ public class  MenuFragment extends Fragment {
         //Creates a new Entrant object with the new information and the current user's ID
         Entrant newUser = new Entrant(newName, newEmail, newPhone, currentUser.getId());
         newUser.setDeviceId(InstanceUtil.getDeviceId((MainActivity) requireActivity()));
+        Profile profile = newUser.getProfile();
+        profile.setSendNotifications(newNotifications);
+        newUser.setProfile(profile);
 
 
         setProfileEditingEnabled(false);
         binding.profileSaveButton.setEnabled(false);
         binding.profileCancelButton.setEnabled(false);
 
-        newUser.getProfile().updateSendNotifications(newNotifications, new DBWriteCallback() {
+
+
+        EntrantController.updateEntrant(newUser, new DBWriteCallback() {
             @Override public void onSuccess() {
                 vm.setUser(newUser);
                 name = newName;
