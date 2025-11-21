@@ -22,6 +22,7 @@ import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.WaitlistController;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.databinding.EventDetailsFragmentBinding;
+import com.example.slices.models.EventInfo;
 
 /** EventDetailsFragment
  * A fragment for displaying the details of a tapped-on event in the Browse window
@@ -190,13 +191,14 @@ public class EventDetailsFragment extends Fragment {
                 });
             }
         });
+        EventInfo eventInfo = e.getEventInfo();
 
-        binding.eventTitle.setText(e.getName());
-        binding.eventToolbar.setTitle(e.getName());
-        binding.eventDescription.setText(e.getDescription());
+        binding.eventTitle.setText(eventInfo.getName());
+        binding.eventToolbar.setTitle(eventInfo.getName());
+        binding.eventDescription.setText(eventInfo.getDescription());
 
         // Date/time formatting
-        java.util.Date when = (e.getEventDate() != null) ? e.getEventDate().toDate() : null;
+        java.util.Date when = (eventInfo.getEventDate() != null) ? eventInfo.getEventDate().toDate() : null;
         String whenText;
         if (when != null) {
             java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(
@@ -206,7 +208,7 @@ public class EventDetailsFragment extends Fragment {
             whenText = "Date/time TBD"; // in case of any errors in date/time, failsafe!
         }
         binding.eventDatetime.setText(whenText);
-        Glide.with(this.getContext()).load(e.getImageUrl()).into(binding.eventImage);
+        Glide.with(this.getContext()).load(eventInfo.getImageUrl()).into(binding.eventImage);
 
         // counts style reflecting the "Waitlist | Participants" from the xml style
         int wlCount = 0; //waitlist count

@@ -141,7 +141,7 @@ public class TestUtils {
         for (int i = 0; i < count; i++) {
             // Send a notification to each entrant from the last entrant
             NotificationManager.sendNotification(
-                    entrants.get(i).getName(),
+                    entrants.get(i).getProfile().getName(),
                     "Test",
                     entrants.get(i).getId(),
                     entrants.get(count + 1).getId(),

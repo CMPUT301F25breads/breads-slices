@@ -24,6 +24,7 @@ import com.example.slices.databinding.MenuFragmentBinding;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
+import com.example.slices.models.Profile;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 
@@ -58,11 +59,13 @@ public class  MenuFragment extends Fragment {
 
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         Entrant user =  vm.getUser();
+        Profile profile = user.getProfile();
 
-        name = user.getName();
-        email = user.getEmail();
-        phoneNumber = user.getPhoneNumber();
-        notifications = user.getSendNotifications();
+
+        name = profile.getName();
+        email = profile.getEmail();
+        phoneNumber = profile.getPhoneNumber();
+        notifications = profile.getSendNotifications();
 
         // Sets the text fields to the current user's information
         binding.nameTextfield.setText(name);
@@ -135,13 +138,13 @@ public class  MenuFragment extends Fragment {
         //Creates a new Entrant object with the new information and the current user's ID
         Entrant newUser = new Entrant(newName, newEmail, newPhone, currentUser.getId());
         newUser.setDeviceId(InstanceUtil.getDeviceId((MainActivity) requireActivity()));
-        newUser.setSendNotifications(newNotifications);
+
+
         setProfileEditingEnabled(false);
         binding.profileSaveButton.setEnabled(false);
         binding.profileCancelButton.setEnabled(false);
 
-        // Updates the user in the database
-        EntrantController.updateEntrant(newUser, new DBWriteCallback() {
+        newUser.getProfile().updateSendNotifications(newNotifications, new DBWriteCallback() {
             @Override public void onSuccess() {
                 vm.setUser(newUser);
                 name = newName;

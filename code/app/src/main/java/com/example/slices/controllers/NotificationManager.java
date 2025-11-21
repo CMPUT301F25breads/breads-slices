@@ -8,6 +8,7 @@ import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.NotificationCallback;
 import com.example.slices.interfaces.NotificationIDCallback;
 import com.example.slices.interfaces.NotificationListCallback;
+import com.example.slices.models.Entrant;
 import com.example.slices.models.Invitation;
 import com.example.slices.models.LogType;
 import com.example.slices.models.Notification;
@@ -24,6 +25,7 @@ import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Singleton class to manage sending notifications and invitations.
@@ -43,7 +45,8 @@ public class NotificationManager {
     /**
      * Largest notification ID assigned so far
      */
-    private static int largestId = 0;
+    private static final AtomicInteger largestId = new AtomicInteger(0);
+
 
 
     private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -76,6 +79,33 @@ public class NotificationManager {
         }
     }
 
+    public static void sendNotifications(String title, String body, List<Entrant> recipients, int senderId,
+                                         DBWriteCallback callback) {
+        if (recipients.isEmpty()) {
+            callback.onSuccess();
+            return;
+        }
+
+        AtomicInteger completed = new AtomicInteger(0);
+        for (Entrant recipient : recipients) {
+            sendNotification(title, body, recipient.getId(), senderId, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    if (completed.incrementAndGet() == recipients.size()) {
+                        callback.onSuccess();
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    callback.onFailure(e);
+                }
+            });
+        }
+    }
+
+
+
 
     /**
      * Sends a standard notification to a recipient.
@@ -87,42 +117,64 @@ public class NotificationManager {
      * @param senderId ID of the sender entrant
      * @param callback Callback for success/failure of database write
      */
-    public static void sendNotification (String title, String body,int recipientId,
-                                         int senderId, DBWriteCallback callback){
-            if (largestId > 0) {
-                largestId++;
-            } else {
-                NotificationManager.getNotificationId(new NotificationIDCallback() {
+
+
+
+    public static void sendNotification(String title, String body, int recipientId,
+                                        int senderId, DBWriteCallback callback) {
+        getNextNotificationId(new NotificationIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                Notification notification = new Notification(title, body, id, recipientId, senderId);
+
+                writeNotification(notification, new DBWriteCallback() {
                     @Override
-                    public void onSuccess(int id) {
-                        largestId = id;
-                        sendNotification(title, body, recipientId, senderId, callback);
+                    public void onSuccess() {
+                        Logger.log(notification, null); // PASS null instead of the callback
+                        callback.onSuccess();           // Only call once here
                     }
 
                     @Override
                     public void onFailure(Exception e) {
-                        System.out.println("Failed to get notification ID: " + e.getMessage());
+                        System.out.println("Failed to write notification: " + e.getMessage());
+                        callback.onFailure(e);
                     }
                 });
-                return;
             }
 
-            Notification notification = new Notification(title, body, largestId, recipientId, senderId);
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(new Exception("Failed to get notification ID: " + e.getMessage()));
+            }
+        });
+    }
 
-            NotificationManager.writeNotification(notification, new DBWriteCallback() {
+    private static void getNextNotificationId(NotificationIDCallback callback) {
+        if (largestId.get() > 0) {
+            // Already initialized, increment and return
+            int id = largestId.incrementAndGet();
+            callback.onSuccess(id);
+        } else {
+            // Fetch from DB for first time
+            getNotificationId(new NotificationIDCallback() {
                 @Override
-                public void onSuccess() {
-                    Logger.log(notification, callback);
-                    callback.onSuccess();
+                public void onSuccess(int id) {
+                    largestId.set(id);
+                    callback.onSuccess(largestId.incrementAndGet());
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    System.out.println("Failed to write notification: " + e.getMessage());
                     callback.onFailure(e);
                 }
             });
         }
+    }
+
+
+
+
+
 
         /**
          * Sends an invitation notification for an event.
@@ -134,39 +186,32 @@ public class NotificationManager {
          * @param senderId ID of the sender entrant
          * @param eventId ID of the associated event
          */
-        public static void sendInvitation (String title, String body,int recipientId, int senderId,
-        int eventId, DBWriteCallback callback){
-            if (largestId > 0) {
-                largestId++;
-            } else {
-                NotificationManager.getNotificationId(new NotificationIDCallback() {
-                    @Override
-                    public void onSuccess(int id) {
-                        largestId = id;
-                        sendInvitation(title, body, recipientId, senderId, eventId, callback);
-                    }
+        public static void sendInvitation(String title, String body, int recipientId, int senderId,
+                                          int eventId, DBWriteCallback callback) {
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        System.out.println("Failed to get notification ID: " + e.getMessage());
-                        callback.onFailure(e);
-                    }
-                });
-                return;
-            }
-
-            Invitation invitation = new Invitation(title, body, largestId, recipientId, senderId, eventId);
-
-            NotificationManager.writeNotification(invitation, new DBWriteCallback() {
+            getNextNotificationId(new NotificationIDCallback() {
                 @Override
-                public void onSuccess() {
-                    Logger.log(invitation, callback);
-                    callback.onSuccess();
+                public void onSuccess(int id) {
+                    // Use the ID directly, no recursion
+                    Invitation invitation = new Invitation(title, body, id, recipientId, senderId, eventId);
+
+                    NotificationManager.writeNotification(invitation, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Logger.log(invitation, callback);
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            System.out.println("Failed to write invitation: " + e.getMessage());
+                            callback.onFailure(e);
+                        }
+                    });
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    System.out.println("Failed to write notification: " + e.getMessage());
+                    System.out.println("Failed to get notification ID: " + e.getMessage());
                     callback.onFailure(e);
                 }
             });
@@ -175,35 +220,21 @@ public class NotificationManager {
          * Gets the next available notification ID
          * @param callback
          *      Callback to call when the operation is complete
-         */
-        public static void getNotificationId (NotificationIDCallback callback){
+         *      */
+        public static void getNotificationId(NotificationIDCallback callback) {
             notificationRef.get()
-                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                        @Override
-                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                            if (!queryDocumentSnapshots.isEmpty()) {
-                                // Get the highest ID
-                                int highestId = 0;
-                                for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                    int id = doc.getLong("id").intValue();
-                                    if (id > highestId) {
-                                        highestId = id;
-                                        callback.onSuccess(highestId + 1);
-                                    } else {
-                                        callback.onSuccess(highestId + 1);
-                                    }
-                                }
+                    .addOnSuccessListener(querySnapshot -> {
+                        int highestId = 0;
+                        if (!querySnapshot.isEmpty()) {
+                            for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                                int id = doc.getLong("id").intValue();
+                                if (id > highestId) highestId = id;
                             }
                         }
+                        // Always call callback once
+                        callback.onSuccess(highestId + 1);
                     })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            callback.onFailure(new DBOpFailed("Failed to get next notification ID"));
-
-                        }
-                    });
-
+                    .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to get next notification ID")));
         }
 
         /**
@@ -316,7 +347,7 @@ public class NotificationManager {
          * @param callback
          *      Callback to call when the operation is complete
          */
-        public static void getNotificationById ( int id, NotificationCallback callback){
+        public static void getNotificationById (int id, NotificationCallback callback){
             notificationRef.whereEqualTo("id", id)
                     .whereEqualTo("type", NotificationType.NOTIFICATION)
                     .get()

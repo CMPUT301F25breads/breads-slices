@@ -257,7 +257,7 @@ public class OrganizerCreateEventFragment extends Fragment {
 
             // Create event object - use testing constructor to bypass validation
             // The boolean flag bypasses date validation
-            Event event = new Event(name, desc, location, eventTimestamp, regEndTimestamp, maxParticipants, true,
+            Event event = new Event(name, desc, location, eventTimestamp, regEndTimestamp, maxParticipants,
                     new EventCallback() {
                         @Override
                         public void onSuccess(Event createdEvent) {

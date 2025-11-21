@@ -164,4 +164,6 @@ public class WaitlistController {
         t.addOnSuccessListener(snap -> cb.accept(snap.exists()))
          .addOnFailureListener(e -> cb.accept(false));
     }
+
+
 }

@@ -149,7 +149,7 @@ public class testEvent {
         assertTrue("Event creation callback was not called in time", completed);
         Event e = ref.get();
         assertNotNull("Event should not be null", e);
-        assertEquals("Foo", e.getName());
+        assertEquals("Foo", e.getEventInfo().getName());
     }
 
     /**

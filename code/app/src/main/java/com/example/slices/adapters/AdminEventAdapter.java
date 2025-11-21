@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.slices.R;
 import com.example.slices.models.Event;
+import com.example.slices.models.EventInfo;
 import com.google.android.material.button.MaterialButton;
 
 
@@ -66,16 +67,17 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Event event = eventList.get(position);
+        EventInfo eventInfo = event.getEventInfo();
 
-        holder.title.setText(event.getName());
-        holder.details.setText(event.getDescription() != null ? event.getDescription() : "No description");
+        holder.title.setText(eventInfo.getName());
+        holder.details.setText(eventInfo.getDescription() != null ? eventInfo.getDescription() : "No description");
 
         // Safe handling of null image URL or null context
-        String imageUrl = event.getImageUrl();
+        String imageUrl = eventInfo.getImageUrl();
         Context ctx = holder.itemView.getContext();
 
         if (ctx == null || holder.icon == null) {
-            Log.e("AdminEventAdapter", "Icon is null for event: " + event.getName());
+            Log.e("AdminEventAdapter", "Icon is null for event: " + eventInfo.getName());
             return;
         }
 
@@ -95,7 +97,7 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
         // Remove button click
         holder.removeButton.setOnClickListener(v -> {
             removeEvent(event);
-            Toast.makeText(ctx, event.getName() + " removed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ctx, eventInfo.getName() + " removed", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -128,8 +130,9 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
         } else {
             String lowerQuery = query.toLowerCase();
             for (Event e : eventListFull) {
-                if (e.getName().toLowerCase().contains(lowerQuery)
-                        || (e.getLocation() != null && e.getLocation().toLowerCase().contains(lowerQuery))) {
+                EventInfo eventInfo = e.getEventInfo();
+                if (eventInfo.getName().toLowerCase().contains(lowerQuery)
+                        || (eventInfo.getLocation() != null && eventInfo.getLocation().toLowerCase().contains(lowerQuery))) {
                     filtered.add(e);
                 }
             }

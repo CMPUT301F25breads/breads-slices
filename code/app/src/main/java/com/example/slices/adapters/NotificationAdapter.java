@@ -18,6 +18,7 @@ import com.example.slices.controllers.NotificationManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
+import com.example.slices.models.EventInfo;
 import com.example.slices.models.Invitation;
 import com.example.slices.models.Notification;
 import com.google.android.material.button.MaterialButton;
@@ -83,8 +84,9 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         EventController.getEvent(n.getEventId(), new EventCallback() {
             @Override
             public void onSuccess(Event event) {
-                h.eventName.setText(event.getName());
-                h.eventDate.setText(event.getEventDate().toDate().toString());
+                EventInfo eventInfo = event.getEventInfo();
+                h.eventName.setText(eventInfo.getName());
+                h.eventDate.setText(eventInfo.getEventDate().toDate().toString());
             }
             @Override
             public void onFailure(Exception e) {

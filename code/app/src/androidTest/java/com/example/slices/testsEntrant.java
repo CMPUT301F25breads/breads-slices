@@ -11,8 +11,10 @@ import com.example.slices.controllers.EntrantController;
 import com.example.slices.controllers.EventController;
 import com.example.slices.controllers.Logger;
 import com.example.slices.controllers.NotificationManager;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.models.Entrant;
+import com.example.slices.models.Profile;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -93,9 +95,10 @@ public class testsEntrant {
     @Test
     public void testEntrant() {
         Entrant e = new Entrant("Foo", "Foo@Foo.Foo", "780-678-1211", 1);
-        assertTrue(e.getName().equals("Foo"));
-        assertTrue(e.getEmail().equals("Foo@Foo.Foo"));
-        assertTrue(e.getPhoneNumber().equals("780-678-1211"));
+        Profile p = e.getProfile();
+        assertTrue(p.getName().equals("Foo"));
+        assertTrue(p.getEmail().equals("Foo@Foo.Foo"));
+        assertTrue(p.getPhoneNumber().equals("780-678-1211"));
         assertTrue(e.getId() == 1);
     }
 
@@ -136,14 +139,43 @@ public class testsEntrant {
      */
     @Test
     public void testSettersAndGetters() {
-        primaryEntrant.setName("NewName");
-        primaryEntrant.setEmail("newemail@test.com");
-        primaryEntrant.setPhoneNumber("111-222-3333");
-        primaryEntrant.setDeviceId("DEVICE123");
+        Profile profile = primaryEntrant.getProfile();
+        profile.updateName("NewName", new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                profile.updateEmail("newemail@test.com", new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        profile.updatePhoneNumber("111-222-3333", new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                assertEquals("NewName", profile.getName());
+                                assertEquals("newemail@test.com", profile.getEmail());
+                                assertEquals("111-222-3333", profile.getPhoneNumber());
+                            }
 
-        assertEquals("NewName", primaryEntrant.getName());
-        assertEquals("newemail@test.com", primaryEntrant.getEmail());
-        assertEquals("111-222-3333", primaryEntrant.getPhoneNumber());
+                            @Override
+                            public void onFailure(Exception e) {
+                                fail("Failed to update phone number");
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        fail("Failed to update email");
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                fail("Failed to update name");
+            }
+        });
+
+
+        primaryEntrant.setDeviceId("DEVICE123");
         assertEquals("DEVICE123", primaryEntrant.getDeviceId());
     }
 
@@ -182,11 +214,29 @@ public class testsEntrant {
      */
     @Test
     public void testSendNotifications() {
-        primaryEntrant.setSendNotifications(true);
-        assertTrue(primaryEntrant.getSendNotifications());
+        Profile profile = primaryEntrant.getProfile();
+        profile.updateSendNotifications(true, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                assertTrue(profile.getSendNotifications());
+                profile.updateSendNotifications(false, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        assertFalse(profile.getSendNotifications());
+                    }
 
-        primaryEntrant.setSendNotifications(false);
-        assertFalse(primaryEntrant.getSendNotifications());
+                    @Override
+                    public void onFailure(Exception e) {
+                        fail("Failed to update send notifications");
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                fail("Failed to update send notifications");
+            }
+        });
     }
 
     /**

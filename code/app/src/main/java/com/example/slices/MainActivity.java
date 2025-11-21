@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Entrant entrant) {
                 sharedViewModel.setUser(entrant);
-                Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getName()), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getProfile().getName()), Toast.LENGTH_SHORT).show();
                 NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
                 navController.navigate(R.id.MyEventsFragment);
             }
