@@ -10,6 +10,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.example.slices.models.Event;
 import com.example.slices.R;
+import com.example.slices.models.EventInfo;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -51,16 +52,18 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Event event = events.get(position);
+        EventInfo eventInfo = event.getEventInfo();
+
 
         // Set text fields
-        holder.title.setText(event.getName());
-        Date date = event.getEventDate().toDate();
+        holder.title.setText(eventInfo.getName());
+        Date date = eventInfo.getEventDate().toDate();
         SimpleDateFormat formatter = new SimpleDateFormat("ha | MMM. dd, yyyy", Locale.CANADA);
-        holder.details.setText(formatter.format(date) + " | " + event.getLocation());
+        holder.details.setText(formatter.format(date) + " | " + eventInfo.getLocation());
 
         // Load image
         Glide.with(context)
-                .load(event.getImageUrl())
+                .load(eventInfo.getImageUrl())
                 .placeholder(R.drawable.ic_image)
                 .into(holder.image);
 

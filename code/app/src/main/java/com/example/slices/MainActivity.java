@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Entrant entrant) {
                 sharedViewModel.setUser(entrant);
-                Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getName()), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getProfile().getName()), Toast.LENGTH_SHORT).show();
                 NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
                 navController.navigate(R.id.MyEventsFragment);
             }
@@ -105,14 +105,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Exception e) {
                 if(e instanceof EntrantNotFound) {
-                    new Entrant(deviceId, new EntrantCallback() {
+                    EntrantController.createEntrant(deviceId, new EntrantCallback() {
                         @Override
                         public void onSuccess(Entrant entrant) {
                             sharedViewModel.setUser(entrant);
                             NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
                             navController.navigate(R.id.action_to_MenuFragment);
                         }
-
                         @Override
                         public void onFailure(Exception e) {
 

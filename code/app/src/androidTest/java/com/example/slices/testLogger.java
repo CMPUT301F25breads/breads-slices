@@ -137,4 +137,28 @@ public class testLogger {
         assertEquals(logger1, logger2);
     }
 
+    /**
+     * Tests the getAllNotificationLogs method of the Logger class
+     *
+     */
+    @Test
+    public void testGetAllNotificationLogs() throws InterruptedException {
+        //TODO: Implement
+    }
+
+    /**
+     * Tests the getNotificationLogById method of the Logger class
+     *
+     */
+    @Test
+    public void testGetNotificationLogById() throws InterruptedException {
+        //TODO: Implement
+    }
+
+    
+
+
+
+
+
 }

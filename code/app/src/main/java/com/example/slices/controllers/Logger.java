@@ -79,43 +79,40 @@ public class Logger {
      *      Notification to log
      */
     public static void log(Notification notification, DBWriteCallback callback) {
-        //log the notification to the database
-        //Check if largestID is greater than 0
         if (largestId > 0) {
-            //Increment largestID by 1
-            largestId++;
-        }
-        //Otherwise we have to go get the largestID from the database
-        else {
+            int idToUse = ++largestId;
+            writeLog(new NotificationLogEntry(notification, idToUse), new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    System.out.println("Logged notification successfully");
+                    if (callback != null) {
+                        callback.onSuccess();
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    System.out.println("Failed to log notification: " + e.getMessage());
+                    if (callback != null) {
+                        callback.onFailure(e);
+                    }
+
+                }
+            });
+        } else {
             getLogId(new LogIDCallback() {
                 @Override
                 public void onSuccess(int id) {
                     largestId = id;
-                    log(notification, callback);
+                    log(notification, callback); // recursion safe, largestId > 0 next time
                 }
 
                 @Override
                 public void onFailure(Exception e) {
                     System.out.println("Failed to get log ID: " + e.getMessage());
-                    callback.onFailure(e);
                 }
-
             });
-
         }
-        writeLog(new NotificationLogEntry(notification, largestId), new DBWriteCallback() {
-            @Override
-            public void onSuccess() {
-                System.out.println("Logged notification successfully");
-                callback.onSuccess();
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                System.out.println("Failed to log notification: " + e.getMessage());
-                callback.onFailure(e);
-            }
-        });
     }
     /**
      * Gets the next available log ID

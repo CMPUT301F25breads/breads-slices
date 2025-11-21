@@ -11,9 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.example.slices.controllers.EventController;
 import com.example.slices.models.Event;
 import com.example.slices.R;
-import com.example.slices.controllers.WaitlistController;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventActions;
 import com.example.slices.SharedViewModel;
@@ -22,6 +22,7 @@ import android.view.LayoutInflater;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
+import com.example.slices.models.EventInfo;
 
 import java.util.List;
 
@@ -113,9 +114,11 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         // inflate the view first, then grab the event + null guard
         Event event = getItem(position);
 
+
         if (event == null){
             return view;
         }
+        EventInfo eventInfo = event.getEventInfo();
         final int eventId = event.getId(); // ID from firestore DB
         final String eventIdStr = String.valueOf(eventId); // then make it string
         // initial waitlist state comes from shared view model
@@ -124,11 +127,11 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
         // binding core card views, same as EventAdapter behaviour
         TextView title = view.findViewById(R.id.event_title);
         if (title != null) {
-            title.setText(event.getName());
+            title.setText(eventInfo.getName());
         }
         ImageView image = view.findViewById(R.id.image);
         if (image != null) {
-            Glide.with(this.getContext()).load(event.getImageUrl()).into(image);
+            Glide.with(this.getContext()).load(eventInfo.getImageUrl()).into(image);
         }
 
         // join/leave button (safeguarded if the layout doesnt have it)
@@ -151,7 +154,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                     // switch to Join
                     updateWaitlistButton(actionBtn, false);
 
-                    WaitlistController.leave(eventIdStr, userId, new DBWriteCallback() {
+                    EventController.removeEntrantFromWaitlist(event, vm.getUser(), new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             vm.removeWaitlistedId(eventIdStr);
@@ -170,7 +173,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                     // switch to Leave
                     updateWaitlistButton(actionBtn, true);
 
-                    WaitlistController.join(eventIdStr, userId, new DBWriteCallback() {
+                    EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             vm.addWaitlistedId(eventIdStr);

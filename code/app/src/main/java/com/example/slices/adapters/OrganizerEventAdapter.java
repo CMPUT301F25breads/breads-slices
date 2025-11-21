@@ -18,6 +18,7 @@ import com.bumptech.glide.Glide;
 import com.example.slices.R;
 import com.example.slices.fragments.OrganizerEventsFragment;
 import com.example.slices.models.Event;
+import com.example.slices.models.EventInfo;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -77,19 +78,21 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Event event = eventList.get(position);
+        EventInfo eventInfo = event.getEventInfo();
+
 
         // Set text fields
-        holder.eventName.setText(event.getName());
-        holder.eventDetails.setText("Entrants: " + event.getCurrentEntrants() + "/" + event.getMaxEntrants());
+        holder.eventName.setText(eventInfo.getName());
+        holder.eventDetails.setText("Entrants: " + eventInfo.getCurrentEntrants() + "/" + eventInfo.getMaxEntrants());
 
         // Format event date/time
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy h:mm a", Locale.getDefault());
-        String eventTime = sdf.format(event.getEventDate().toDate());
-        holder.eventDateTime.setText(eventTime + " | " + event.getLocation());
+        String eventTime = sdf.format(eventInfo.getEventDate().toDate());
+        holder.eventDateTime.setText(eventTime + " | " + eventInfo.getLocation());
 
         // Load image with Glide
         Glide.with(context)
-                .load(event.getImageUrl())
+                .load(eventInfo.getImageUrl())
                 .placeholder(R.drawable.ic_image)
                 .into(holder.imgEvent);
 

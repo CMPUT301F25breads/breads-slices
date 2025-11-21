@@ -23,10 +23,13 @@ import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.R;
+import com.example.slices.controllers.EventController;
 import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
+import com.example.slices.models.EventInfo;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -248,19 +251,29 @@ public class OrganizerCreateEventFragment extends Fragment {
             int maxWaiting = TextUtils.isEmpty(maxWaitStr) ? 0 : Integer.parseInt(maxWaitStr);
 
             // Organizer ID (if we want event to be associated to organizer)
-            //String organizerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            String organizerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
             // Debug: Log the parsed timestamps
             android.util.Log.d("CreateEvent", "Event Date: " + eventTimestamp.toDate().toString());
             android.util.Log.d("CreateEvent", "Reg Deadline: " + regEndTimestamp.toDate().toString());
             android.util.Log.d("CreateEvent", "Current Time: " + new Timestamp(Calendar.getInstance().getTime()).toDate().toString());
 
+            //How far away can the entrants be
+            String entrantDist = "10";
+
+            //Placeholder image
+            String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
+
+            // Build an eventInfo
+            EventInfo eventInfo = new EventInfo(name, desc, guide, location, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
+                    maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
+
+
             // Create event object - use testing constructor to bypass validation
             // The boolean flag bypasses date validation
-            Event event = new Event(name, desc, location, eventTimestamp, regEndTimestamp, maxParticipants, true,
-                    new EventCallback() {
+            EventController.createEvent(eventInfo, new EventCallback() {
                         @Override
-                        public void onSuccess(Event createdEvent) {
+                            public void onSuccess(Event createdEvent) {
                             android.util.Log.d("CreateEvent", "Event created with ID: " + createdEvent.getId());
 
                             // Generate QR code for the event

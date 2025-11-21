@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Class representing a waitlist for an event
  * @author Ryan Haubrich
- * @version 1.0
+ * @version 1.5
  */
 
 @IgnoreExtraProperties
@@ -57,11 +57,7 @@ public class Waitlist {
      *      If the waitlist is already full
      */
     public void addEntrant(Entrant entrant) {
-        if (isFull()) {
-            throw new IllegalStateException("Waitlist is full");
-        }
         entrants.add(entrant);
-        currentEntrants++;
     }
 
     /**
@@ -88,12 +84,7 @@ public class Waitlist {
      *      Entrant to remove
      */
     public void removeEntrant(Entrant entrant) {
-        if (isEmpty()) {
-            throw new IllegalStateException("Waitlist is empty");
-        }
-        boolean removed = entrants.removeIf(e -> e.getId() == (entrant.getId()));
-        if (!removed) throw new IllegalArgumentException("Entrant not on waitlist");
-
+        entrants.remove(entrant);
         currentEntrants--;
     }
 

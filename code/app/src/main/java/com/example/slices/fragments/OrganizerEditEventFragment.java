@@ -39,6 +39,7 @@ import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.models.EventInfo;
 import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
@@ -244,13 +245,15 @@ public class OrganizerEditEventFragment extends Fragment {
 
                 // Store the event object for later updates
                 currentEvent = event;
+                EventInfo eventInfo = event.getEventInfo();
+
 
                 // --- Populate UI ---
-                editEventName.setText(event.getName());
-                textDescription.setText(event.getDescription());
+                editEventName.setText(eventInfo.getName());
+                textDescription.setText(eventInfo.getDescription());
                 textGuidelines.setText("event guidelines");
-                textLocation.setText(event.getLocation());
-                editMaxParticipants.setText(String.valueOf(event.getMaxEntrants()));
+                textLocation.setText(eventInfo.getLocation());
+                editMaxParticipants.setText(String.valueOf(eventInfo.getMaxEntrants()));
 
                 // Display waiting list capacity (show empty if unlimited/default)
                 int waitlistCapacity = event.getWaitlist().getMaxCapacity();
@@ -262,12 +265,12 @@ public class OrganizerEditEventFragment extends Fragment {
 
                 // Format and display date
                 SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy", Locale.getDefault());
-                editDate.setText(dateFormat.format(event.getEventDate().toDate()));
-                editRegEnd.setText(dateFormat.format(event.getRegDeadline().toDate()));
+                editDate.setText(dateFormat.format(eventInfo.getEventDate().toDate()));
+                editRegEnd.setText(dateFormat.format(eventInfo.getRegEnd().toDate()));
 
                 // Format and display time
                 SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-                editTime.setText(timeFormat.format(event.getEventDate().toDate()));
+                editTime.setText(timeFormat.format(eventInfo.getEventDate().toDate()));
 
 
                 // To be implemented later
@@ -278,7 +281,7 @@ public class OrganizerEditEventFragment extends Fragment {
                 //        }
 
                 Glide.with(requireContext())
-                        .load(event.getImageUrl())
+                        .load(eventInfo.getImageUrl())
                         .placeholder(R.drawable.ic_image)
                         .into(eventImage);
             }
@@ -385,16 +388,34 @@ public class OrganizerEditEventFragment extends Fragment {
             // Update the TextView
             targetTextView.setText(newValue);
 
-            // Update the Event object based on which field was edited
+            // First get the existing event info
+            EventInfo currentEventInfo = currentEvent.getEventInfo();
+
+            // ------------------------------------------
+            // I added logic for all fields but I dont know what the UI looks like
+            // -Ryan
+            // ------------------------------------------
+
+            // Update the EventInfo object based on which field was edited
             if (title.equals("Edit Description")) {
-                currentEvent.setDescription(newValue);
+                currentEventInfo.setDescription(newValue);
             } else if (title.equals("Edit Location")) {
-                currentEvent.setLocation(newValue);
+                currentEventInfo.setLocation(newValue);
+            } else if (title.equals("Edit Guidelines")) {
+                currentEventInfo.setGuidelines(newValue);
+            } else if (title.equals("Edit Image")) {
+                currentEventInfo.setImageUrl(newValue);
+            } else if (title.equals("Edit Name")) {
+                currentEventInfo.setName(newValue);
+            } else if (title.equals("Edit Max Participants")) {
+                currentEventInfo.setMaxEntrants(Integer.parseInt(newValue));
             }
-            // Note: Guidelines field doesn't exist in Event model yet
+
+
+
 
             // Save to database
-            EventController.updateEvent(currentEvent, new DBWriteCallback() {
+            EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getContext(), title + " saved to database!", Toast.LENGTH_SHORT).show();
@@ -539,7 +560,7 @@ public class OrganizerEditEventFragment extends Fragment {
             }
 
             Timestamp newEventDate = new Timestamp(calendar.getTime());
-            currentEvent.setEventDate(newEventDate);
+            currentEvent.getEventInfo().setEventDate(newEventDate);
 
             EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
@@ -589,7 +610,8 @@ public class OrganizerEditEventFragment extends Fragment {
             calendar.set(year, month, day, 23, 59, 59); // Set to end of day
 
             Timestamp newRegDeadline = new Timestamp(calendar.getTime());
-            currentEvent.setRegDeadline(newRegDeadline);
+
+            currentEvent.getEventInfo().setRegEnd(newRegDeadline);
 
             EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
@@ -619,12 +641,13 @@ public class OrganizerEditEventFragment extends Fragment {
         String newName = editEventName.getText().toString().trim();
         if (newName.isEmpty()) {
             Toast.makeText(getContext(), "Event name cannot be empty", Toast.LENGTH_SHORT).show();
-            editEventName.setText(currentEvent.getName());
+            editEventName.setText(currentEvent.getEventInfo().getName());
             return;
         }
 
-        currentEvent.setName(newName);
-        EventController.updateEvent(currentEvent, new DBWriteCallback() {
+        EventInfo currentEventInfo = currentEvent.getEventInfo();
+        currentEventInfo.setName(newName);
+        EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
             @Override
             public void onSuccess() {
                 Toast.makeText(getContext(), "Event name saved!", Toast.LENGTH_SHORT).show();
@@ -708,7 +731,7 @@ public class OrganizerEditEventFragment extends Fragment {
                 return;
             }
 
-            currentEvent.setMaxEntrants(maxParticipants);
+            currentEvent.getEventInfo().setMaxEntrants(maxParticipants);
             EventController.updateEvent(currentEvent, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {

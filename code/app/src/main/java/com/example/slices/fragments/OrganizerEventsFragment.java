@@ -16,6 +16,7 @@ import com.example.slices.controllers.EventController;
 import com.example.slices.databinding.OrganizerEventsFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
 import com.example.slices.models.Event;
+import com.example.slices.models.EventInfo;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -102,8 +103,9 @@ public class OrganizerEventsFragment extends Fragment {
 
                 // Sort events
                 for (Event e : events) {
-                    long eventTime = e.getEventDate().toDate().getTime();
-                    long regDeadline = e.getRegDeadline().toDate().getTime();
+                    EventInfo eventInfo = e.getEventInfo();
+                    long eventTime = eventInfo.getEventDate().toDate().getTime();
+                    long regDeadline = eventInfo.getRegEnd().toDate().getTime();
 
                     if (now < regDeadline) {
                         upcomingEvents.add(e);
