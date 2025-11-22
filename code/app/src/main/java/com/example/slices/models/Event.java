@@ -46,7 +46,7 @@ public class Event implements Comparable<Event> {
 
     public Event(String name, String description, String location, String guidelines, String imgUrl,
                  Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
-                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, String organizerID) {
+                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
         this.eventInfo = new EventInfo(name, description, location, guidelines, imgUrl,
                 eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
         this.id = id;

@@ -22,6 +22,7 @@ import com.example.slices.models.Event;
 
 import com.example.slices.databinding.BrowseFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
+import com.example.slices.models.SearchConditions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
     private ArrayList<Event> eventList = new ArrayList<>();
     private SharedViewModel vm;
-
+    private static SearchConditions sc = new SearchConditions();
 
     @Override
     public View onCreateView(

@@ -39,7 +39,7 @@ public class EntrantController {
 
     @SuppressLint("StaticFieldLeak")
     private static final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
-    private static CollectionReference entrantRef;
+    private static CollectionReference entrantRef = firestore.collection("entrants");
 
     private EntrantController() {}
 
@@ -464,6 +464,7 @@ public class EntrantController {
             }
             @Override
             public void onFailure(Exception e) {
+                if(e instanceof EntrantNotFound) {
                 //If it doesn't exist, create it
                 //Start by getting a new id
                 EntrantController.getNewEntrantId(new EntrantIDCallback() {
@@ -489,8 +490,75 @@ public class EntrantController {
                     }
                 });
             }
+            }
         });
     }
+
+    public static void createEntrant(String deviceId, EntrantCallback callback, int i) {
+        //First check if the entrant already exists
+        EntrantController.getEntrantByDeviceId(deviceId, new EntrantCallback() {
+            @Override
+            public void onSuccess(Entrant entrant) {
+                callback.onSuccess(entrant);
+            }
+            @Override
+            public void onFailure(Exception e) {
+                if(e instanceof EntrantNotFound) {
+                    //If it doesn't exist, create it
+                    //Start by getting a new id
+                    EntrantController.getNewEntrantId(new EntrantIDCallback() {
+                        @Override
+                        public void onSuccess(int id) {
+                            Entrant newEntrant = new Entrant(deviceId, id);
+                            EntrantController.writeEntrant(newEntrant, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    callback.onSuccess(newEntrant);
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    callback.onFailure(e);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            callback.onFailure(e);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+//    public static void createEntrant(String deviceId, EntrantCallback callback) {
+//                //If it doesn't exist, create it
+//                //Start by getting a new id
+//                EntrantController.getNewEntrantId(new EntrantIDCallback() {
+//                    @Override
+//                    public void onSuccess(int id) {
+//                        Entrant newEntrant = new Entrant(deviceId, id);
+//                        EntrantController.writeEntrant(newEntrant, new DBWriteCallback() {
+//                            @Override
+//                            public void onSuccess() {
+//                                callback.onSuccess(newEntrant);
+//                            }
+//
+//                            @Override
+//                            public void onFailure(Exception e) {
+//                                callback.onFailure(e);
+//                            }
+//                        });
+//                    }
+//
+//                    @Override
+//                    public void onFailure(Exception e) {
+//                        callback.onFailure(e);
+//                    }
+//                });
+//    }
 
     public static void createEntrant(String name, String email, String phoneNumber, EntrantCallback callback) {
         //Start by getting a new id

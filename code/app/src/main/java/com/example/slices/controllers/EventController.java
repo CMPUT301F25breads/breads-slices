@@ -20,6 +20,7 @@ import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
 import com.example.slices.models.Notification;
+import com.example.slices.models.SearchConditions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -29,6 +30,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
@@ -41,7 +43,7 @@ public class EventController {
 
     private static FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    private static CollectionReference eventRef;
+    private static CollectionReference eventRef = db.collection("events");
 
     private static EventController instance;
 
@@ -414,7 +416,7 @@ public class EventController {
 
     public static void createEvent(String name, String description, String location, String guidelines, String imgUrl,
                                    Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
-                                   int maxWaiting, boolean entrantLoc, String entrantDist, String organizerID, EventCallback callback) {
+                                   int maxWaiting, boolean entrantLoc, String entrantDist, int organizerID, EventCallback callback) {
         try {
             verifyEventTimes(regStart, regEnd, eventDate);
             //First get an id
@@ -664,6 +666,7 @@ public class EventController {
      * @param callback Callback to call when the operation is complete
      */
     public static void getAllFutureEvents(EventListCallback callback) {
+
         eventRef.get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -673,6 +676,48 @@ public class EventController {
                             for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                                 Event event = doc.toObject(Event.class);
                                 if (event.getEventInfo().getEventDate().compareTo(Timestamp.now()) > 0)
+                                    events.add(event);
+                            }
+                            callback.onSuccess(events);
+
+
+                        } else {
+                            callback.onSuccess(new ArrayList<Event>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get Events"));
+                    }
+                });
+    }
+
+    private static void queryEvents(SearchConditions search, EventListCallback callback) {
+        Query q = eventRef.whereGreaterThanOrEqualTo("eventDate", Timestamp.now());
+
+        if(search.getAvailStart() != null && search.getAvailEnd() != null) {
+            q = q.whereGreaterThanOrEqualTo("eventDate", search.getAvailStart());
+            q = q.whereLessThanOrEqualTo("eventDate", search.getAvailEnd());
+        }
+
+        if(search.getLoc() != null && !search.getLoc().trim().isEmpty()) {
+            q = q.whereEqualTo("location", search.getLoc());
+        }
+
+        if(search.getMaxEntrants() != -1) {
+            q = q.whereLessThanOrEqualTo("maxEntrants", search.getMaxEntrants());
+        }
+
+        q.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            ArrayList<Event> events = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Event event = doc.toObject(Event.class);
+                                if (event.getEventInfo().getName().toLowerCase().contains(search.getName()))
                                     events.add(event);
                             }
                             callback.onSuccess(events);
