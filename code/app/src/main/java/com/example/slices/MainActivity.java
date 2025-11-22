@@ -14,7 +14,9 @@ import androidx.navigation.ui.NavigationUI;
 import com.example.slices.controllers.EntrantController;
 import com.example.slices.databinding.ActivityMainBinding;
 import com.example.slices.exceptions.EntrantNotFound;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
+import com.example.slices.interfaces.EntrantIDCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
 
@@ -97,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Entrant entrant) {
                 sharedViewModel.setUser(entrant);
-                Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getProfile().getName()), Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getProfile().getName()), Toast.LENGTH_SHORT).show();
                 NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
                 navController.navigate(R.id.MyEventsFragment);
             }
@@ -105,18 +107,30 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Exception e) {
                 if(e instanceof EntrantNotFound) {
-                    EntrantController.createEntrant(deviceId, new EntrantCallback() {
+                    Entrant ent = new Entrant(deviceId);
+                    EntrantController.getNewEntrantId(new EntrantIDCallback() {
                         @Override
-                        public void onSuccess(Entrant entrant) {
-                            sharedViewModel.setUser(entrant);
-                            NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
-                            navController.navigate(R.id.action_to_MenuFragment);
+                        public void onSuccess(int id) {
+                            ent.setId(id);
                         }
+
                         @Override
                         public void onFailure(Exception e) {
 
                         }
                     });
+
+                    EntrantController.writeEntrant(ent, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {}
+
+                        @Override
+                        public void onFailure(Exception e) {}
+                    });
+                    sharedViewModel.setUser(ent);
+                    NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
+                    navController.navigate(R.id.action_to_MenuFragment);
+
                 }
             }
         });

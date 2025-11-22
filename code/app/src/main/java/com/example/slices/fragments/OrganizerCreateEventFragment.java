@@ -18,14 +18,18 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.slices.R;
+import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.EventController;
 import com.example.slices.controllers.QRCodeManager;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
+import com.example.slices.interfaces.EventIDCallback;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
 import com.google.firebase.Timestamp;
@@ -53,6 +57,7 @@ import java.util.Calendar;
 public class OrganizerCreateEventFragment extends Fragment {
 
     private EditText editEventName, editDescription, editGuidelines, editLocation;
+    private SharedViewModel svm;
     private EditText editDate, editTime, editRegStart, editRegEnd, editMaxWaiting, editMaxParticipants;
     private SwitchCompat switchEntrantLocation;
     private ImageView eventImage;
@@ -102,6 +107,8 @@ public class OrganizerCreateEventFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
         editEventName = view.findViewById(R.id.editEventName);
         editDescription = view.findViewById(R.id.editDescription);
@@ -251,7 +258,7 @@ public class OrganizerCreateEventFragment extends Fragment {
             int maxWaiting = TextUtils.isEmpty(maxWaitStr) ? 0 : Integer.parseInt(maxWaitStr);
 
             // Organizer ID (if we want event to be associated to organizer)
-            String organizerID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            int organizerID = svm.getUser().getId();
 
             // Debug: Log the parsed timestamps
             android.util.Log.d("CreateEvent", "Event Date: " + eventTimestamp.toDate().toString());
@@ -299,7 +306,7 @@ public class OrganizerCreateEventFragment extends Fragment {
                     });
 
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }

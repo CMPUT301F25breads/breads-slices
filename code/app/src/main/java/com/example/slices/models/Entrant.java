@@ -61,6 +61,12 @@ public class Entrant {
         this.id = id;
     }
 
+    public Entrant(String deviceId) {
+        this.deviceId = deviceId;
+        this.subEntrants = new ArrayList<>();
+        this.organizedEvents = new ArrayList<>();
+    }
+
 
     /**
      * Constructor for the Entrant class for creating a primary entrant
