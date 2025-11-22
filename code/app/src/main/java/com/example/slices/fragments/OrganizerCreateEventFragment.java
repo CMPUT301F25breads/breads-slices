@@ -306,7 +306,7 @@ public class OrganizerCreateEventFragment extends Fragment {
                     });
 
         } catch (Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
             Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
