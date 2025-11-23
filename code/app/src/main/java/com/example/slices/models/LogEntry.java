@@ -21,7 +21,7 @@ public abstract class LogEntry {
     /**
      * ID of the log entry
      */
-    protected int logId;
+    protected String logId;
 
     /**
      * Type of the log entry
@@ -33,7 +33,7 @@ public abstract class LogEntry {
      * @return
      *      ID of the log entry
      */
-    public int getLogId() {
+    public String getLogId() {
         return logId;
     }
 
@@ -87,7 +87,7 @@ public abstract class LogEntry {
      * @param logId
      *      ID to set for the log entry
      */
-    public void setLogId(int logId) {
+    public void setLogId(String logId) {
         this.logId = logId;
     }
 

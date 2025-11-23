@@ -6,6 +6,7 @@ import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.LogIDCallback;
 import com.example.slices.interfaces.LogListCallback;
+import com.example.slices.models.Invitation;
 import com.example.slices.models.InvitationLogEntry;
 import com.example.slices.models.LogEntry;
 import com.example.slices.models.LogType;
@@ -16,6 +17,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -38,7 +40,6 @@ public class Logger {
     /**
      * Largest log ID assigned so far
      */
-    private static int largestId = 0;
 
     private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private static CollectionReference logRef = db.collection("logs");
@@ -79,100 +80,45 @@ public class Logger {
      *      Notification to log
      */
     public static void log(Notification notification, DBWriteCallback callback) {
-        if (largestId > 0) {
-            int idToUse = ++largestId;
-            writeLog(new NotificationLogEntry(notification, idToUse), new DBWriteCallback() {
-                @Override
-                public void onSuccess() {
+        //Create Firestore doc with auto-generated ID.
+        DocumentReference ref = logRef.document();
+        String id = ref.getId();
+
+        //Create Log Entry
+        LogEntry entry = new NotificationLogEntry(notification, id);
+
+        ref.set(entry)
+                .addOnSuccessListener(aVoid -> {
                     System.out.println("Logged notification successfully");
-                    if (callback != null) {
-                        callback.onSuccess();
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    System.out.println("Failed to log notification: " + e.getMessage());
-                    if (callback != null) {
-                        callback.onFailure(e);
-                    }
-
-                }
-            });
-        } else {
-            getLogId(new LogIDCallback() {
-                @Override
-                public void onSuccess(int id) {
-                    largestId = id;
-                    log(notification, callback); // recursion safe, largestId > 0 next time
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    System.out.println("Failed to get log ID: " + e.getMessage());
-                }
-            });
-        }
-    }
-    /**
-     * Gets the next available log ID
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
-
-    public static void getLogId(LogIDCallback callback) {
-        logRef.get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            // Get the highest ID
-                            int highestId = 0;
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                if (doc.getLong("id") != null) {
-                                    int id = doc.getLong("id").intValue();
-                                    if (id > highestId) {
-                                        highestId = id;
-                                    }
-
-                                }
-                            }
-                            // Return the next ID
-                            if (highestId != 0) {
-                                callback.onSuccess(highestId + 1);
-                            } else {
-                                callback.onSuccess(1);
-                            }
-                        }
-                        else {
-                            callback.onSuccess(1);
-                        }
-                    }
+                    if (callback != null) callback.onSuccess();
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get next log ID"));
-
-
-                    }
+                .addOnFailureListener(e -> {
+                    System.out.println("Failed to log notification: " + e.getMessage());
+                    if (callback != null) callback.onFailure(e);
                 });
-
     }
 
-    /**
-     * Writes a log to the database
-     * @param log
-     *      Log to write to the database
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
-    public static void writeLog(LogEntry log, DBWriteCallback callback) {
-        logRef.document(String.valueOf(log.getLogId()))
-                .set(log)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write log")));
+    public static void log(Invitation inv, DBWriteCallback callback) {
+        //Create Firestore doc with auto-generated ID.
+        DocumentReference ref = logRef.document();
+        String id = ref.getId();
+
+        //Create Log Entry
+        LogEntry entry = new InvitationLogEntry(inv, id);
+
+        ref.set(entry)
+                .addOnSuccessListener(aVoid -> {
+                    System.out.println("Logged invitation successfully");
+                    if (callback != null) callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    System.out.println("Failed to log invitation: " + e.getMessage());
+                    if (callback != null) callback.onFailure(e);
+                });
     }
+
+
+
 
     /**
      * Probably not particularly useful
@@ -181,29 +127,22 @@ public class Logger {
      */
 
     public static void getAllNotificationLogs(LogListCallback callback) {
-        logRef.get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<LogEntry> logs = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                NotificationLogEntry log = doc.toObject(NotificationLogEntry.class);
-                                logs.add(log);
-                            }
-                            callback.onSuccess(logs);
-                        } else {
-                            callback.onSuccess(new ArrayList<LogEntry>());
+        logRef.whereEqualTo("type", LogType.NOTIFICATION)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<LogEntry> logs = new ArrayList<>();
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            LogEntry log = doc.toObject(NotificationLogEntry.class);
+                            logs.add(log);
                         }
+                        callback.onSuccess(logs);
+                    } else {
+                        callback.onSuccess(new ArrayList<LogEntry>());
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get logs"));
-
-
-                    }
+                .addOnFailureListener(e -> {
+                    callback.onFailure(new DBOpFailed("Failed to get notification logs"));
                 });
     }
 
@@ -213,9 +152,19 @@ public class Logger {
      *      ID of the log to delete
      */
 
-    public static void deleteLog(String id) {
-        logRef.document(id).delete();
+    public static void deleteLog(String id, DBWriteCallback callback) {
+        logRef.document(id)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    System.out.println("Deleted log successfully");
+                    if (callback != null) callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    System.out.println("Failed to delete log: " + e.getMessage());
+                    if (callback != null) callback.onFailure(e);
+                });
     }
+
 
 
 

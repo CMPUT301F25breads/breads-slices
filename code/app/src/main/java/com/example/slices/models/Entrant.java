@@ -1,12 +1,6 @@
 package com.example.slices.models;
 
 
-import com.example.slices.controllers.EntrantController;
-import com.example.slices.testing.DebugLogger;
-import com.example.slices.interfaces.DBWriteCallback;
-import com.example.slices.interfaces.EntrantCallback;
-import com.example.slices.interfaces.EntrantIDCallback;
-import com.example.slices.interfaces.EntrantListCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +32,6 @@ public class Entrant {
      */
     private List<Integer> subEntrants;
 
-    private List<Integer> organizedEvents;
 
 
     /**
@@ -55,16 +48,16 @@ public class Entrant {
      *      Device ID of the entrant
      */
     public Entrant(String deviceId, int id) {
+        this.profile = new Profile();
         this.deviceId = deviceId;
         this.subEntrants = new ArrayList<Integer>();
-        this.organizedEvents = new ArrayList<Integer>();
         this.id = id;
     }
 
     public Entrant(String deviceId) {
+        this.profile = new Profile();
         this.deviceId = deviceId;
         this.subEntrants = new ArrayList<>();
-        this.organizedEvents = new ArrayList<>();
     }
 
 
@@ -82,7 +75,6 @@ public class Entrant {
 
     public Entrant(String name, String email, String phoneNumber, int id) {
         this.subEntrants = new ArrayList<Integer>();
-        this.organizedEvents = new ArrayList<Integer>();
         this.id = id;
         this.profile = new Profile(name, email, phoneNumber, true, id);
     }
@@ -152,15 +144,6 @@ public class Entrant {
         return parent;
     }
 
-    /**
-     * Getter for the list of organized events of the entrant
-     * @return
-     *      List of organized events of the entrant
-     */
-
-    public List<Integer> getOrganizedEvents() {
-        return organizedEvents;
-    }
 
 
 
@@ -191,14 +174,11 @@ public class Entrant {
         subEntrants.add(child.getId());
     }
 
-    /**
-     * Adds an organized event to the list of organized events of the entrant
-     * @param eventId
-     *      Event ID to add
-     */
-    public void addOrganizedEvent(int eventId) {
-        organizedEvents.add(eventId);
+    public void removeSubEntrant(Entrant child) {
+        subEntrants.remove(child.getId());
     }
+
+
 
 
 
@@ -239,16 +219,6 @@ public class Entrant {
 
     }
 
-    /**
-     * Sets the list of organized events of the entrant
-     * @param organizedEvents
-     *      List of organized events to set
-     */
-    public void setOrganizedEvents(List<Integer> organizedEvents) {
-        this.organizedEvents = organizedEvents;
-    }
-
-
 
     public Profile getProfile() {
         return profile;
@@ -257,9 +227,5 @@ public class Entrant {
     public void setProfile(Profile profile) {
         this.profile = profile;
     }
-    public void entrantModified(DBWriteCallback callback) {
-        EntrantController.updateEntrant(this, callback);
-    }
-
 
 }

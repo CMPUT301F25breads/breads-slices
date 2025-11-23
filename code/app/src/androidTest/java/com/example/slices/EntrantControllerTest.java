@@ -809,4 +809,15 @@ public class EntrantControllerTest {
         });
         await(latch);
     }
+
+    @Test
+    public void deleteOrganizerDeletesEvent() throws Exception {
+        //TODO
+    }
+
+
+
+
+
+
 }
