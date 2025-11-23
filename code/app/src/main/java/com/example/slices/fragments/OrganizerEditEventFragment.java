@@ -194,8 +194,15 @@ public class OrganizerEditEventFragment extends Fragment {
         });
 
         buttonViewWaitingList.setOnClickListener(v -> {
+            if (currentEvent == null || eventID == null) {
+                Toast.makeText(getContext(), "Event data not loaded yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
             Bundle bundle = new Bundle();
-            bundle.putString("eventName", editEventName.getText().toString()); // example data
+            bundle.putInt("event_id", currentEvent.getId());
+            bundle.putString("event_name", currentEvent.getEventInfo().getName());
+            bundle.putInt("sender_id", currentEvent.getEventInfo().getOrganizerID());
             navigateToEntrantsFragment(bundle);
         });
 
