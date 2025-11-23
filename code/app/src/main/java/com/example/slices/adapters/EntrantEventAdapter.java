@@ -119,10 +119,31 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
             return view;
         }
         EventInfo eventInfo = event.getEventInfo();
+        
+        // Safety check: if vm or user is not properly initialized, we can't determine waitlist status
+        if (vm == null || vm.getUser() == null || vm.getUser().getId() == 0) {
+            // Bind basic event info but hide the action button if user is not logged in
+            TextView title = view.findViewById(R.id.event_title);
+            if (title != null) {
+                title.setText(eventInfo.getName());
+            }
+            ImageView image = view.findViewById(R.id.image);
+            if (image != null) {
+                Glide.with(this.getContext()).load(eventInfo.getImageUrl()).into(image);
+            }
+            
+            View buttonView = view.findViewById(R.id.btn_event_action);
+            if (buttonView != null) {
+                buttonView.setVisibility(View.GONE);
+            }
+            return view;
+        }
+        
         final int eventId = event.getId(); // ID from firestore DB
         final String eventIdStr = String.valueOf(eventId); // then make it string
+        
         // initial waitlist state comes from shared view model
-        boolean isOn = vm != null && vm.isWaitlisted(eventIdStr);
+        boolean isOn = vm.isWaitlisted(eventIdStr);
 
         // binding core card views, same as EventAdapter behaviour
         TextView title = view.findViewById(R.id.event_title);
@@ -143,10 +164,7 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
 
             // toggle join/leave on click using shared state + controller
             actionBtn.setOnClickListener(v -> {
-                if (vm == null || vm.getUser() == null) {
-                    return;
-                }
-
+                // vm and user are already validated above, safe to use here
                 final String userId = String.valueOf(vm.getUser().getId());
                 boolean isWaitlisted = vm.isWaitlisted(eventIdStr);
 
@@ -186,6 +204,19 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                         public void onFailure(Exception e) {
                             // reverts on failure
                             updateWaitlistButton(actionBtn, false);
+                            
+                            // Show user-friendly error message
+                            String message = "Failed to join waitlist";
+                            if (e.getMessage() != null) {
+                                if (e.getMessage().contains("full")) {
+                                    message = "Waitlist is full";
+                                } else if (e.getMessage().contains("already")) {
+                                    message = "You're already on the waitlist";
+                                } else {
+                                    message = e.getMessage();
+                                }
+                            }
+                            android.widget.Toast.makeText(getContext(), message, android.widget.Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
