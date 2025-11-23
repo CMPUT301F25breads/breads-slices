@@ -8,8 +8,10 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.OrganizerEventAdapter;
 
 import com.example.slices.controllers.EventController;
@@ -137,4 +139,23 @@ public class OrganizerEventsFragment extends Fragment {
         super.onDestroyView();
         binding = null;
     }
+
+
+//        Feel free to delete but was just leaving it here in case its helpful, was just testing some db queries
+//          loadOrganizerEvents()
+//                SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+//                EventController.getEventsForOrganizer(svm.getUser().getId(), new EventListCallback() {
+//                    @Override
+//                    public void onSuccess(List<Event> events) {
+//                        pastEvents.clear();
+//                        pastEvents.addAll(events);
+//                        binding.rvPast.setAdapter(new OrganizerEventAdapter(requireContext(), pastEvents, OrganizerEventsFragment.this));
+//
+//                    }
+//
+//                    @Override
+//                    public void onFailure(Exception e) {
+//
+//                    }
+//                });
 }

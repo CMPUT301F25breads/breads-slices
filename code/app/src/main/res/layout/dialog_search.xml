@@ -1,0 +1,39 @@
+<LinearLayout
+xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <EditText
+        android:id="@+id/edit_name"
+        android:hint="Name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/edit_location"
+        android:hint="Location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/edit_start_date"
+        android:hint="Start Date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/edit_end_date"
+        android:hint="End Date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <CheckBox
+        android:id="@+id/exclude_check"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Exclude Joined"
+        android:textColor="@color/dark_grey"
+        android:textSize="20sp"
+        android:checked="true"/>
+</LinearLayout>

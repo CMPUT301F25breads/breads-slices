@@ -47,12 +47,16 @@ public class EventInfo {
     private String guidelines;
     private String imageUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
-    private int maxWaiting;
+    /**
+     * Max amount of people allowed on waiting list
+     * set is int max by default as it is optionally limited
+     */
+    private int maxWaiting = Integer.MAX_VALUE;
     private boolean entrantLoc;
 
     private String entrantDist;
 
-    private String organizerID;
+    private int organizerID;
 
 
 
@@ -66,7 +70,7 @@ public class EventInfo {
 
     public EventInfo(String name, String description, String location, String guidelines,
                      String imgUrl, Timestamp eventDate, Timestamp regStart, Timestamp regEnd,
-                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, String organizerID) {
+                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
         this.name = name;
         this.description = description;
         this.location = location;
@@ -279,11 +283,11 @@ public class EventInfo {
         this.entrantDist = entrantDist;
     }
 
-    public String getOrganizerID() {
+    public int getOrganizerID() {
         return organizerID;
     }
 
-    public void setOrganizerID(String organizerID) {
+    public void setOrganizerID(int organizerID) {
         this.organizerID = organizerID;
     }
 

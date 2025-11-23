@@ -1,10 +1,14 @@
 package com.example.slices.fragments;
 
+import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -22,8 +26,13 @@ import com.example.slices.models.Event;
 
 import com.example.slices.databinding.BrowseFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
+import com.example.slices.models.SearchSettings;
+import com.google.firebase.Timestamp;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -35,7 +44,7 @@ public class BrowseFragment extends Fragment {
     private BrowseFragmentBinding binding;
     private ArrayList<Event> eventList = new ArrayList<>();
     private SharedViewModel vm;
-
+    private EntrantEventAdapter eventAdapter;
 
     @Override
     public View onCreateView(
@@ -51,26 +60,28 @@ public class BrowseFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
+        SearchSettings search = vm.getSearch();
 
-        setupEvents();
+        setupEvents(search);
 
         setupListeners();
 
     }
 
-    public void setupEvents() {
-        EventController.getAllFutureEvents(new EventListCallback() {
+
+    public void setupEvents(SearchSettings search) {
+        EventController.queryEvents(search, new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
                 try {
                     eventList.clear();
                     eventList.addAll(events);
+                    eventAdapter.notifyDataSetChanged();
 
-                    EntrantEventAdapter eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
+                    //eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
                     eventAdapter.setViewModel(vm);
                     binding.browseEventList.setAdapter(eventAdapter);
-
-
 
                 } catch (Exception e) {
                     Log.e("BrowseFragment", "Error setting adapter", e);
@@ -84,8 +95,10 @@ public class BrowseFragment extends Fragment {
 
                 Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
 
-                EntrantEventAdapter eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
+                //eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
+                eventAdapter.notifyDataSetChanged();
                 binding.browseEventList.setAdapter(eventAdapter);
+
             }
         });
     }
@@ -107,6 +120,125 @@ public class BrowseFragment extends Fragment {
 
             navController.navigate(R.id.action_global_EventDetailsFragment, null, options);
         });
+
+        binding.searchButton.setOnClickListener(v -> {
+            SearchSettings updated = vm.getSearch();
+            if(updated == null)
+                updated = new SearchSettings();
+
+            updated.setName(binding.searchEditText.getText().toString().trim().toLowerCase());
+
+            vm.setSearch(updated);
+            setupEvents(vm.getSearch());
+        });
+        binding.scanButton.setOnClickListener(v -> {
+            navigateToCamera();
+        });
+        binding.filterButton.setOnClickListener(v -> {
+            onFilterClick();
+        });
+    }
+
+    private void onFilterClick() {
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_search, null);
+
+
+        EditText nameInput = dialogView.findViewById(R.id.edit_name);
+        nameInput.setText(binding.searchEditText.getText());
+        EditText locationInput = dialogView.findViewById(R.id.edit_location);
+        EditText startDateInput = dialogView.findViewById(R.id.edit_start_date);
+        EditText endDateInput = dialogView.findViewById(R.id.edit_end_date);
+
+        // Disable keyboard for date fields
+        startDateInput.setInputType(InputType.TYPE_NULL);
+        endDateInput.setInputType(InputType.TYPE_NULL);
+        startDateInput.setFocusable(false);
+        endDateInput.setFocusable(false);
+
+
+        startDateInput.setOnClickListener(v -> showDatePicker(startDateInput));
+        endDateInput.setOnClickListener(v -> showDatePicker(endDateInput));
+
+        // Pre-fill current filter values
+        SearchSettings current = vm.getSearch();
+        if (current != null) {
+            if (current.getName() != null)
+                nameInput.setText(current.getName());
+            if (current.getLoc() != null)
+                locationInput.setText(current.getLoc());
+
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+            if (current.getAvailStart() != null)
+                startDateInput.setText(sdf.format(current.getAvailStart().toDate()));
+            if (current.getAvailEnd() != null)
+                endDateInput.setText(sdf.format(current.getAvailEnd().toDate()));
+        }
+
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Search Filters")
+                .setView(dialogView)
+                .setPositiveButton("Search", (dialog, which) -> {
+
+                    String name = nameInput.getText().toString().trim();
+                    String location = locationInput.getText().toString().trim();
+
+                    // Parse dates
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+                    Timestamp startTimestamp = null;
+                    Timestamp endTimestamp = null;
+
+                    try {
+                        String startStr = startDateInput.getText().toString().trim();
+                        String endStr = endDateInput.getText().toString().trim();
+
+                        if (!startStr.isEmpty())
+                            startTimestamp = new Timestamp(sdf.parse(startStr));
+
+                        if (!endStr.isEmpty())
+                            endTimestamp = new Timestamp(sdf.parse(endStr));
+
+                    } catch (ParseException e) {
+                        Toast.makeText(requireContext(), "Invalid date format", Toast.LENGTH_SHORT).show();
+                    }
+
+                    SearchSettings newSearch = new SearchSettings();
+                    newSearch.setName(name);
+                    newSearch.setLoc(location);
+                    newSearch.setAvailStart(startTimestamp);
+                    newSearch.setAvailEnd(endTimestamp);
+
+                    vm.setSearch(newSearch);
+                    binding.searchEditText.setText(nameInput.getText());
+
+
+                    setupEvents(newSearch);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+
+    /**
+     * Displays a DatePickerDialog for the given EditText.
+     *
+     * @param target EditText to populate with selected date.
+     */
+    private void showDatePicker(EditText target) {
+        Calendar calendar = Calendar.getInstance();
+        DatePickerDialog datePicker = new DatePickerDialog(
+                requireContext(),
+                (view, year, month, dayOfMonth) -> target.setText((month + 1) + "/" + dayOfMonth + "/" + year),
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+        );
+        datePicker.show();
+    }
+
+    private void navigateToCamera() {
+
     }
 
     @Override

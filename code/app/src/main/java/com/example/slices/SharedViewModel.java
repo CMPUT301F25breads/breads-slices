@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
+import com.example.slices.models.SearchSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,23 @@ public class SharedViewModel extends ViewModel {
     private final MutableLiveData<List<Event>> events = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Event> selectedEvent = new MutableLiveData<>(new Event());
     private final MutableLiveData<List<Event>> waitlistedEvents = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<SearchSettings> search = new MutableLiveData<>(new SearchSettings());
+    private final MutableLiveData<List<Event>> pastEvents = new MutableLiveData<>(new ArrayList<>());
+
+    public List<Event> getPastEvents() {
+        return pastEvents.getValue();
+    }
+    public void setPastEvents(List<Event> pastEvents) {
+        this.pastEvents.setValue(pastEvents);
+    }
+
+    public SearchSettings getSearch() {
+        return search.getValue();
+    }
+
+    public void setSearch(SearchSettings search) {
+        this.search.setValue(search);
+    }
 
     public Entrant getUser() {
         return user.getValue();
