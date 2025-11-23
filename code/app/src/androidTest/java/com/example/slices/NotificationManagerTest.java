@@ -152,7 +152,7 @@ public class NotificationManagerTest {
         Timestamp eventDate = times.get(2);
 
         EventController.createEvent("Event", "Desc", "Loc", "Guide", "Img",
-                eventDate, regStart, regEnd, 10, 5, false, "none", "Org123",
+                eventDate, regStart, regEnd, 10, 5, false, "none", 123,
                 new EventCallback() {
                     @Override
                     public void onSuccess(Event event) {

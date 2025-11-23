@@ -251,7 +251,7 @@ public class EntrantController {
             public void onSuccess(Entrant entrant) {
 
                 // Now get all events they belong to
-                EventController.getEventsForEntrant(entrant, new EntrantEventCallback() {
+                EventController.getAllEventsForEntrant(entrant, new EntrantEventCallback() {
                     @Override
                     public void onSuccess(List<Event> events, List<Event> waitEvents) {
 

@@ -1,12 +1,8 @@
 package com.example.slices.controllers;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import androidx.annotation.NonNull;
 
 import com.example.slices.exceptions.DBOpFailed;
-import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.exceptions.EventNotFound;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantEventCallback;
@@ -14,17 +10,14 @@ import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
 import com.example.slices.interfaces.EventListCallback;
-import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.AsyncBatchExecutor;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
-import com.example.slices.models.Notification;
-import com.example.slices.models.SearchConditions;
+import com.example.slices.models.SearchSettings;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
@@ -33,10 +26,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class EventController {
@@ -266,39 +258,155 @@ public class EventController {
      * @param callback Callback to call when the operation is complete
      */
     public static void getEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
-        eventRef
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Event> events = new ArrayList<>();
-                            List<Event> waitEvents = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Event event = doc.toObject(Event.class);
-                                assert event != null;
-                                if (event.getEntrants().contains(entrant))
-                                    events.add(event);
-                                else if (event.getWaitlist().getEntrants().contains(entrant))
-                                    waitEvents.add(event);
-                            }
-                            if (!events.isEmpty() || !waitEvents.isEmpty()) {
-                                callback.onSuccess(events, waitEvents);
-                            } else {
 
-                                callback.onSuccess(new ArrayList<Event>(), new ArrayList<>());
-                            }
-                        } else {
-                            callback.onSuccess(new ArrayList<Event>(), new ArrayList<>());
-                        }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get events for an entrant"));
-                    }
-                });
+        Query q = eventRef.whereGreaterThan("eventInfo.eventDate", Timestamp.now());
+
+        Query eventsQuery = q.whereArrayContains("entrants", entrant);
+        Query waitlistQuery = q.whereArrayContains("waitlist.entrants", entrant);
+
+        eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
+            List<Event> events = new ArrayList<>();
+            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                Event event = doc.toObject(Event.class);
+
+                if (event != null)
+                    events.add(event);
+            }
+
+
+            waitlistQuery.get().addOnSuccessListener(waitlistSnapshots -> {
+                List<Event> waitEvents = new ArrayList<>();
+                for (DocumentSnapshot doc : waitlistSnapshots.getDocuments()) {
+                    Event event = doc.toObject(Event.class);
+                    if (event != null)
+                        waitEvents.add(event);
+                }
+
+                if(!events.isEmpty() || !waitEvents.isEmpty())
+                    callback.onSuccess(events, waitEvents);
+                else
+                    callback.onSuccess(new ArrayList<>(), new ArrayList<>());
+
+
+
+            }).addOnFailureListener(e ->
+                    callback.onFailure(new DBOpFailed("Failed to get waitlist events"))
+            );
+
+        }).addOnFailureListener(e ->
+                callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
+        );
+
+
+    }
+
+
+    /**
+     * Gets all events for a given entrant
+     *
+     * @param entrant  user to find events for
+     * @param callback Callback to call when the operation is complete
+     */
+    public static void getAllEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
+
+        Query eventsQuery = eventRef.whereArrayContains("entrants", entrant);
+        Query waitlistQuery = eventRef.whereArrayContains("waitlist.entrants", entrant);
+
+        eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
+            List<Event> events = new ArrayList<>();
+            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                Event event = doc.toObject(Event.class);
+
+                if (event != null)
+                    events.add(event);
+            }
+
+
+            waitlistQuery.get().addOnSuccessListener(waitlistSnapshots -> {
+                List<Event> waitEvents = new ArrayList<>();
+                for (DocumentSnapshot doc : waitlistSnapshots.getDocuments()) {
+                    Event event = doc.toObject(Event.class);
+                    if (event != null)
+                        waitEvents.add(event);
+                }
+
+                if(!events.isEmpty() || !waitEvents.isEmpty())
+                    callback.onSuccess(events, waitEvents);
+                else
+                    callback.onSuccess(new ArrayList<>(), new ArrayList<>());
+
+
+
+            }).addOnFailureListener(e ->
+                    callback.onFailure(new DBOpFailed("Failed to get waitlist events"))
+            );
+
+        }).addOnFailureListener(e ->
+                callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
+        );
+
+
+    }
+
+    /**
+     * Gets all events for a given entrant
+     *
+     * @param entrant  user to find events for
+     * @param callback Callback to call when the operation is complete
+     */
+    public static void getPastEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
+
+        Query q = eventRef.whereLessThan("eventInfo.eventDate", Timestamp.now());
+
+        Query eventsQuery = q.whereArrayContains("entrants", entrant);
+        Query waitlistQuery = q.whereArrayContains("waitlist.entrants", entrant);
+
+        // First fetch main events
+
+        eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
+            List<Event> events = new ArrayList<>();
+            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                Event event = doc.toObject(Event.class);
+                if (event != null) events.add(event);
+            }
+
+            // Then fetch waitlist events
+            waitlistQuery.get().addOnSuccessListener(waitlistSnapshots -> {
+                List<Event> waitEvents = new ArrayList<>();
+                for (DocumentSnapshot doc : waitlistSnapshots.getDocuments()) {
+                    Event event = doc.toObject(Event.class);
+                    if (event != null) waitEvents.add(event);
+                }
+
+                callback.onSuccess(events, waitEvents);
+
+
+            }).addOnFailureListener(e ->
+                    callback.onFailure(new DBOpFailed("Failed to get waitlist events"))
+            );
+
+        }).addOnFailureListener(e ->
+                callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
+        );
+    }
+
+    public static void getEventsForOrganizer(int id, EventListCallback callback) {
+        Query query = eventRef
+                .whereEqualTo("eventInfo.organizerID", id);
+
+        query.get().addOnSuccessListener(queryDocumentSnapshots -> {
+            List<Event> events = new ArrayList<>();
+            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                Event event = doc.toObject(Event.class);
+                if (event != null)
+                    events.add(event);
+                callback.onSuccess(events);
+            }
+
+        }).addOnFailureListener(e ->
+                callback.onFailure(new DBOpFailed("Failed to get events for organizer"))
+        );
+
     }
 
     /**
@@ -667,7 +775,8 @@ public class EventController {
      */
     public static void getAllFutureEvents(EventListCallback callback) {
 
-        eventRef.get()
+        eventRef.whereGreaterThan("eventInfo.eventDate", Timestamp.now())
+                .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
@@ -675,8 +784,7 @@ public class EventController {
                             ArrayList<Event> events = new ArrayList<>();
                             for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                                 Event event = doc.toObject(Event.class);
-                                if (event.getEventInfo().getEventDate().compareTo(Timestamp.now()) > 0)
-                                    events.add(event);
+                                events.add(event);
                             }
                             callback.onSuccess(events);
 
@@ -694,21 +802,28 @@ public class EventController {
                 });
     }
 
-    private static void queryEvents(SearchConditions search, EventListCallback callback) {
-        Query q = eventRef.whereGreaterThanOrEqualTo("eventDate", Timestamp.now());
+    /**
+     * Queries the Firestore and gets all event that match the parameters
+     * inputted from the SearchSettings asynchronously
+     * @param search
+     *      SearchSettings object that contains all desired parameters
+     * @param callback
+     *      Callback to call when the operation is complete
+     * @author
+     *      Brad
+     */
+    public static void queryEvents(SearchSettings search, EventListCallback callback) {
+        Query q = eventRef.whereGreaterThanOrEqualTo("eventInfo.eventDate", Timestamp.now());
 
-        if(search.getAvailStart() != null && search.getAvailEnd() != null) {
-            q = q.whereGreaterThanOrEqualTo("eventDate", search.getAvailStart());
-            q = q.whereLessThanOrEqualTo("eventDate", search.getAvailEnd());
-        }
 
-        if(search.getLoc() != null && !search.getLoc().trim().isEmpty()) {
-            q = q.whereEqualTo("location", search.getLoc());
-        }
+        if (search.getAvailStart() != null)
+            q = q.whereGreaterThanOrEqualTo("eventInfo.eventDate", search.getAvailStart());
 
-        if(search.getMaxEntrants() != -1) {
-            q = q.whereLessThanOrEqualTo("maxEntrants", search.getMaxEntrants());
-        }
+        if (search.getAvailEnd() != null)
+            q = q.whereLessThanOrEqualTo("eventInfo.eventDate", search.getAvailEnd());
+
+        if (search.getLoc() != null && !search.getLoc().trim().isEmpty())
+            q = q.whereEqualTo("eventInfo.location", search.getLoc());
 
         q.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
@@ -717,14 +832,24 @@ public class EventController {
                             ArrayList<Event> events = new ArrayList<>();
                             for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
                                 Event event = doc.toObject(Event.class);
-                                if (event.getEventInfo().getName().toLowerCase().contains(search.getName()))
+                                if (event == null)
+                                    continue;
+
+                                boolean matchesName = true;
+
+                                if (search.getName() != null && !search.getName().trim().isEmpty()) {
+                                    String filter = search.getName().toLowerCase();
+                                    String eventName = event.getEventInfo().getName().toLowerCase();
+                                    matchesName = eventName.contains(filter);
+                                }
+
+                                if (matchesName)
                                     events.add(event);
                             }
                             callback.onSuccess(events);
 
-
                         } else {
-                            callback.onSuccess(new ArrayList<Event>());
+                            callback.onSuccess(new ArrayList<>());
                         }
                     }
                 })
