@@ -22,7 +22,7 @@ public class Notification {
     /**
      * ID of the notification
      */
-    protected int id;
+    protected String id;
 
     /**
      * ID of the recipient entrant
@@ -72,7 +72,7 @@ public class Notification {
      * @param senderId
      *      ID of the sender entrant
      */
-    public Notification(String title, String body, int notificationId, int recipientId, int senderId) {
+    public Notification(String title, String body, String notificationId, int recipientId, int senderId) {
         this.title = title;
         this.body = body;
         this.id = notificationId;
@@ -106,7 +106,7 @@ public class Notification {
      * @return
      *      ID of the notification
      */
-    public int getId() {
+    public String getId() {
         return id;
     }
 
@@ -169,7 +169,7 @@ public class Notification {
      * @param id
      *      ID to set for the notification
      */
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -261,16 +261,9 @@ public class Notification {
             return false;
         }
         Notification other = (Notification) obj;
-        return id == other.id;
+        return id.equals(other.id);
     }
 
-    /**
-     * Returns hash code for the notification based on its ID
-     * @return
-     *      Hash code of the notification
-     */
-    @Override
-    public int hashCode() {
-        return id;
-    }
+
+
 }

@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class EventControllerTest {
@@ -47,6 +48,7 @@ public class EventControllerTest {
         EventController.setTesting(true);
         Logger.setTesting(true);
         NotificationManager.setTesting(true);
+
 
         //Clean it out
         CountDownLatch latch = new CountDownLatch(4);
@@ -1537,6 +1539,359 @@ public class EventControllerTest {
         });
         await(addWL);
     }
+
+    @Test
+    public void testGetEventsForOrganizer() {
+        clearAll();
+        //Create an organizer
+        try {
+            Entrant organizer = createEntrant("Organizer");
+            //Now create an event for the organizer
+            Event event = createValidEvent();
+            event.getEventInfo().setOrganizerID(organizer.getId());
+            //Save event
+            EventController.writeEvent(event, new DBWriteCallback()
+            {
+                @Override
+                public void onSuccess() {
+                    //Now get events for organizer
+                    EventController.getEventsForOrganizer(organizer.getId(), new EventListCallback() {
+                        @Override
+                        public void onSuccess(List<Event> events) {
+                            assertEquals(1, events.size());
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            fail("Failed to get events for organizer");
+                        }
+                    });
+                }
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to save event");
+                }
+            });
+        }
+        catch (Exception e) {
+            fail("Failed to create organizer");
+        }
+
+        //Create an event for the organizer
+    }
+
+    @Test
+    public void testLotterySendsInvites() {
+        clearAll();
+        Entrant organizer = null;
+        Entrant e1 = null;
+        Entrant e2 = null;
+        Entrant e3 = null;
+
+        //Create an organizer and 3 entrants
+        try {
+            organizer = createEntrant("Organizer");
+        }
+        catch (Exception e) {
+            fail("Failed to create organizer");
+        }
+        try {
+            e1 = createEntrant("E1");
+        }
+        catch (Exception e) {
+            fail("Failed to create entrant 1");
+        }
+        try {
+            e2 = createEntrant("E2");
+        }
+        catch (Exception e) {
+            fail("Failed to create entrant 2");
+        }
+        try {
+            e3 = createEntrant("E3");
+        }
+        catch (Exception e) {
+            fail("Failed to create entrant 3");
+        }
+
+        try {
+            //Now create an event for the organizer
+            Event event = createValidEvent();
+            event.getEventInfo().setOrganizerID(organizer.getId());
+            //Set event cap to 2
+            event.getEventInfo().setMaxEntrants(2);
+            //Save event
+            CountDownLatch save = new CountDownLatch(1);
+            EventController.writeEvent(event, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    save.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to save event");
+                }
+            });
+            await(save);
+
+            CountDownLatch add = new CountDownLatch(3);
+            EventController.addEntrantToWaitlist(event, e1, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            EventController.addEntrantToWaitlist(event, e2, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            EventController.addEntrantToWaitlist(event, e3, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            await(add);
+
+
+            //Now run lottery
+            CountDownLatch lottery = new CountDownLatch(1);
+            EventController.doLottery(event, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    lottery.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Lottery failed");
+                }
+            });
+            await(lottery);
+
+            AtomicInteger sent = new AtomicInteger(0);
+            CountDownLatch check = new CountDownLatch(3);
+            NotificationManager.getInvitationByRecipientId(e1.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            NotificationManager.getInvitationByRecipientId(e2.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            NotificationManager.getInvitationByRecipientId(e3.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            await(check);
+            assertEquals(2, sent.get());
+        }
+        catch (Exception e) {
+            fail("Something else went wrong " + e.getMessage());
+        }
+
+    }
+
+    @Test
+    public void testLotterySendsNotifications() {
+        clearAll();
+        Entrant organizer = null;
+        Entrant e1 = null;
+        Entrant e2 = null;
+        Entrant e3 = null;
+
+        //Create an organizer and 3 entrants
+        try {
+            organizer = createEntrant("Organizer");
+        } catch (Exception e) {
+            fail("Failed to create organizer");
+        }
+        try {
+            e1 = createEntrant("E1");
+        } catch (Exception e) {
+            fail("Failed to create entrant 1");
+        }
+        try {
+            e2 = createEntrant("E2");
+        } catch (Exception e) {
+            fail("Failed to create entrant 2");
+        }
+        try {
+            e3 = createEntrant("E3");
+        } catch (Exception e) {
+            fail("Failed to create entrant 3");
+        }
+        try {
+            //Now create an event for the organizer
+            Event event = createValidEvent();
+            event.getEventInfo().setOrganizerID(organizer.getId());
+            //Set event cap to 2
+            event.getEventInfo().setMaxEntrants(2);
+            //Save event
+            CountDownLatch save = new CountDownLatch(1);
+            EventController.writeEvent(event, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    save.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to save event");
+                }
+            });
+            await(save);
+            CountDownLatch add = new CountDownLatch(3);
+            EventController.addEntrantToWaitlist(event, e1, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            EventController.addEntrantToWaitlist(event, e2, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            EventController.addEntrantToWaitlist(event, e3, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            await(add);
+            //Now run lottery
+            CountDownLatch lottery = new CountDownLatch(1);
+            EventController.doLottery(event, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    lottery.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Lottery failed");
+                }
+            });
+            await(lottery);
+            //Check notifications
+            AtomicInteger sent = new AtomicInteger(0);
+            CountDownLatch check = new CountDownLatch(3);
+            NotificationManager.getNotificationsByRecipientId(e1.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            NotificationManager.getNotificationsByRecipientId(e2.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            NotificationManager.getNotificationsByRecipientId(e3.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            await(check);
+            assertEquals(1, sent.get());
+
+        } catch (Exception e) {
+            fail("Something else went wrong " + e.getMessage());
+        }
+    }
+
+
 }
 
 

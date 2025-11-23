@@ -46,7 +46,7 @@ public class Invitation extends Notification {
      * @param eventId
      *      ID of the event associated with the invitation
      */
-    public Invitation(String title, String body, int notificationId, int recipient, int sender, int eventId) {
+    public Invitation(String title, String body, String notificationId, int recipient, int sender, int eventId) {
         this.title = title;
         this.body = body;
         this.id = notificationId;

@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.exceptions.EventNotFound;
 import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EntrantEventCallback;
 import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.interfaces.EventCallback;
@@ -15,6 +16,7 @@ import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
 import com.example.slices.models.SearchSettings;
+import com.example.slices.testing.DebugLogger;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -29,6 +31,8 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class EventController {
@@ -344,9 +348,14 @@ public class EventController {
         }).addOnFailureListener(e ->
                 callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
         );
-
-
     }
+
+
+
+
+
+
+
 
     /**
      * Gets all events for a given entrant
@@ -416,18 +425,6 @@ public class EventController {
      * 3. Removes all entrants from the event
      * 4. Notifies all entrants
      * 5. Deletes the event
-     * @param id
-     * @param callback
-     */
-
-
-    /**
-     * This method deletes an event from the database
-     * 1. Gets the event
-     * 2. Gets all entrants
-     * 3. Removes all entrants from the event
-     * 4. Notifies all entrants
-     * 5. Deletes the event
      *
      * @param id
      *      ID of the event to delete
@@ -453,12 +450,9 @@ public class EventController {
                     return;
                 }
 
-                // IMPORTANT: take a snapshot so removals don't empty the list we notify
+                // Make a copy of the list of entrants
                 List<Entrant> entrantSnapshot = new ArrayList<>(entrants);
-
-                // ----------------------------------------------
-                // STEP 3: REMOVE ALL ENTRANTS FROM EVENT
-                // ----------------------------------------------
+                // Remove all entrants from the event
                 List<Consumer<DBWriteCallback>> removalOps = new ArrayList<>();
                 for (Entrant entrant : entrantSnapshot) {
                     removalOps.add(cb -> removeEntrantFromEvent(event, entrant, cb));
@@ -467,32 +461,24 @@ public class EventController {
                 AsyncBatchExecutor.runBatch(removalOps, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
-
-                        // ----------------------------------------------
-                        // STEP 4: BUILD NOTIFICATION OPERATIONS
-                        // ----------------------------------------------
+                        //Create notificaiton operations
                         List<Consumer<DBWriteCallback>> notifyOps = new ArrayList<>();
 
                         for (Entrant entrant : entrantSnapshot) {
                             notifyOps.add(cb -> NotificationManager.sendNotification(
                                     "Event Deleted",
                                     "Your event has been deleted",
-                                    entrant.getId(),      // recipient
-                                    event.getId(),        // sender (arbitrary here)
+                                    entrant.getId(),
+                                    event.getId(),
                                     cb
                             ));
                         }
 
-                        // ----------------------------------------------
-                        // STEP 4.1: SEND ALL NOTIFICATIONS
-                        // ----------------------------------------------
+                        // Send notifications
                         AsyncBatchExecutor.runBatch(notifyOps, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
-
-                                // ----------------------------------------------
-                                // STEP 5: DELETE THE EVENT
-                                // ----------------------------------------------
+                                // Delete the event
                                 eventRef.document(id)
                                         .delete()
                                         .addOnSuccessListener(unused -> verifyDeleteEvent(id, callback))
@@ -538,8 +524,8 @@ public class EventController {
                         @Override
                         public void onSuccess() {
                             callback.onSuccess(event);
-                        }
 
+                        }
                         @Override
                         public void onFailure(Exception e) {
                             callback.onFailure(e);
@@ -705,8 +691,6 @@ public class EventController {
 
 
 
-
-
     public static void removeEntrantsFromEvent(Event event, List<Entrant> entrants, DBWriteCallback callback) {
         //Remove the entrants from the event
         boolean failFlag = true;
@@ -725,6 +709,11 @@ public class EventController {
         }
     }
 
+    /**
+     * Testing method that creates some event times
+     * @return
+     *      List of event times
+     */
     public static List<Timestamp> getTestEventTimes() {
         List<Timestamp> times = new ArrayList<>();
 
@@ -893,10 +882,19 @@ public class EventController {
 
                 //If everyone fits, no lottery required
                 if (entrants.size() <= spots) {
-                    addEntrantsToEvent(event, entrants, callback);
+                    addEntrantsToEvent(event, entrants, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            callback.onSuccess();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            callback.onFailure(e);
+                        }
+                    });
                     return;
                 }
-
                 //More entrants than spots: run a lottery
                 List<Entrant> pool = new ArrayList<>(entrants); //work on a copy
                 List<Entrant> winners = new ArrayList<>();
@@ -906,7 +904,38 @@ public class EventController {
                     winners.add(pool.remove(randomIndex));
                 }
 
-                addEntrantsToEvent(event, winners, callback);
+                addEntrantsToEvent(event, winners, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        //Notify all winners and losers
+                        notifyWinners(winners, event, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                notifyLosers(pool, event, new DBWriteCallback() {
+                                    @Override
+                                    public void onSuccess() {
+                                        callback.onSuccess();
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        DebugLogger.d("E", "Notify Losers failed");
+                                        callback.onFailure(e);
+                                    }
+                                });
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                DebugLogger.d("E", "Notify winners failed");
+                                callback.onFailure(e);
+                            }});
+
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
             }
 
             @Override
@@ -916,19 +945,42 @@ public class EventController {
         });
     }
 
-    public static void addEntrantsToEvent(Event event, List<Entrant> entrants, DBWriteCallback callback) {
+    private static void notifyWinners(List<Entrant> winners, Event event, DBWriteCallback callback) {
+        //Setup message
+        String title = "Congratulations!";
+        String body = "You have won the lottery for " + event.getEventInfo().getName() + "!";
+        int sender = event.getEventInfo().getOrganizerID();
+        List<Integer> recipients = new ArrayList<>();
+        for (Entrant e : winners) {
+            recipients.add(e.getId());
+        }
+        NotificationManager.sendBulkInvitation(title, body, recipients, sender, event.getId(), callback);
+    }
 
+    private static void notifyLosers(List<Entrant> losers, Event event, DBWriteCallback callback) {
+        //Setup message
+        String title = "Sorry!";
+        String body = "You have lost the lottery for " + event.getEventInfo().getName() + "!";
+        int sender = event.getEventInfo().getOrganizerID();
+        List<Integer> recipients = new ArrayList<>();
+        for (Entrant e : losers) {
+            recipients.add(e.getId());
+        }
+        NotificationManager.sendBulkNotification(title, body, recipients, sender, callback);
+    }
+
+    public static void addEntrantsToEvent(Event event, List<Entrant> entrants, DBWriteCallback callback) {
         //Build batch operations
         List<Consumer<DBWriteCallback>> ops = new ArrayList<>();
-
         for (Entrant e : entrants) {
             ops.add(cb -> addEntrantToEvent(event, e, cb));
             ops.add(cb -> removeEntrantFromWaitlist(event, e, cb));
         }
-
         //Execute everything
         AsyncBatchExecutor.runBatch(ops, callback);
     }
+
+
 
 
 }
