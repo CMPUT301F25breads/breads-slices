@@ -677,18 +677,29 @@ public class EventController {
 
     public static void addEntrantToWaitlist(Event event, Entrant entrant, DBWriteCallback callback) {
         //First make sure that the entrant is not already in the event
-        if (event.getEntrants().contains(entrant)) {
+        if (event.getEntrants() != null && event.getEntrants().contains(entrant)) {
             callback.onFailure(new Exception("Entrant already in event"));
             return;
         }
-        //Add the entrant to the event
-        boolean added = event.addEntrantToWaitlist(entrant);
-        if (added) {
-            //Write to database
-            updateEvent(event, callback);
+        
+        // Safety check: ensure waitlist exists
+        if (event.getWaitlist() == null) {
+            callback.onFailure(new Exception("Event waitlist is not initialized"));
+            return;
         }
-        else {
-            callback.onFailure(new Exception("Entrant already in event"));
+        
+        try {
+            //Add the entrant to the waitlist
+            boolean added = event.addEntrantToWaitlist(entrant);
+            if (added) {
+                //Write to database
+                updateEvent(event, callback);
+            } else {
+                callback.onFailure(new Exception("Failed to add entrant to waitlist"));
+            }
+        } catch (Exception e) {
+            // Catch any exceptions thrown by addEntrantToWaitlist (WaitlistFull, DuplicateEntry, etc.)
+            callback.onFailure(e);
         }
     }
 
