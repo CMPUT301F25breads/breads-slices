@@ -27,7 +27,7 @@ import com.example.slices.models.EventInfo;
 import java.util.List;
 
 /** EntrantEventAdapter
- * This adpater is for entrants (users) joining or leaving events
+ * This adapter is for entrants (users) joining or leaving events
  * This adapter is used when an event is clicked to join or to leave the event. It changes the text
  * as well as the background colors as per Storyboard illustration (purple BG / white BG with
  * white text / black text, respectively).

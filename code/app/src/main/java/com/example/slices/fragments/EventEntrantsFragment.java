@@ -8,9 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.example.slices.controllers.EventController;
 import com.example.slices.models.Event;
-
 import com.example.slices.controllers.NotificationDialog;
 import com.example.slices.controllers.NotificationService;
 import com.example.slices.databinding.EventEntrantsFragmentBinding;
@@ -27,7 +25,6 @@ public class EventEntrantsFragment extends Fragment {
     private static final String ARG_SENDER_ID = "sender_id";
 
     private EventEntrantsFragmentBinding binding;
-
     private int eventId;
     private String eventName;
     private int senderId;
@@ -60,9 +57,6 @@ public class EventEntrantsFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Initialize database connector
-
 
         // Get arguments passed through navigation
         if (getArguments() != null) {
@@ -109,8 +103,8 @@ public class EventEntrantsFragment extends Fragment {
     // Set up the entrants list container
     private void setupEntrantsContainer() {
         if (binding != null) {
-            // Show the entrants list container and hide other states
-            binding.entrantsListContainer.setVisibility(View.VISIBLE);
+            // Show the entrants RecyclerView and hide other states
+            binding.recyclerViewEntrants.setVisibility(View.VISIBLE);
             binding.layoutEmptyState.setVisibility(View.GONE);
             binding.layoutErrorState.setVisibility(View.GONE);
             binding.progressBar.setVisibility(View.GONE);
@@ -151,7 +145,7 @@ public class EventEntrantsFragment extends Fragment {
     private void loadEventData() {
         if (eventId == -1) return;
 
-        EventController.getEvent(eventId, new EventCallback() {
+        com.example.slices.controllers.EventController.getEvent(eventId, new EventCallback() {
             @Override
             public void onSuccess(Event event) {
                 if (getActivity() != null) {

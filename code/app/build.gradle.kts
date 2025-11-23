@@ -62,6 +62,8 @@ dependencies {
     implementation(libs.navigation.fragment)
     implementation(libs.firebase.auth)
     testImplementation(libs.junit)
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("org.mockito:mockito-core:5.7.0")
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation("androidx.test.espresso:espresso-contrib:3.5.1") {
