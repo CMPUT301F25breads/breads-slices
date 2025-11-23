@@ -22,10 +22,13 @@ import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.EntrantController;
 import com.example.slices.databinding.MenuFragmentBinding;
 import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EntrantIDCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
 import com.example.slices.models.Profile;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.util.Objects;
 
 
 /**
@@ -61,6 +64,11 @@ public class  MenuFragment extends Fragment {
         Entrant user =  vm.getUser();
         Profile profile = user.getProfile();
 
+        //Default
+        binding.nameTextfield.setText("");
+        binding.emailTextfield.setText("");
+        binding.phoneNumberTextfield.setText("");
+        binding.sendNotificationsSwitch.setChecked(false);
 
         name = profile.getName();
         email = profile.getEmail();
@@ -205,11 +213,61 @@ public class  MenuFragment extends Fragment {
                     public void onClick(DialogInterface dialogInterface, int i) {
                     }
                 })
-                .setPositiveButton("Yes", (dialogInterface, i) -> deleteProfile())
+                .setPositiveButton("Yes", (dialogInterface, i) -> {
+                    try {
+                        deleteProfile();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .show();
     }
 
-    private void deleteProfile() {
+
+    /**
+     * Deletes the users profile, and initializes a new blank user
+     * @throws Exception
+     */
+    private void deleteProfile() throws Exception {
+        EntrantController.deleteEntrant(Integer.toString(vm.getUser().getId()), new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                binding.nameTextfield.setText("");
+                binding.emailTextfield.setText("");
+                binding.phoneNumberTextfield.setText("");
+                binding.sendNotificationsSwitch.setChecked(false);
+                String deviceId = InstanceUtil.getDeviceId(requireContext());
+                Entrant ent = new Entrant(deviceId);
+                EntrantController.getNewEntrantId(new EntrantIDCallback() {
+                    @Override
+                    public void onSuccess(int id) {
+                        ent.setId(id);
+                        EntrantController.writeEntrant(ent, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                Toast.makeText(requireContext(), "Profile Deleted", Toast.LENGTH_SHORT).show();
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                Log.e("MenuFragment", "Couldn't write new entrant", e);
+                                Toast.makeText(requireContext(), "Error: Couldn't write new entrant", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        vm.setUser(ent);
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        Log.e("MenuFragment", "Couldn't get entrant ID", e);
+                        Toast.makeText(requireContext(), "Error: Couldn't get entrant ID", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Log.e("MenuFragment", "Couldn't delete entrant", e);
+                Toast.makeText(requireContext(), "Error: Couldn't delete profile", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     /**

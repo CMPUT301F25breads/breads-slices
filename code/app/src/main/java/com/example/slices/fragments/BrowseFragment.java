@@ -62,6 +62,9 @@ public class BrowseFragment extends Fragment {
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
         SearchSettings search = vm.getSearch();
+        
+        // Load user's waitlisted events to populate button states correctly
+        loadUserWaitlistedEvents();
 
         setupEvents(search);
 
@@ -71,6 +74,10 @@ public class BrowseFragment extends Fragment {
 
 
     public void setupEvents(SearchSettings search) {
+        // Set ViewModel on adapter before any data operations to prevent null reference crashes
+        eventAdapter.setViewModel(vm);
+        binding.browseEventList.setAdapter(eventAdapter);
+        
         EventController.queryEvents(search, new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
@@ -78,10 +85,6 @@ public class BrowseFragment extends Fragment {
                     eventList.clear();
                     eventList.addAll(events);
                     eventAdapter.notifyDataSetChanged();
-
-                    //eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
-                    eventAdapter.setViewModel(vm);
-                    binding.browseEventList.setAdapter(eventAdapter);
 
                 } catch (Exception e) {
                     Log.e("BrowseFragment", "Error setting adapter", e);
@@ -92,13 +95,8 @@ public class BrowseFragment extends Fragment {
             @Override
             public void onFailure(Exception e) {
                 Log.e("BrowseFragment", "Error fetching events", e);
-
                 Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
-
-                //eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
                 eventAdapter.notifyDataSetChanged();
-                binding.browseEventList.setAdapter(eventAdapter);
-
             }
         });
     }
@@ -239,6 +237,50 @@ public class BrowseFragment extends Fragment {
 
     private void navigateToCamera() {
 
+    }
+    
+    /**
+     * Loads the user's waitlisted events and populates the waitlistedEventIds in the ViewModel.
+     * This ensures that the browse screen shows correct button states (Join vs Leave).
+     */
+    private void loadUserWaitlistedEvents() {
+        // Only load if user is initialized
+        if (vm.getUser() == null || vm.getUser().getId() == 0) {
+            return;
+        }
+        
+        // Check if already loaded to avoid redundant queries
+        if (vm.getWaitlistedEvents() != null && !vm.getWaitlistedEvents().isEmpty()) {
+            // Already loaded, just sync the IDs
+            for (Event event : vm.getWaitlistedEvents()) {
+                vm.addWaitlistedId(String.valueOf(event.getId()));
+            }
+            return;
+        }
+        
+        // Load from database
+        EventController.getEventsForEntrant(vm.getUser(), new com.example.slices.interfaces.EntrantEventCallback() {
+            @Override
+            public void onSuccess(List<Event> events, List<Event> waitEvents) {
+                vm.setWaitlistedEvents(waitEvents);
+                
+                // Populate waitlistedEventIds for button state tracking
+                for (Event event : waitEvents) {
+                    vm.addWaitlistedId(String.valueOf(event.getId()));
+                }
+                
+                // Refresh the adapter to update button states
+                if (eventAdapter != null) {
+                    eventAdapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // Silently fail - user can still browse events
+                Log.e("BrowseFragment", "Failed to load user's waitlisted events", e);
+            }
+        });
     }
 
     @Override
