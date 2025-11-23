@@ -145,7 +145,7 @@ public class EventControllerTest {
         Timestamp eventDate = times.get(2);
         //Create the event
         EventController.createEvent("Name", "Desc", "Loc", "Guidelines", "ImgUrl",
-                eventDate, regStart, regEnd, 10, 5, false, "none", "Organizer123",
+                eventDate, regStart, regEnd, 10, 5, false, "none", 123,
                 new EventCallback() {
                     @Override
                     public void onSuccess(Event event) {
@@ -649,7 +649,7 @@ public class EventControllerTest {
         clearAll();
         Entrant e = createEntrant("NoEvents");
         CountDownLatch latch = new CountDownLatch(1);
-        EventController.getEventsForEntrant(e, new EntrantEventCallback() {
+        EventController.getAllEventsForEntrant(e, new EntrantEventCallback() {
             @Override
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
                 assertTrue(events.isEmpty());
@@ -704,7 +704,7 @@ public class EventControllerTest {
 
         //Get all events for entrant
         CountDownLatch latch = new CountDownLatch(1);
-        EventController.getEventsForEntrant(entrant, new EntrantEventCallback() {
+        EventController.getAllEventsForEntrant(entrant, new EntrantEventCallback() {
             @Override
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
                 assertEquals(1, events.size());
@@ -903,7 +903,7 @@ public class EventControllerTest {
         CountDownLatch latch = new CountDownLatch(1);
 
         EventController.createEvent("Bad", "Desc", "Loc", "Guide", "Img", event, regStart, regEnd,
-                10, 5, false, "none", "Org", new EventCallback() {
+                10, 5, false, "none", 123, new EventCallback() {
                     @Override
                     public void onSuccess(Event e) {
                         fail("Should not create event with invalid times");
@@ -930,7 +930,7 @@ public class EventControllerTest {
         //Create event info
         EventInfo info = new EventInfo("Info Event", "Desc", "Loc",
                 "Guide", "Img", times.get(2), times.get(0), times.get(1),
-                20, 10, true, "dist", 0, "OrgX");
+                20, 10, true, "dist", 0, 123);
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Event> ref = new AtomicReference<>();
         //Create event from event info
@@ -1160,7 +1160,7 @@ public class EventControllerTest {
         Timestamp pastRegEnd = new Timestamp(cal.getTime());
 
         EventInfo pastInfo = new EventInfo("Past", "Desc", "Loc", "Guide", "Img",
-                pastEventTs, pastRegStart, pastRegEnd, 10, 5, false, "none", 0, "Org");
+                pastEventTs, pastRegStart, pastRegEnd, 10, 5, false, "none", 0, 123);
         createEventNoCheck(pastInfo);
 
         CountDownLatch latch = new CountDownLatch(1);

@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -47,7 +48,6 @@ public class MyEventsFragment extends Fragment {
         sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
         setupEvents();
-
     }
 
     @Override
@@ -79,6 +79,26 @@ public class MyEventsFragment extends Fragment {
 
             @Override
             public void onFailure(Exception e) {
+                Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
+        EventController.getPastEventsForEntrant(sharedViewModel.getUser(), new EntrantEventCallback() {
+            @Override
+            public void onSuccess(List<Event> events, List<Event> waitEvents) {
+                events.addAll(waitEvents);
+                sharedViewModel.setPastEvents(events);
+
+                EventAdapter pastAdapter = new EventAdapter(requireContext(), events, MyEventsFragment.this);
+                binding.pastList.setLayoutManager(new LinearLayoutManager(requireContext()));
+                binding.pastList.setAdapter(pastAdapter);
+
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(requireContext(), "Failed to load past events.", Toast.LENGTH_SHORT).show();
 
             }
         });

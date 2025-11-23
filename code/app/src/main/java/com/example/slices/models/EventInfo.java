@@ -47,7 +47,11 @@ public class EventInfo {
     private String guidelines;
     private String imageUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
-    private int maxWaiting;
+    /**
+     * Max amount of people allowed on waiting list
+     * set is int max by default as it is optionally limited
+     */
+    private int maxWaiting = Integer.MAX_VALUE;
     private boolean entrantLoc;
 
     private String entrantDist;

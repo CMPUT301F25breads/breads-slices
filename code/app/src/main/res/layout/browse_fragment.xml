@@ -2,7 +2,62 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="20dp">
+        <!-- Search Bar -->
+        <LinearLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:gravity="center_vertical"
+            android:background="@drawable/search_bar_bg">
+
+            <!-- The EditText -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                app:boxBackgroundMode="none"
+                app:hintEnabled="false">
+
+            <EditText
+                android:id="@+id/search_edit_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:hint="Search events..."
+                />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <ImageButton
+                android:id="@+id/filter_button"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_menu"
+                android:background="@null"/>
+
+            <ImageButton
+                android:id="@+id/scan_button"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_cam"
+                android:paddingHorizontal="10dp"
+                android:background="@null"/>
+            <ImageButton
+                android:id="@+id/search_button"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_forward"
+                android:background="@null"/>
+
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
         android:layout_width="match_parent"

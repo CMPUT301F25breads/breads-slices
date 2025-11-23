@@ -255,7 +255,9 @@ public class OrganizerCreateEventFragment extends Fragment {
 
             // Max participants / waiting list
             int maxParticipants = TextUtils.isEmpty(maxPartStr) ? 0 : Integer.parseInt(maxPartStr);
-            int maxWaiting = TextUtils.isEmpty(maxWaitStr) ? 0 : Integer.parseInt(maxWaitStr);
+
+            // Just changed this because I kept creating events with a max waitlist of 0 - Brad
+            int maxWaiting = TextUtils.isEmpty(maxWaitStr) ? Integer.MAX_VALUE : Integer.parseInt(maxWaitStr);
 
             // Organizer ID (if we want event to be associated to organizer)
             int organizerID = svm.getUser().getId();
