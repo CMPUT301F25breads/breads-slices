@@ -11,6 +11,7 @@ import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
 import com.example.slices.interfaces.EventListCallback;
+import com.example.slices.interfaces.StringListCallback;
 import com.example.slices.models.AsyncBatchExecutor;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
@@ -984,6 +985,25 @@ public class EventController {
         }
         //Execute everything
         AsyncBatchExecutor.runBatch(ops, callback);
+    }
+
+    public static void getAllImages(StringListCallback callback) {
+        eventRef.get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<String> images = new ArrayList<>();
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments())
+                        images.add(doc.getString("imageUrl"));
+                    callback.onSuccess(images);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    public static void removeImage(Event e, DBWriteCallback callback) {
+        e.getEventInfo().setImageUrl(null);
+        eventRef.document(String.valueOf(e.getId()))
+                .set(e)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e1 -> callback.onFailure(new Exception("Failed to remove image")));
     }
 
 

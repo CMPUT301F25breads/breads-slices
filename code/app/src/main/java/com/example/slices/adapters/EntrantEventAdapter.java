@@ -16,6 +16,8 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.exceptions.DuplicateEntry;
+import com.example.slices.exceptions.WaitlistFull;
 import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.interfaces.DBWriteCallback;
@@ -225,6 +227,7 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
                         }
                     });
+
                 }
             });
         }

@@ -95,7 +95,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
         // Tries to fetch the event name from the database,
         // if it fails it will set the text to "Event not found"
-        EventController.getEvent(n.getEventId(), new EventCallback() {
+        EventController.getEvent(n.getSenderId(), new EventCallback() {
             @Override
             public void onSuccess(Event event) {
                 EventInfo eventInfo = event.getEventInfo();
