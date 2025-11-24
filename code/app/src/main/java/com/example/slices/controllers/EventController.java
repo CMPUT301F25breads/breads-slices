@@ -351,12 +351,6 @@ public class EventController {
     }
 
 
-
-
-
-
-
-
     /**
      * Gets all events for a given entrant
      *
