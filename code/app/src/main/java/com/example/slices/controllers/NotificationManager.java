@@ -82,34 +82,6 @@ public class NotificationManager {
         }
     }
 
-    public static void sendNotifications(String title, String body, List<Entrant> recipients, int senderId,
-                                         DBWriteCallback callback) {
-        if (recipients.isEmpty()) {
-            callback.onSuccess();
-            return;
-        }
-
-        AtomicInteger completed = new AtomicInteger(0);
-        for (Entrant recipient : recipients) {
-            sendNotification(title, body, recipient.getId(), senderId, new DBWriteCallback() {
-                @Override
-                public void onSuccess() {
-                    if (completed.incrementAndGet() == recipients.size()) {
-                        callback.onSuccess();
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    callback.onFailure(e);
-                }
-            });
-        }
-    }
-
-
-
-
     /**
      * Sends a standard notification to a recipient.
      * Creates a Notification object, writes it to the database, and logs it.
@@ -125,10 +97,27 @@ public class NotificationManager {
 
     public static void sendNotification(String title, String body, int recipientId,
                                         int senderId, DBWriteCallback callback) {
+        sendNotification(title, body, recipientId, senderId, 0, callback);
+    }
+    
+    /**
+     * Sends a notification with an optional event ID
+     * @param title Title of the notification
+     * @param body Body text of the notification
+     * @param recipientId ID of the recipient entrant
+     * @param senderId ID of the sender entrant
+     * @param eventId ID of the associated event (0 if not event-related)
+     * @param callback Callback for success/failure of database write
+     */
+    public static void sendNotification(String title, String body, int recipientId,
+                                        int senderId, int eventId, DBWriteCallback callback) {
         getNextNotificationId(new NotificationIDCallback() {
             @Override
             public void onSuccess(int id) {
                 Notification notification = new Notification(title, body, id, recipientId, senderId);
+                if (eventId > 0) {
+                    notification.setEventId(eventId);
+                }
 
                 writeNotification(notification, new DBWriteCallback() {
                     @Override
@@ -229,8 +218,26 @@ public class NotificationManager {
                     int highestId = 0;
                     if (!querySnapshot.isEmpty()) {
                         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                            int id = doc.getLong("id").intValue();
-                            if (id > highestId) highestId = id;
+                            try {
+                                // Try to get as Long first
+                                Long idLong = doc.getLong("id");
+                                if (idLong != null) {
+                                    int id = idLong.intValue();
+                                    if (id > highestId) highestId = id;
+                                }
+                            } catch (RuntimeException e) {
+                                // If it fails (e.g., stored as String), try to parse it
+                                try {
+                                    String idStr = doc.getString("id");
+                                    if (idStr != null) {
+                                        int id = Integer.parseInt(idStr);
+                                        if (id > highestId) highestId = id;
+                                    }
+                                } catch (Exception parseEx) {
+                                    // Skip this document if we can't parse the ID
+                                    System.out.println("Skipping notification with invalid ID: " + doc.getId());
+                                }
+                            }
                         }
                     }
                     // Always call callback once

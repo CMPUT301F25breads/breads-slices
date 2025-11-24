@@ -271,8 +271,9 @@ public class EventEntrantsFragment extends Fragment {
 
         // Get count for success message
         int entrantCount = (type == NotificationType.WAITLIST)
-                ? NotificationService.getWaitlistEntrantCount(currentEvent)
-                : NotificationService.getEventEntrantCount(currentEvent);
+                ? (currentEvent.getWaitlist() != null && currentEvent.getWaitlist().getEntrants() != null 
+                    ? currentEvent.getWaitlist().getEntrants().size() : 0)
+                : (currentEvent.getEntrants() != null ? currentEvent.getEntrants().size() : 0);
 
         com.example.slices.interfaces.DBWriteCallback callback = new com.example.slices.interfaces.DBWriteCallback() {
             @Override
