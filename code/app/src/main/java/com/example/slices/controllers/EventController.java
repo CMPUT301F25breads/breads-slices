@@ -462,8 +462,9 @@ public class EventController {
                             notifyOps.add(cb -> NotificationManager.sendNotification(
                                     "Event Deleted",
                                     "Your event has been deleted",
-                                    entrant.getId(),
-                                    event.getId(),
+                                    entrant.getId(),      // recipient
+                                    event.getId(),        // sender (arbitrary here)
+                                    event.getId(),        // eventId
                                     cb
                             ));
                         }

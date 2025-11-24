@@ -48,6 +48,10 @@ public class NotificationManager {
      */
     private static NotificationManager instance;
 
+    /**
+     * Largest notification ID assigned so far
+     */
+    private static final AtomicInteger largestId = new AtomicInteger(0);
 
     private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private static CollectionReference notificationRef = db.collection("notifications");
@@ -79,97 +83,38 @@ public class NotificationManager {
         }
     }
 
-    public static void sendNotifications(String title, String body, List<Entrant> recipients, int senderId,
-                                         DBWriteCallback callback) {
-        if (recipients.isEmpty()) {
-            callback.onSuccess();
-            return;
-        }
 
-        AtomicInteger completed = new AtomicInteger(0);
-        for (Entrant recipient : recipients) {
-            sendNotification(title, body, recipient.getId(), senderId, new DBWriteCallback() {
-                @Override
-                public void onSuccess() {
-                    if (completed.incrementAndGet() == recipients.size()) {
+
+
+
+
+    /**
+     * Sends a notification with an event ID
+     * @param title Title of the notification
+     * @param body Body text of the notification
+     * @param recipientId ID of the recipient entrant
+     * @param senderId ID of the sender entrant
+     * @param eventId ID of the associated event
+     * @param callback Callback for success/failure of database write
+     */
+    public static void sendNotification(String title, String body, int recipientId,
+                                        int senderId, int eventId, DBWriteCallback callback) {
+        getNextNotificationId(new NotificationIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                Notification notification = new Notification(title, body, id, recipientId, senderId);
+                notification.setEventId(eventId);
+
+                writeNotification(notification, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Logger.log(notification, null);
                         callback.onSuccess();
                     }
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    callback.onFailure(e);
-                }
-            });
-        }
-    }
-
-
-
-
-    /**
-     * Sends a standard notification to a recipient.
-     * Creates a Notification object, writes it to the database, and logs it.
-     *
-     * @param title Title of the notification
-     * @param body Body text of the notification
-     * @param recipientId ID of the recipient entrant
-     * @param senderId ID of the sender entrant
-     * @param callback Callback for success/failure of database write
-     */
-
-
-
-    public static void sendNotification(String title, String body,
-                                        int recipientId, int senderId,
-                                        DBWriteCallback callback) {
-
-        DocumentReference ref = notificationRef.document();
-        String id = ref.getId();
-
-        Notification notification = new Notification(title, body, id, recipientId, senderId);
-        notification.setType(NotificationType.NOTIFICATION);
-
-        ref.set(notification)
-                .addOnSuccessListener(aVoid ->
-                        Logger.log(notification, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                callback.onSuccess();
-                            }
-
-                            @Override
-                            public void onFailure(Exception e) {
-                                callback.onFailure(e);
-                            }
-                        }))
-                .addOnFailureListener(callback::onFailure);
-    }
-
-    public static void sendBulkNotification(String title, String body, List<Integer> recipients,
-                                             int senderId, DBWriteCallback callback) {
-        if (recipients.isEmpty()) {
-            callback.onSuccess();
-            return;
-        }
-        AtomicInteger completed = new AtomicInteger(0);
-        AtomicBoolean failed = new AtomicBoolean(false);
-        for (int recipient : recipients) {
-            sendNotification(title, body, recipient, senderId, new DBWriteCallback() {
-                @Override
-                public void onSuccess() {
-                    if (failed.get()) {
-                        return;
-                    }
-                    if (completed.incrementAndGet() == recipients.size()) {
-                        if (!failed.get()) {
-                            callback.onSuccess();
-                        }
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
                     if (failed.compareAndSet(false, true)) {
                         callback.onFailure(e);
                     }
@@ -179,36 +124,10 @@ public class NotificationManager {
         }
     }
 
-    public static void sendBulkInvitation(String title, String body, List<Integer> recipients,
-                                           int senderId, int eventID, DBWriteCallback callback) {
-        if (recipients.isEmpty()) {
-            callback.onSuccess();
-            return;
-        }
-        AtomicInteger completed = new AtomicInteger(0);
-        AtomicBoolean failed = new AtomicBoolean(false);
-        for (int recipient : recipients) {
-            sendInvitation(title, body, recipient, senderId, eventID, new DBWriteCallback() {
-                @Override
-                public void onSuccess() {
-                    if (failed.get()) {
-                        return;
-                    }
-                    if (completed.incrementAndGet() == recipients.size()) {
-                        if (!failed.get()) {
-                            callback.onSuccess();
-                        }
-                    }
-                }
-                @Override
-                public void onFailure(Exception e) {
-                    if (failed.compareAndSet(false, true)) {
-                        callback.onFailure(e);
-                    }
-                }
-            });
-        }
-    }
+
+
+
+
 
 
 
@@ -225,14 +144,23 @@ public class NotificationManager {
      * @param recipientId ID of the recipient entrant
      * @param senderId ID of the sender entrant
      * @param eventId ID of the associated event
+     * @param callback Callback for success/failure of database write
      */
     public static void sendInvitation(String title, String body,
                                       int recipientId, int senderId,
                                       int eventId,
                                       DBWriteCallback callback) {
 
-        DocumentReference ref = notificationRef.document();
-        String id = ref.getId();
+        getNextNotificationId(new NotificationIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                Invitation invitation = new Invitation(title, body, id, recipientId, senderId, eventId);
+
+                writeNotification(invitation, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Logger.log(invitation, callback);
+                    }
 
         Invitation invitation = new Invitation(title, body, id, recipientId, senderId, eventId);
         invitation.setType(NotificationType.INVITATION);
@@ -260,253 +188,285 @@ public class NotificationManager {
 
 
 
+    private static void getNextNotificationId(NotificationIDCallback callback) {
+        if (largestId.get() > 0) {
+            // Already initialized, increment and return
+            int id = largestId.incrementAndGet();
+            callback.onSuccess(id);
+        } else {
+            // Fetch from DB for first time
+            getNotificationId(new NotificationIDCallback() {
+                @Override
+                public void onSuccess(int id) {
+                    largestId.set(id);
+                    callback.onSuccess(largestId.incrementAndGet());
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    callback.onFailure(e);
+                }
+            });
+        }
+    }
+
     /**
-     * Gets the next available notification ID
-     * @param callback
-     *      Callback to call when the operation is complete
-     *      */
+     * Gets the next available notification ID from the database
+     * @param callback Callback to call when the operation is complete
+     */
     public static void getNotificationId(NotificationIDCallback callback) {
         notificationRef.get()
                 .addOnSuccessListener(querySnapshot -> {
                     int highestId = 0;
                     if (!querySnapshot.isEmpty()) {
                         for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                            int id = doc.getLong("id").intValue();
-                            if (id > highestId) highestId = id;
+                            try {
+                                // Try to get as Long first
+                                Long idLong = doc.getLong("id");
+                                if (idLong != null) {
+                                    int id = idLong.intValue();
+                                    if (id > highestId) highestId = id;
+                                }
+                            } catch (RuntimeException e) {
+                                // If it fails (e.g., stored as String), try to parse it
+                                try {
+                                    String idStr = doc.getString("id");
+                                    if (idStr != null) {
+                                        int id = Integer.parseInt(idStr);
+                                        if (id > highestId) highestId = id;
+                                    }
+                                } catch (Exception parseEx) {
+                                    // Skip this document if we can't parse the ID
+                                    System.out.println("Skipping notification with invalid ID: " + doc.getId());
+                                }
+                            }
                         }
                     }
-                    // Always call callback once
-                    callback.onSuccess(highestId + 1);
+                    callback.onSuccess(highestId);
                 })
                 .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to get next notification ID")));
     }
 
-        /**
-         * Gets all notifications from the database asynchronously
-         * @param callback
-         *      Callback to call when the operation is complete
-         */
-
-        public static void getAllNotifications (NotificationListCallback callback){
-            notificationRef.get()
-                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                        @Override
-                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                            if (!queryDocumentSnapshots.isEmpty()) {
-                                List<Notification> notifications = new ArrayList<>();
-                                for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                    Notification notification = doc.toObject(Notification.class);
-                                    notifications.add(notification);
-                                }
-                                callback.onSuccess(notifications);
-
-
-                            } else {
-                                callback.onSuccess(new ArrayList<Notification>());
-                            }
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            callback.onFailure(new DBOpFailed("Failed to get notifications"));
-                        }
-                    });
-        }
-
-        /**
-         * Deletes a notification from the database
-         * @param id
-         *      Notification ID to delete
-         */
-
-        public static void deleteNotification (String id, DBWriteCallback callback){
-            notificationRef.document(String.valueOf(id))
-                    .delete()
-                    .addOnSuccessListener(aVoid -> callback.onSuccess())
-                    .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to delete notification")));
-        }
-
-
-        /**
-         * Writes a notification to the database
-         * @param notification
-         *      Notification to write to the database
-         * @param callback
-         *      Callback to call when the operation is complete
-         */
-
-        public static void writeNotification (Notification notification, DBWriteCallback callback){
-            notificationRef.document(String.valueOf(notification.getId()))
-                    .set(notification)
-                    .addOnSuccessListener(aVoid -> callback.onSuccess())
-                    .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write notification")));
-        }
-
-        /**
-         * Updates a notification in the database
-         * @param notification
-         *      Notification to update in the database
-         * @param callback
-         *      Callback to call when the operation is complete
-         */
-        public static void updateNotification (Notification notification, DBWriteCallback callback){
-            notificationRef.document(String.valueOf(notification.getId()))
-                    .set(notification)
-                    .addOnSuccessListener(aVoid -> callback.onSuccess())
-                    .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write notification")));
-        }
-
-        /**
-         * Clears all notifications from the database asynchronously: Used for testing
-         * @param onComplete
-         *      Callback to call when the operation is complete
-
-         */
-
-        public static void clearNotifications(Runnable onComplete) {
-            notificationRef.get()
-                    .addOnSuccessListener(querySnapshot -> {
-
-                        if (querySnapshot.isEmpty()) {
-                            onComplete.run();
-                            return;
-                        }
-
-                        WriteBatch batch = db.batch();
-                        for (DocumentSnapshot doc : querySnapshot) {
-                            batch.delete(doc.getReference());
-                        }
-
-                        batch.commit()
-                                .addOnSuccessListener(aVoid -> onComplete.run())
-                                .addOnFailureListener(e -> onComplete.run());
-                    })
-                    .addOnFailureListener(e -> {
-                        System.out.println("Failed to clear notifications: " + e.getMessage());
-                        onComplete.run();
-                    });
-        }
-
-        /**
-         * Gets a notification from the database asynchronously
-         * @param id
-         *      Notification ID to search for
-         * @param callback
-         *      Callback to call when the operation is complete
-         */
-        public static void getNotificationById (String id, NotificationCallback callback){
-            notificationRef.whereEqualTo("id", id)
-                    .whereEqualTo("type", NotificationType.NOTIFICATION)
-                    .get()
-                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                        @Override
-                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                            if (!queryDocumentSnapshots.isEmpty()) {
-                                DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
-                                Notification notification = doc.toObject(Notification.class);
-                                callback.onSuccess(notification);
-                            } else {
-                                callback.onFailure(new NotificationNotFound("Notification not found", String.valueOf(id)));
-                            }
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            callback.onFailure(new DBOpFailed("Failed to get notification"));
-                        }
-                    });
-        }
-
-        /**
-         * Gets all notifications for a single recipient from the database asynchronously
-         * @param recipientId
-         *      Recipient ID to search for
-         * @param callback
-         *      Callback to call when the operation is complete
-         */
-        public static void getNotificationsByRecipientId ( int recipientId, NotificationListCallback
-        callback){
-            notificationRef.get().addOnSuccessListener(querySnapshot -> {
-                for (DocumentSnapshot doc : querySnapshot) {
-                    System.out.println(doc.getData());
-                }
-            });
-
-            notificationRef.whereEqualTo("recipientId", recipientId)
-                    .whereEqualTo("type", NotificationType.NOTIFICATION)
-                    .get()
-                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                        @Override
-                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                            if (!queryDocumentSnapshots.isEmpty()) {
-                                List<Notification> notifications = new ArrayList<>();
-                                for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                    Notification notification = doc.toObject(Notification.class);
-                                    notifications.add(notification);
-                                }
-                                callback.onSuccess(notifications);
-                            } else {
-                                callback.onSuccess(new ArrayList<Notification>());
-                            }
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            callback.onFailure(new DBOpFailed("Failed to get notifications"));
-                        }
-                    });
-        }
-
-
-        /**
-         * Gets all notifications for a single sender from the database asynchronously
-         * @param senderId
-         *      ID of the sender to search for
-         * @param callback
-         *      Callback to call when the operation is complete
-         */
-
-        public static void getNotificationsBySenderId ( int senderId, NotificationListCallback callback){
-            notificationRef.whereEqualTo("senderId", senderId)
-                    .whereEqualTo("type", NotificationType.NOTIFICATION)
-                    .get()
-                    .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                        @Override
-                        public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                            if (!queryDocumentSnapshots.isEmpty()) {
-                                List<Notification> notifications = new ArrayList<>();
-                                for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                    Notification notification = doc.toObject(Notification.class);
-                                    notifications.add(notification);
-                                }
-                                callback.onSuccess(notifications);
-                            } else {
-                                callback.onSuccess(new ArrayList<Notification>());
-                            }
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            callback.onFailure(new DBOpFailed("Failed to get notifications"));
-
-                        }
-                    });
-        }
-
     /**
-     * Gets a single invitation from the database asynchronously
-     * @param id
-     *      ID of the invitation to search for
+     * Gets all notifications from the database asynchronously
      * @param callback
      *      Callback to call when the operation is complete
      */
 
-    public static void getInvitationById(String id, NotificationCallback callback) {
-        notificationRef.whereEqualTo("id", id )
+    public static void getAllNotifications (NotificationListCallback callback){
+        notificationRef.get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Notification> notifications = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Notification notification = doc.toObject(Notification.class);
+                                notifications.add(notification);
+                            }
+                            callback.onSuccess(notifications);
+
+
+                        } else {
+                            callback.onSuccess(new ArrayList<Notification>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                    }
+                });
+    }
+
+    /**
+     * Deletes a notification from the database
+     * @param id Notification ID to delete
+     * @param callback Callback for success/failure
+     */
+    public static void deleteNotification(int id, DBWriteCallback callback){
+        notificationRef.document(String.valueOf(id))
+                .delete()
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to delete notification")));
+    }
+
+
+    /**
+     * Writes a notification to the database
+     * @param notification
+     *      Notification to write to the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
+    public static void writeNotification (Notification notification, DBWriteCallback callback){
+        notificationRef.document(String.valueOf(notification.getId()))
+                .set(notification)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write notification")));
+    }
+
+    /**
+     * Updates a notification in the database
+     * @param notification
+     *      Notification to update in the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public static void updateNotification (Notification notification, DBWriteCallback callback){
+        notificationRef.document(String.valueOf(notification.getId()))
+                .set(notification)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write notification")));
+    }
+
+    /**
+     * Clears all notifications from the database asynchronously: Used for testing
+     * @param onComplete
+     *      Callback to call when the operation is complete
+
+     */
+
+    public static void clearNotifications(Runnable onComplete) {
+        notificationRef.get()
+                .addOnSuccessListener(querySnapshot -> {
+
+                    if (querySnapshot.isEmpty()) {
+                        onComplete.run();
+                        return;
+                    }
+
+                    WriteBatch batch = db.batch();
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        batch.delete(doc.getReference());
+                    }
+
+                    batch.commit()
+                            .addOnSuccessListener(aVoid -> onComplete.run())
+                            .addOnFailureListener(e -> onComplete.run());
+                })
+                .addOnFailureListener(e -> {
+                    System.out.println("Failed to clear notifications: " + e.getMessage());
+                    onComplete.run();
+                });
+    }
+
+    /**
+     * Gets a notification from the database asynchronously
+     * @param id Notification ID to search for
+     * @param callback Callback to call when the operation is complete
+     */
+    public static void getNotificationById(int id, NotificationCallback callback){
+        notificationRef.whereEqualTo("id", id)
+                .whereEqualTo("type", NotificationType.NOTIFICATION)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
+                            Notification notification = doc.toObject(Notification.class);
+                            callback.onSuccess(notification);
+                        } else {
+                            callback.onFailure(new NotificationNotFound("Notification not found", String.valueOf(id)));
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get notification"));
+                    }
+                });
+    }
+
+    /**
+     * Gets all notifications for a single recipient from the database asynchronously
+     * @param recipientId
+     *      Recipient ID to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public static void getNotificationsByRecipientId ( int recipientId, NotificationListCallback
+            callback){
+        notificationRef.get().addOnSuccessListener(querySnapshot -> {
+            for (DocumentSnapshot doc : querySnapshot) {
+                System.out.println(doc.getData());
+            }
+        });
+
+        notificationRef.whereEqualTo("recipientId", recipientId)
+                .whereEqualTo("type", NotificationType.NOTIFICATION)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Notification> notifications = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Notification notification = doc.toObject(Notification.class);
+                                notifications.add(notification);
+                            }
+                            callback.onSuccess(notifications);
+                        } else {
+                            callback.onSuccess(new ArrayList<Notification>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                    }
+                });
+    }
+
+
+    /**
+     * Gets all notifications for a single sender from the database asynchronously
+     * @param senderId
+     *      ID of the sender to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+
+    public static void getNotificationsBySenderId ( int senderId, NotificationListCallback callback){
+        notificationRef.whereEqualTo("senderId", senderId)
+                .whereEqualTo("type", NotificationType.NOTIFICATION)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (!queryDocumentSnapshots.isEmpty()) {
+                            List<Notification> notifications = new ArrayList<>();
+                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                Notification notification = doc.toObject(Notification.class);
+                                notifications.add(notification);
+                            }
+                            callback.onSuccess(notifications);
+                        } else {
+                            callback.onSuccess(new ArrayList<Notification>());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
+
+                    }
+                });
+    }
+
+    /**
+     * Gets a single invitation from the database asynchronously
+     * @param id ID of the invitation to search for
+     * @param callback Callback to call when the operation is complete
+     */
+    public static void getInvitationById(int id, NotificationCallback callback) {
+        notificationRef.whereEqualTo("id", id)
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {

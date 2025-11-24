@@ -35,7 +35,7 @@ public class NotificationService {
             return;
         }
 
-        sendToEntrantList(waitlistEntrants, title, body, senderId, callback);
+        sendToEntrantList(waitlistEntrants, title, body, senderId, event.getId(), callback);
     }
 
     // Send notification to all chosen entrants in an event
@@ -51,7 +51,7 @@ public class NotificationService {
             return;
         }
 
-        sendToEntrantList(eventEntrants, title, body, senderId, callback);
+        sendToEntrantList(eventEntrants, title, body, senderId, event.getId(), callback);
     }
 
     // Send notification to selected entrants
@@ -61,18 +61,28 @@ public class NotificationService {
             return;
         }
 
-        sendToEntrantList(selectedEntrants, title, body, senderId, callback);
+        sendToEntrantList(selectedEntrants, title, body, senderId, 0, callback);
     }
 
-    // Internal method to send notifications to a list of entrants
-    private static void sendToEntrantList(List<Entrant> entrants, String title, String body, int senderId, DBWriteCallback callback) {
+    /**
+     * Internal method to send notifications to a list of entrants
+     * Consolidated method that handles both event-related and non-event notifications
+     * 
+     * @param entrants List of entrants to notify
+     * @param title Notification title
+     * @param body Notification body
+     * @param senderId ID of the sender
+     * @param eventId ID of the associated event (0 if not event-related)
+     * @param callback Callback for completion status
+     */
+    private static void sendToEntrantList(List<Entrant> entrants, String title, String body, int senderId, int eventId, DBWriteCallback callback) {
         final int totalEntrants = entrants.size();
         final AtomicInteger successCount = new AtomicInteger(0);
         final AtomicInteger failureCount = new AtomicInteger(0);
         final AtomicInteger completedCount = new AtomicInteger(0);
 
         for (Entrant entrant : entrants) {
-            NotificationManager.sendNotification(title, body, entrant.getId(), senderId, new DBWriteCallback() {
+            NotificationManager.sendNotification(title, body, entrant.getId(), senderId, eventId, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     successCount.incrementAndGet();
@@ -94,30 +104,12 @@ public class NotificationService {
                             callback.onSuccess();
                         } else {
                             // Some failed - report as failure with details
-                            String errorMessage;
-                            errorMessage = String.format("Notifications partially failed: %d succeeded, %d failed", successCount.get(), failureCount.get());
+                            String errorMessage = String.format("Notifications partially failed: %d succeeded, %d failed", successCount.get(), failureCount.get());
                             callback.onFailure(new RuntimeException(errorMessage));
                         }
                     }
                 }
             });
         }
-    }
-
-
-    // Utility method to get count of entrants that would be notified for waitlist
-    public static int getWaitlistEntrantCount(Event event) {
-        if (event == null || event.getWaitlist() == null || event.getWaitlist().getEntrants() == null) {
-            return 0;
-        }
-        return event.getWaitlist().getEntrants().size();
-    }
-
-    // Utility method to get count of entrants that would be notified for event participants
-    public static int getEventEntrantCount(Event event) {
-        if (event == null || event.getEntrants() == null) {
-            return 0;
-        }
-        return event.getEntrants().size();
     }
 }
