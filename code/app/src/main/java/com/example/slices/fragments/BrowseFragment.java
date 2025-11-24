@@ -14,9 +14,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.NavOptions;
-import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
@@ -60,7 +58,8 @@ public class BrowseFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
+        eventAdapter = new EntrantEventAdapter(requireContext(), BrowseFragment.this, eventList);
+        binding.browseList.setLayoutManager(new LinearLayoutManager(requireContext()));
         SearchSettings search = vm.getSearch();
         
         // Load user's waitlisted events to populate button states correctly
@@ -76,7 +75,7 @@ public class BrowseFragment extends Fragment {
     public void setupEvents(SearchSettings search) {
         // Set ViewModel on adapter before any data operations to prevent null reference crashes
         eventAdapter.setViewModel(vm);
-        binding.browseEventList.setAdapter(eventAdapter);
+        binding.browseList.setAdapter(eventAdapter);
         
         EventController.queryEvents(search, new EventListCallback() {
             @Override
@@ -106,19 +105,6 @@ public class BrowseFragment extends Fragment {
      * @author Brad Erdely
      */
     public void setupListeners() {
-        binding.browseEventList.setOnItemClickListener((parent, v, position, id)-> {
-            vm.setSelectedEvent(eventList.get(position));
-
-            NavController navController = NavHostFragment.findNavController(this);
-
-            NavOptions options = new NavOptions.Builder()
-                    .setRestoreState(true)
-                    .setPopUpTo(R.id.BrowseFragment, true)
-                    .build();
-
-            navController.navigate(R.id.action_global_EventDetailsFragment, null, options);
-        });
-
         binding.searchButton.setOnClickListener(v -> {
             SearchSettings updated = vm.getSearch();
             if(updated == null)
