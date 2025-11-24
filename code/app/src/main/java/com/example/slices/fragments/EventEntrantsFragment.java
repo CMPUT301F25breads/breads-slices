@@ -243,11 +243,11 @@ public class EventEntrantsFragment extends Fragment {
         switch (type) {
             case WAITLIST:
                 // Send notification to all entrants on the waitlist
-                NotificationService.sendToWaitlist(currentEvent, title, message, senderId, callback);
+                NotificationService.sendToWaitlist(currentEvent, title, message, eventId, callback);
                 break;
             case PARTICIPANTS:
                 // Send notification to all entrants in the event
-                NotificationService.sendToEventEntrants(currentEvent, title, message, senderId, callback);
+                NotificationService.sendToEventEntrants(currentEvent, title, message, eventId, callback);
                 break;
         }
     }
