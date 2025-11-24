@@ -153,9 +153,9 @@ public class Event implements Comparable<Event> {
         if(waitlist.getEntrants().isEmpty()) {
             return false;
         }
-        //Otherwise remove the entrant from the waitlist)
+        //Otherwise remove the entrant from the waitlist
         waitlist.removeEntrant(entrant);
-        eventInfo.setCurrentEntrants(eventInfo.getCurrentEntrants() - 1);
+        // Note: waitlist.removeEntrant() already decrements currentEntrants
         return true;
     }
 

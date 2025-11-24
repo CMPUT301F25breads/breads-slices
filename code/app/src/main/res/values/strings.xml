@@ -6,6 +6,12 @@
     <string name="no_entrants_message">No entrants have joined this event yet.</string>
     <string name="error_label">Error</string>
     <string name="error_loading_entrants">An error occurred while loading entrants.</string>
+    <string name="error_invalid_event_id">Invalid event ID</string>
+    <string name="error_failed_to_load_entrants">Failed to load entrants</string>
+    <string name="anonymous_user">Anonymous User</string>
+    <string name="no_email_provided">No email provided</string>
+    <string name="entrant_count_singular">%d entrant</string>
+    <string name="entrant_count_plural">%d entrants</string>
     <string name="my_events">My Events</string>
     <string name="create_event">Create Event</string>
     <string name="notifications">Notifications</string>
