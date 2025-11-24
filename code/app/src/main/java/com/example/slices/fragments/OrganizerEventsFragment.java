@@ -48,6 +48,9 @@ public class OrganizerEventsFragment extends Fragment {
     private final List<Event> inProgressEvents = new ArrayList<>();
     private final List<Event> pastEvents = new ArrayList<>();
 
+    private SharedViewModel vm;
+
+
 
 
     /**
@@ -63,6 +66,8 @@ public class OrganizerEventsFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate layout using view binding (organizer_events_fragment.xml)
         binding = OrganizerEventsFragmentBinding.inflate(inflater, container, false);
+        // Initialize SharedViewModel
+        vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         return binding.getRoot();
     }
 
@@ -91,7 +96,8 @@ public class OrganizerEventsFragment extends Fragment {
      */
     private void loadOrganizerEvents() {
         //getAllFutureEvents is a placeholder for the actual organizer's events based on ID
-        EventController.getAllFutureEvents(new EventListCallback() {
+        //Toast.makeText(requireContext(), "Organizer ID: " + vm.getUser().getId(), Toast.LENGTH_SHORT).show();
+        EventController.getEventsForOrganizer(vm.getUser().getId(), new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
                 // Clear old lists

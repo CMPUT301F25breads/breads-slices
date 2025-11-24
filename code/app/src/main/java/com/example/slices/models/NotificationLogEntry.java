@@ -9,7 +9,7 @@ public class NotificationLogEntry extends LogEntry {
     /**
      * ID of the associated notification
      */
-    private int notificationId;
+    private String notificationId;
 
     /**
      * ID of the sender entrant
@@ -42,7 +42,7 @@ public class NotificationLogEntry extends LogEntry {
      * @param logId
      *      ID of the log entry
      */
-    public NotificationLogEntry(Notification notification, int logId) {
+    public NotificationLogEntry(Notification notification, String logId) {
         this.message = notification.getTitle() + " " + notification.getBody();
         this.timestamp = notification.getTimestamp();
         this.notificationId = notification.getId();
@@ -58,7 +58,7 @@ public class NotificationLogEntry extends LogEntry {
      * @return
      *      ID of the associated notification
      */
-    public int getNotificationId() {
+    public String getNotificationId() {
         return notificationId;
     }
 

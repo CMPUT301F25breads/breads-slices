@@ -11,6 +11,7 @@ import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EntrantEventCallback;
 import com.example.slices.interfaces.EntrantIDCallback;
+import com.example.slices.interfaces.EntrantListCallback;
 import com.example.slices.interfaces.ProfileCallback;
 import com.example.slices.models.AsyncBatchExecutor;
 import com.example.slices.models.Entrant;
@@ -28,9 +29,11 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class EntrantController {
@@ -98,6 +101,52 @@ public class EntrantController {
                 });
 
     }
+
+    /**
+     * Function to get a list of entrants based on a list of IDs
+     * @param ids
+     *      List of IDs to search for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public static void getEntrants(List<Integer> ids, EntrantListCallback callback) {
+
+        //If empty input, return empty list immediately
+        if (ids == null || ids.isEmpty()) {
+            callback.onSuccess(new ArrayList<>());
+            return;
+        }
+
+        List<Entrant> results = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger completed = new AtomicInteger(0);
+        AtomicBoolean failed = new AtomicBoolean(false);
+        int total = ids.size();
+
+        for (int id : ids) {
+            getEntrant(id, new EntrantCallback() {
+                @Override
+                public void onSuccess(Entrant entrant) {
+                    if (failed.get()) {
+                        return;
+                    }
+                    results.add(entrant);
+                    if (completed.incrementAndGet() == total) {
+                        callback.onSuccess(results);
+                    }
+                }
+                @Override
+                public void onFailure(Exception e) {
+                    if (failed.compareAndSet(false, true)) {
+                        callback.onFailure(e);
+                    }
+                }
+            });
+        }
+    }
+
+
+
+
     /**
      * Gets an entrant from the database asynchronously
      * @param deviceId
@@ -394,22 +443,9 @@ public class EntrantController {
                 });
     }
 
+
     /**
      * Re-enrolls an entrant into multiple events asynchronously.
-     * This method attempts to add the entrant back into each event provided.
-     * The callback is only invoked once all operations complete.
-     * If any add operation fails, the callback will return a failure.
-     *
-     * @param entrant
-     *      Entrant to re-enroll
-     * @param events
-     *      List of events the entrant should be re-added to
-     * @param callback
-     *      Callback to call when the re-enroll operation completes
-     */
-    /**
-     * Re-enrolls an entrant into multiple events asynchronously.
-     *
      * This method attempts to add the entrant back into each event provided.
      * The callback is only invoked once all operations complete.
      * If any add operation fails, the callback will return a failure.
@@ -494,71 +530,7 @@ public class EntrantController {
         });
     }
 
-    public static void createEntrant(String deviceId, EntrantCallback callback, int i) {
-        //First check if the entrant already exists
-        EntrantController.getEntrantByDeviceId(deviceId, new EntrantCallback() {
-            @Override
-            public void onSuccess(Entrant entrant) {
-                callback.onSuccess(entrant);
-            }
-            @Override
-            public void onFailure(Exception e) {
-                if(e instanceof EntrantNotFound) {
-                    //If it doesn't exist, create it
-                    //Start by getting a new id
-                    EntrantController.getNewEntrantId(new EntrantIDCallback() {
-                        @Override
-                        public void onSuccess(int id) {
-                            Entrant newEntrant = new Entrant(deviceId, id);
-                            EntrantController.writeEntrant(newEntrant, new DBWriteCallback() {
-                                @Override
-                                public void onSuccess() {
-                                    callback.onSuccess(newEntrant);
-                                }
 
-                                @Override
-                                public void onFailure(Exception e) {
-                                    callback.onFailure(e);
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            callback.onFailure(e);
-                        }
-                    });
-                }
-            }
-        });
-    }
-
-//    public static void createEntrant(String deviceId, EntrantCallback callback) {
-//                //If it doesn't exist, create it
-//                //Start by getting a new id
-//                EntrantController.getNewEntrantId(new EntrantIDCallback() {
-//                    @Override
-//                    public void onSuccess(int id) {
-//                        Entrant newEntrant = new Entrant(deviceId, id);
-//                        EntrantController.writeEntrant(newEntrant, new DBWriteCallback() {
-//                            @Override
-//                            public void onSuccess() {
-//                                callback.onSuccess(newEntrant);
-//                            }
-//
-//                            @Override
-//                            public void onFailure(Exception e) {
-//                                callback.onFailure(e);
-//                            }
-//                        });
-//                    }
-//
-//                    @Override
-//                    public void onFailure(Exception e) {
-//                        callback.onFailure(e);
-//                    }
-//                });
-//    }
 
     public static void createEntrant(String name, String email, String phoneNumber, EntrantCallback callback) {
         //Start by getting a new id
@@ -590,6 +562,55 @@ public class EntrantController {
     public static void updateProfile(Entrant entrant, Profile profile, DBWriteCallback callback) {
         entrant.setProfile(profile);
         EntrantController.updateEntrant(entrant, callback);
+    }
+
+
+    public static void createSubEntrant(Entrant parent, String name, String email, String phoneNumber, EntrantCallback callback) {
+        //First check that the parent is not already a sub-entrant
+        if(parent.getParent() != 0) {
+            callback.onFailure(new DBOpFailed("Parent is already a sub-entrant"));
+        }
+        //Lets make a new entrant then add them to the parent
+        EntrantController.createEntrant(name, email, phoneNumber, new EntrantCallback() {
+            @Override
+            public void onSuccess(Entrant entrant) {
+                parent.addSubEntrant(entrant);
+                updateEntrant(parent, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        callback.onSuccess(entrant);
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    public static void deleteSubEntrant(Entrant parent, Entrant subEntrant, DBWriteCallback callback) {
+        //First delete them normally then remove them from the parent
+        try {
+            EntrantController.deleteEntrant(String.valueOf(subEntrant.getId()), new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    parent.removeSubEntrant(subEntrant);
+                    updateEntrant(parent, callback);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    callback.onFailure(e);
+                }
+            });
+        } catch (Exception e) {
+            callback.onFailure(e);
+        }
     }
 
 }

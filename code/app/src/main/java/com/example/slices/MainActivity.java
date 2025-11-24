@@ -112,24 +112,28 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onSuccess(int id) {
                             ent.setId(id);
+                            EntrantController.writeEntrant(ent, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    sharedViewModel.setUser(ent);
+                                    NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
+                                    navController.navigate(R.id.action_to_MenuFragment);
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {}
+                            });
+
                         }
 
                         @Override
                         public void onFailure(Exception e) {
+                            Toast.makeText(MainActivity.this, "Error getting new entrant ID", Toast.LENGTH_SHORT).show();
 
                         }
                     });
 
-                    EntrantController.writeEntrant(ent, new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {}
 
-                        @Override
-                        public void onFailure(Exception e) {}
-                    });
-                    sharedViewModel.setUser(ent);
-                    NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
-                    navController.navigate(R.id.action_to_MenuFragment);
 
                 }
             }

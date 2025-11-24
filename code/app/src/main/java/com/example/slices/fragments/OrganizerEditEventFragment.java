@@ -264,7 +264,7 @@ public class OrganizerEditEventFragment extends Fragment {
 
                 // Display waiting list capacity (show empty if unlimited/default)
                 int waitlistCapacity = event.getWaitlist().getMaxCapacity();
-                if (waitlistCapacity == 32768) {
+                if (waitlistCapacity > 32768) {
                     editMaxWaiting.setText(""); // Unlimited
                 } else {
                     editMaxWaiting.setText(String.valueOf(waitlistCapacity));

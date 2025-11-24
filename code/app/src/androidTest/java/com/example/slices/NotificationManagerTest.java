@@ -369,7 +369,6 @@ public class NotificationManagerTest {
                         assertEquals(recipient.getId(), n.getRecipientId());
                         assertEquals(sender.getId(), n.getSenderId());
                         assertEquals(NotificationType.NOTIFICATION, n.getType());
-                        assertTrue(n.getId() > 0);
                         latch.countDown();
                     }
                     @Override
@@ -506,63 +505,7 @@ public class NotificationManagerTest {
         assertEquals(1, (int)ref.get());
     }
 
-    /**
-     * Tests the getNotificationId method on non-empty database
-     * Pass if the ID is 11
-     * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
-     */
-    @Test
-    public void testGetNotificationIdNonEmpty() throws InterruptedException {
-        clearAll();
 
-        //Manually write two notifications with known IDs
-        Notification n1 = new Notification("A", "B", 5, 1, 2);
-        Notification n2 = new Notification("C", "D", 10, 3, 4);
-
-        CountDownLatch wLatch = new CountDownLatch(2);
-        NotificationManager.writeNotification(n1, new DBWriteCallback() {
-            @Override
-            public void onSuccess() {
-                wLatch.countDown();
-            }
-            @Override
-            public void onFailure(Exception e) {
-                fail("Write n1 failed");
-            }
-        });
-        NotificationManager.writeNotification(n2, new DBWriteCallback() {
-            @Override
-            public void onSuccess() {
-                wLatch.countDown();
-            }
-            @Override
-            public void onFailure(Exception e) {
-                fail("Write n2 failed");
-            }
-        });
-        await(wLatch);
-
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Integer> ref = new AtomicReference<>(0);
-
-        NotificationManager.getNotificationId(new NotificationIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                ref.set(id);
-                latch.countDown();
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                fail("getNotificationId failed");
-            }
-        });
-
-        await(latch);
-        assertEquals(11, (int)ref.get());
-    }
 
     /**
      * Tests the getAllNotifications method on empty database
@@ -653,7 +596,7 @@ public class NotificationManagerTest {
     public void testWriteAndUpdateNotification() throws InterruptedException {
         clearAll();
 
-        Notification n = new Notification("Title", "Body", 42, 1, 2);
+        Notification n = new Notification("Title", "Body", "42", 1, 2);
         CountDownLatch latch = new CountDownLatch(1);
         NotificationManager.writeNotification(n, new DBWriteCallback() {
             @Override
@@ -667,7 +610,7 @@ public class NotificationManagerTest {
         });
         await(latch);
         CountDownLatch get = new CountDownLatch(1);
-        NotificationManager.getNotificationById(42, new NotificationCallback() {
+        NotificationManager.getNotificationById("42", new NotificationCallback() {
             @Override
             public void onSuccess(Notification notification) {
                 assertEquals("Title", notification.getTitle());
@@ -697,7 +640,7 @@ public class NotificationManagerTest {
         await(upd);
 
         CountDownLatch check = new CountDownLatch(1);
-        NotificationManager.getNotificationById(42, new NotificationCallback() {
+        NotificationManager.getNotificationById("42", new NotificationCallback() {
             @Override
             public void onSuccess(Notification notification) {
                 assertEquals("NewTitle", notification.getTitle());
@@ -722,7 +665,7 @@ public class NotificationManagerTest {
     @Test
     public void testDeleteNotificationRemovesFromDb() throws InterruptedException {
         clearAll();
-        Notification n = new Notification("Del", "Me", 7, 1, 2);
+        Notification n = new Notification("Del", "Me", "7", 1, 2);
         CountDownLatch wLatch = new CountDownLatch(1);
         NotificationManager.writeNotification(n, new DBWriteCallback() {
             @Override
@@ -777,7 +720,7 @@ public class NotificationManagerTest {
         clearAll();
 
         CountDownLatch latch = new CountDownLatch(1);
-        NotificationManager.getNotificationById(9999, new NotificationCallback() {
+        NotificationManager.getNotificationById("9999", new NotificationCallback() {
             @Override
             public void onSuccess(Notification notification) {
                 fail("Should not find non-existent notification");
@@ -957,7 +900,7 @@ public class NotificationManagerTest {
         clearAll();
 
         CountDownLatch latch = new CountDownLatch(1);
-        NotificationManager.getInvitationById(9999, new NotificationCallback() {
+        NotificationManager.getInvitationById("9999", new NotificationCallback() {
             @Override
             public void onSuccess(Notification notification) {
                 fail("Should not find non-existent invitation");
@@ -1464,6 +1407,40 @@ public class NotificationManagerTest {
     public void testDeclineInvitationRemovesFromWaitlist() {
         //TODO: add test here
     }
+
+    @Test
+    public void testSendMessageCreatesLog() {
+        //TODO: add test here
+    }
+
+    @Test
+    public void testDeleteMessageCreatesLog() {
+        //TODO: add test here
+    }
+
+    @Test
+    public void testUpdateMessageCreatesLog() {
+        //TODO: add test here
+    }
+
+    @Test
+    public void sendInvitationCreatesLog() {
+        //TODO: add test
+    }
+
+    @Test
+    public void testDeclineInvitationCreatesLog() {
+        //TODO: add test here
+    }
+
+    @Test
+    public void testAcceptInvitationCreatesLog() {
+        //TODO: add test here
+    }
+
+
+
+
 
 
 }

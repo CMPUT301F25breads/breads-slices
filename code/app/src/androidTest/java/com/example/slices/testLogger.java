@@ -96,7 +96,7 @@ public class testLogger {
     @Test
     public void testLog() throws InterruptedException {
         clearAll();
-        Notification notification = new Notification("Test Notification", "Test Message", 1, 2, 3);
+        Notification notification = new Notification("Test Notification", "Test Message", "1", 2, 3);
         Logger.log(notification, new DBWriteCallback() {
             @Override
             public void onSuccess() {
@@ -154,6 +154,8 @@ public class testLogger {
     public void testGetNotificationLogById() throws InterruptedException {
         //TODO: Implement
     }
+
+
 
     
 

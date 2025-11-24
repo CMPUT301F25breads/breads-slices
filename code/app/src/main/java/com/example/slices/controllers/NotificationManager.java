@@ -111,21 +111,19 @@ public class NotificationManager {
                         Logger.log(notification, null);
                         callback.onSuccess();
                     }
+                }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        System.out.println("Failed to write notification: " + e.getMessage());
+                @Override
+                public void onFailure(Exception e) {
+                    if (failed.compareAndSet(false, true)) {
                         callback.onFailure(e);
                     }
-                });
-            }
+                }
+            });
 
-            @Override
-            public void onFailure(Exception e) {
-                callback.onFailure(new Exception("Failed to get notification ID: " + e.getMessage()));
-            }
-        });
+        }
     }
+
 
 
 
@@ -148,8 +146,10 @@ public class NotificationManager {
      * @param eventId ID of the associated event
      * @param callback Callback for success/failure of database write
      */
-    public static void sendInvitation(String title, String body, int recipientId, int senderId,
-                                      int eventId, DBWriteCallback callback) {
+    public static void sendInvitation(String title, String body,
+                                      int recipientId, int senderId,
+                                      int eventId,
+                                      DBWriteCallback callback) {
 
         getNextNotificationId(new NotificationIDCallback() {
             @Override
@@ -162,20 +162,23 @@ public class NotificationManager {
                         Logger.log(invitation, callback);
                     }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        System.out.println("Failed to write invitation: " + e.getMessage());
-                        callback.onFailure(e);
-                    }
-                });
-            }
+        Invitation invitation = new Invitation(title, body, id, recipientId, senderId, eventId);
+        invitation.setType(NotificationType.INVITATION);
 
-            @Override
-            public void onFailure(Exception e) {
-                System.out.println("Failed to get notification ID: " + e.getMessage());
-                callback.onFailure(e);
-            }
-        });
+        ref.set(invitation)
+                .addOnSuccessListener(aVoid ->
+                        Logger.log(invitation, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                callback.onSuccess();
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                callback.onFailure(e);
+                            }
+                        }))
+                .addOnFailureListener(callback::onFailure);
     }
 
 
