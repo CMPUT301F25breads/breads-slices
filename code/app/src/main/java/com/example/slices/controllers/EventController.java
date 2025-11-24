@@ -479,6 +479,7 @@ public class EventController {
                                     "Your event has been deleted",
                                     entrant.getId(),      // recipient
                                     event.getId(),        // sender (arbitrary here)
+                                    event.getId(),        // eventId
                                     cb
                             ));
                         }
