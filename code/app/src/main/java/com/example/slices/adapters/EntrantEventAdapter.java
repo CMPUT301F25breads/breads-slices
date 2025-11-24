@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.exceptions.DuplicateEntry;
+import com.example.slices.exceptions.WaitlistFull;
 import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.interfaces.DBWriteCallback;
@@ -21,6 +23,8 @@ import com.example.slices.SharedViewModel;
 import android.view.LayoutInflater;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.bumptech.glide.Glide;
 import com.example.slices.models.EventInfo;
 
@@ -172,22 +176,38 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                 } else {
                     // switch to Leave
                     updateWaitlistButton(actionBtn, true);
-
-                    EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {
-                            vm.addWaitlistedId(eventIdStr);
-                            if (actions != null) {
-                                actions.onJoinClicked(event);
+                    try {
+                        EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                vm.addWaitlistedId(eventIdStr);
+                                if (actions != null) {
+                                    actions.onJoinClicked(event);
+                                }
                             }
-                        }
 
-                        @Override
-                        public void onFailure(Exception e) {
-                            // reverts on failure
-                            updateWaitlistButton(actionBtn, false);
-                        }
-                    });
+                            @Override
+                            public void onFailure(Exception e) {
+                                // reverts on failure
+                                updateWaitlistButton(actionBtn, false);
+                            }
+                        });
+                    }
+                    catch (WaitlistFull e1) {
+                        Toast.makeText(getContext(),
+                                "Waitlist is full for this event.",
+                                Toast.LENGTH_SHORT).show();
+                        // reverts on failure
+                        updateWaitlistButton(actionBtn, false);
+                    }
+                    catch (DuplicateEntry e1) {
+                        Toast.makeText(getContext(),
+                                "You are already on the waitlist for this event.",
+                                Toast.LENGTH_SHORT).show();
+                        // reverts on failure
+                        updateWaitlistButton(actionBtn, false);
+                    }
+
                 }
             });
         }

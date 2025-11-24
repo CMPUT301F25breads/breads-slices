@@ -15,6 +15,8 @@ import androidx.lifecycle.ViewModelProvider;
 import com.bumptech.glide.Glide;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.exceptions.DuplicateEntry;
+import com.example.slices.exceptions.WaitlistFull;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.R;
@@ -171,22 +173,35 @@ public class EventDetailsFragment extends Fragment {
                 isWaitlisted = true;
                 vm.addWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
-                EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        // success means do nothing else
-                    }
+                try {
+                    EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // success means do nothing else
+                        }
 
-                    @Override
-                    public void onFailure(Exception e1) {
-                        isWaitlisted = false;
-                        vm.removeWaitlistedId(eventIdStr);
-                        updateWaitlistButton(isWaitlisted);
-                        Toast.makeText(requireContext(),
-                                "Failed to join waitlist. Please try again.",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
+                        @Override
+                        public void onFailure(Exception e1) {
+                            isWaitlisted = false;
+                            vm.removeWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            Toast.makeText(requireContext(),
+                                    "Failed to join waitlist. Please try again.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+                catch (DuplicateEntry e1) {
+                    Toast.makeText(requireContext(),
+                            "You are already on the waitlist for this event.",
+                            Toast.LENGTH_SHORT).show();
+                }
+                catch (WaitlistFull e1) {
+                    Toast.makeText(requireContext(),
+                            "Waitlist is full for this event.",
+                            Toast.LENGTH_SHORT).show();
+                }
+
             }
         });
         EventInfo eventInfo = e.getEventInfo();
