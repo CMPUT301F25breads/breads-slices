@@ -77,7 +77,7 @@ public class AdminEventsFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerViewEvents);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        eventAdapter = new AdminEventAdapter(requireContext(), eventList, true); // true = admin mode
+        eventAdapter = new AdminEventAdapter(requireContext(), eventList); // true = admin mode
         recyclerView.setAdapter(eventAdapter);
 
         //Search Bar

@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.slices.R;
+import com.example.slices.controllers.EventController;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
 import com.google.android.material.button.MaterialButton;
@@ -33,15 +35,13 @@ import java.util.List;
 public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.ViewHolder> {
 
     private final Context context;
-    private final boolean isAdmin;
     private List<Event> eventList;
     private List<Event> eventListFull;
 
-    public AdminEventAdapter(Context context, List<Event> eventList, boolean isAdmin) {
+    public AdminEventAdapter(Context context, List<Event> eventList) {
         this.context = context;
         this.eventList = eventList;
         this.eventListFull = new ArrayList<>(eventList);
-        this.isAdmin = isAdmin;
     }
 
     /**
@@ -96,11 +96,23 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
 
         // Remove button click
         holder.removeButton.setOnClickListener(v -> {
-            removeEvent(event);
-            Toast.makeText(ctx, eventInfo.getName() + " removed", Toast.LENGTH_SHORT).show();
+            String eventId = String.valueOf(event.getId());
+
+            EventController.deleteEvent(eventId, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    removeEvent(event);
+                    Toast.makeText(ctx, eventInfo.getName() + " deleted", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(ctx, "Delete failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e("AdminEventAdapter", "Error deleting event", e);
+                }
+            });
         });
     }
-
     /**
      * Removes event from list and updates the view
      * Still need to edit for DB connection
