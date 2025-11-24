@@ -82,7 +82,7 @@ public class NotificationService {
         final AtomicInteger completedCount = new AtomicInteger(0);
 
         for (Entrant entrant : entrants) {
-            NotificationManager.sendNotification(title, body, entrant.getId(), senderId, eventId, new DBWriteCallback() {
+            NotificationManager.sendNotification(title, body, entrant.getId(), eventId, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     successCount.incrementAndGet();

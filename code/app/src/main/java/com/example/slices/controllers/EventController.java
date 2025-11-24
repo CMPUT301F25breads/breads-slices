@@ -461,13 +461,7 @@ public class EventController {
 
                         for (Entrant entrant : entrantSnapshot) {
                             notifyOps.add(cb -> NotificationManager.sendNotification(
-                                    "Event Deleted",
-                                    "Your event has been deleted",
-                                    entrant.getId(),      // recipient
-                                    event.getId(),        // sender (arbitrary here)
-                                    event.getId(),        // eventId
-                                    cb
-                            ));
+                                    "Event Deleted", "Your event has been deleted", entrant.getId(), event.getId(), cb));
                         }
 
                         // Send notifications
