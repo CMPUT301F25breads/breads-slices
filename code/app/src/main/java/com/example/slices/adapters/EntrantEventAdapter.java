@@ -194,21 +194,21 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                 } else {
                     // switch to Leave
                     updateWaitlistButton(actionBtn, true);
-                    try {
-                        EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                vm.addWaitlistedId(eventIdStr);
-                                if (actions != null) {
-                                    actions.onJoinClicked(event);
-                                }
+
+                    EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            vm.addWaitlistedId(eventIdStr);
+                            if (actions != null) {
+                                actions.onJoinClicked(event);
                             }
+                        }
 
                         @Override
                         public void onFailure(Exception e) {
                             // reverts on failure
                             updateWaitlistButton(actionBtn, false);
-                            
+
                             // Show user-friendly error message
                             String message = "Failed to join waitlist";
                             if (e.getMessage() != null) {
@@ -223,8 +223,8 @@ public class EntrantEventAdapter extends ArrayAdapter<Event> {
                             android.widget.Toast.makeText(getContext(), message, android.widget.Toast.LENGTH_SHORT).show();
                         }
                     });
+
                 }
-                
             });
         }
         return view;
