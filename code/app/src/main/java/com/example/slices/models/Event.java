@@ -36,6 +36,7 @@ public class Event implements Comparable<Event> {
     private int id;
 
     private EventInfo eventInfo;
+    private List<Integer> entrantIds;
 
     private ArrayList<Location> entrantLocs;
 
@@ -57,6 +58,7 @@ public class Event implements Comparable<Event> {
         this.id = id;
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist(maxWaiting);
+        this.entrantIds = new ArrayList<>();
     }
 
     public Event(EventInfo eventInfo) {
@@ -64,6 +66,7 @@ public class Event implements Comparable<Event> {
         this.id = eventInfo.getId();
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist(eventInfo.getMaxWaiting());
+        this.entrantIds = new ArrayList<>();
     }
     /**
      * Getter for the ID of the event
@@ -110,6 +113,7 @@ public class Event implements Comparable<Event> {
         }
         //Add the entrant to the event
         entrants.add(entrant);
+        entrantIds.add((Integer)entrant.getId());
         //Increment the current entrants
         eventInfo.setCurrentEntrants(eventInfo.getCurrentEntrants() + 1);
         return true;
@@ -120,8 +124,17 @@ public class Event implements Comparable<Event> {
             throw new EntrantNotFound("Entrant not in event", String.valueOf(entrant.getId()));
         }
         entrants.remove(entrant);
+        entrantIds.remove((Integer)entrant.getId());
         eventInfo.setCurrentEntrants(eventInfo.getCurrentEntrants() - 1);
         return true;
+    }
+
+    public List<Integer> getEntrantIds() {
+        return entrantIds;
+    }
+
+    public void setEntrantIds(List<Integer> entrantIds) {
+        this.entrantIds = entrantIds;
     }
 
     /**

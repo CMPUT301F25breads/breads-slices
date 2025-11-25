@@ -223,7 +223,7 @@ public class EventDetailsFragment extends Fragment {
             whenText = "Date/time TBD"; // in case of any errors in date/time, failsafe!
         }
         binding.eventDatetime.setText(whenText);
-        //binding.eventLocation.setText(e.getEventInfo().getLocation());
+        binding.eventLocation.setText(e.getEventInfo().getLocation());
         Glide.with(this.getContext()).load(eventInfo.getImageUrl()).into(binding.eventImage);
 
         // counts style reflecting the "Waitlist | Participants" from the xml style
@@ -240,14 +240,15 @@ public class EventDetailsFragment extends Fragment {
 
         binding.btnGuidelines.setOnClickListener(v -> onGuidelinesClicked());
 
-    }
+        }
 
-    private void onGuidelinesClicked() {
-        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
-                .setMessage(e.getEventInfo().getGuidelines())
-                .setPositiveButton("OK", (dialogInterface, i) -> {
-                })
-                .show();
-    }
+        private void onGuidelinesClicked() {
+            new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
+                    .setMessage(e.getEventInfo().getGuidelines())
+                    .setPositiveButton("OK", (dialogInterface, i) -> {
+                    })
+                    .show();
+        }
 
 }
+

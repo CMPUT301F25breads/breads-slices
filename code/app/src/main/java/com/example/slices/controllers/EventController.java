@@ -288,8 +288,8 @@ public class EventController {
 
         Query q = eventRef.whereGreaterThan("eventInfo.eventDate", Timestamp.now());
 
-        Query eventsQuery = q.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = q.whereArrayContains("waitlist.entrants", entrant);
+        Query eventsQuery = q.whereArrayContains("entrantIds", entrant.getId());
+        Query waitlistQuery = q.whereArrayContains("waitlist.entrantIds", entrant.getId());
 
         eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
             List<Event> events = new ArrayList<>();
@@ -382,8 +382,8 @@ public class EventController {
 
         Query q = eventRef.whereLessThan("eventInfo.eventDate", Timestamp.now());
 
-        Query eventsQuery = q.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = q.whereArrayContains("waitlist.entrants", entrant);
+        Query eventsQuery = q.whereArrayContains("entrantIds", entrant.getId());
+        Query waitlistQuery = q.whereArrayContains("waitlist.entrantIds", entrant.getId());
 
         eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
             List<Event> events = new ArrayList<>();
@@ -987,7 +987,7 @@ public class EventController {
             q = q.whereGreaterThanOrEqualTo("eventInfo.eventDate", search.getAvailStart());
 
         if (search.getAvailEnd() != null)
-            q = q.whereLessThanOrEqualTo("eventInfo.eventDate", search.getAvailEnd());
+            q = q.whereLessThan("eventInfo.eventDate", search.getAvailEnd());
 
         if (search.getLoc() != null && !search.getLoc().trim().isEmpty())
             q = q.whereEqualTo("eventInfo.location", search.getLoc());
@@ -1002,10 +1002,14 @@ public class EventController {
 
                             boolean matchesName = true;
 
-                            if (search.getName() != null && !search.getName().trim().isEmpty()) {
-                                String filter = search.getName().toLowerCase();
-                                String eventName = event.getEventInfo().getName().toLowerCase();
-                                matchesName = eventName.contains(filter);
+                                boolean skipEnrolled = false;
+                                if(search.isEnrolled()) {
+                                    boolean inEntrants = event.getEntrants() != null && event.getEntrants().contains(search.getId());
+                                    boolean inWaitlist = event.getWaitlist() != null && event.getWaitlist().getEntrants().contains(search.getId());
+                                }
+
+                                if (matchesName)
+                                    events.add(event);
                             }
 
                             if (matchesName)

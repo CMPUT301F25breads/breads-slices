@@ -8,6 +8,7 @@ public class SearchSettings {
     private int maxEntrants = -1;
     private Timestamp availStart = null;
     private Timestamp availEnd = null;
+    private int id;
 
     public SearchSettings(){}
 
@@ -26,6 +27,14 @@ public class SearchSettings {
     public void setAvailEnd(Timestamp availEnd) {
 
         this.availEnd = availEnd;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     private boolean enrolled = false;

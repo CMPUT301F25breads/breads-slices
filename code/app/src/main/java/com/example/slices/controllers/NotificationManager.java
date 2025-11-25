@@ -99,9 +99,25 @@ public class NotificationManager {
      * @param callback
      *      Callback for success/failure of database write
      */
-
     public static void sendNotification(String title, String body,
                                         int recipientId, int senderId,
+                                        DBWriteCallback callback) {
+        sendNotification(title, body, recipientId, senderId, 0, callback);
+    }
+
+    /**
+     * Sends a standard notification to a recipient with an associated event.
+     * Creates a Notification object, writes it to the database, and logs it.
+     *
+     * @param title Title of the notification
+     * @param body Body text of the notification
+     * @param recipientId ID of the recipient entrant
+     * @param senderId ID of the sender entrant
+     * @param eventId ID of the associated event (0 if not event-related)
+     * @param callback Callback for success/failure of database write
+     */
+    public static void sendNotification(String title, String body,
+                                        int recipientId, int senderId, int eventId,
                                         DBWriteCallback callback) {
 
         DocumentReference ref = notificationRef.document();
@@ -109,6 +125,7 @@ public class NotificationManager {
 
         Notification notification = new Notification(title, body, id, recipientId, senderId);
         notification.setType(NotificationType.NOTIFICATION);
+        notification.setEventId(eventId);
 
         ref.set(notification)
                 .addOnSuccessListener(aVoid ->
