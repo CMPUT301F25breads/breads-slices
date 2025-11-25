@@ -981,52 +981,65 @@ public class EventController {
      *      Brad
      */
     public static void queryEvents(SearchSettings search, EventListCallback callback) {
+
         Query q = eventRef.whereGreaterThanOrEqualTo("eventInfo.eventDate", Timestamp.now());
 
+        // Date filters
         if (search.getAvailStart() != null)
             q = q.whereGreaterThanOrEqualTo("eventInfo.eventDate", search.getAvailStart());
 
         if (search.getAvailEnd() != null)
             q = q.whereLessThan("eventInfo.eventDate", search.getAvailEnd());
 
+        // Location filter
         if (search.getLoc() != null && !search.getLoc().trim().isEmpty())
-            q = q.whereEqualTo("eventInfo.location", search.getLoc());
+            q = q.whereEqualTo("eventInfo.location", search.getLoc().trim());
 
         q.get().addOnSuccessListener(query -> {
-                    if (!query.isEmpty()) {
-                        ArrayList<Event> events = new ArrayList<>();
-                        for (DocumentSnapshot doc : query.getDocuments()) {
-                            Event event = doc.toObject(Event.class);
-                            if (event == null)
-                                continue;
+            ArrayList<Event> events = new ArrayList<>();
 
-                            boolean matchesName = true;
+            for (DocumentSnapshot doc : query.getDocuments()) {
+                Event event = doc.toObject(Event.class);
+                if (event == null)
+                    continue;
 
-                                boolean skipEnrolled = false;
-                                if(search.isEnrolled()) {
-                                    boolean inEntrants = event.getEntrants() != null && event.getEntrants().contains(search.getId());
-                                    boolean inWaitlist = event.getWaitlist() != null && event.getWaitlist().getEntrants().contains(search.getId());
-                                }
+                boolean include = true;
 
-                                if (matchesName)
-                                    events.add(event);
-                            }
-
-                            if (matchesName)
-                                events.add(event);
-                        }
-
-                        Logger.logSystem("QueryEvents returned " + events.size() + " results", null);
-                        callback.onSuccess(events);
-
-                    } else {
-                        callback.onSuccess(new ArrayList<>());
+                if (search.getName() != null && !search.getName().isEmpty()) {
+                    String eventName = event.getEventInfo().getName().toLowerCase();
+                    String searchName = search.getName().toLowerCase();
+                    if (!eventName.contains(searchName)) {
+                        include = false;
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Logger.logError("Failed to query events", null);
-                    callback.onFailure(new DBOpFailed("Failed to get Events"));
-                });
+                }
+                
+                if (search.isEnrolled()) {
+                    int id = search.getId();
+
+                    boolean inEntrants = event.getEntrants() != null &&
+                            event.getEntrants().contains(id);
+
+                    boolean inWaitlist = event.getWaitlist() != null &&
+                            event.getWaitlist().getEntrants() != null &&
+                            event.getWaitlist().getEntrants().contains(id);
+
+                    if (!inEntrants && !inWaitlist) {
+                        include = false;
+                    }
+                }
+
+                if (include) {
+                    events.add(event);
+                }
+            }
+
+            Logger.logSystem("QueryEvents returned " + events.size() + " results", null);
+            callback.onSuccess(events);
+
+        }).addOnFailureListener(e -> {
+            Logger.logError("Failed to query events", null);
+            callback.onFailure(new DBOpFailed("Failed to get Events"));
+        });
     }
 
     private static void verifyDeleteEvent(String id, DBWriteCallback callback) {
