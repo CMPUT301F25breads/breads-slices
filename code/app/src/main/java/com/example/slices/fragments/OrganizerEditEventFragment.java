@@ -260,8 +260,8 @@ public class OrganizerEditEventFragment extends Fragment {
                 editEventName.setText(eventInfo.getName());
                 textEventTitle.setText(eventInfo.getName());
                 textDescription.setText(eventInfo.getDescription());
-                textGuidelines.setText("event guidelines");
-                //textLocation.setText(eventInfo.getLocation());
+                textGuidelines.setText(eventInfo.getGuidelines());
+                textLocation.setText(eventInfo.getLocation());
                 editMaxParticipants.setText(String.valueOf(eventInfo.getMaxEntrants()));
 
                 // Display waiting list capacity (show empty if unlimited/default)
