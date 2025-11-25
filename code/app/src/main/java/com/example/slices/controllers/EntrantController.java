@@ -266,6 +266,63 @@ public class EntrantController {
                 });
     }
 
+    /**
+     * Updates an entrant and all associated events
+     * @param entrant
+     *      new entrant to be written to the db and to each event they are in
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
+    public static void updateEntrantAndEvents(Entrant entrant, DBWriteCallback callback) {
+        entrantRef.document(String.valueOf(entrant.getId()))
+                .set(entrant)
+                .addOnSuccessListener(aVoid -> {
+                    Logger.logEntrantUpdate(entrant.getId(), -1, null);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to update entrant id=" + entrant.getId(), null);
+                    callback.onFailure(new DBOpFailed("Failed to write entrant"));
+                });
+
+        EventController.getEventsForEntrant(entrant, new EntrantEventCallback() {
+            @Override
+            public void onSuccess(List<Event> events, List<Event> waitEvents) {
+                for(Event event : events) {
+                    int i  = event.getEntrants().indexOf(entrant);
+                    event.getEntrants().set(i, entrant);
+                    EventController.updateEvent(event, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {}
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            callback.onFailure(new DBOpFailed("Failed to update user profile in event"));
+                        }
+                    });
+                }
+                for(Event event : waitEvents) {
+                    int i  = event.getWaitlist().getEntrants().indexOf(entrant);
+                    event.getWaitlist().getEntrants().set(i, entrant);
+                    EventController.updateEvent(event, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {}
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            callback.onFailure(new DBOpFailed("Failed to update user profile in event"));
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+            }
+        });
+    }
+
 
     /**
      * Deletes an entrant from the database asynchronously.
