@@ -568,7 +568,7 @@ public class EventController {
      * @param callback
      *      Callback invoked when the event is created
      */
-    public static void createEvent(String name, String description, Location location, String guidelines, String imgUrl,
+    public static void createEvent(String name, String description, String address, String guidelines, String imgUrl,
                                    Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
                                    int maxWaiting, boolean entrantLoc, String entrantDist, int organizerID, EventCallback callback) {
         try {
@@ -578,7 +578,7 @@ public class EventController {
                 @Override
                 public void onSuccess(int id) {
 
-                    Event event = new Event(name, description, location, guidelines, imgUrl,
+                    Event event = new Event(name, description, address, guidelines, imgUrl,
                             eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
                     writeEvent(event, new DBWriteCallback() {
                         @Override
@@ -647,6 +647,8 @@ public class EventController {
             }
         });
     }
+
+
 
     /**
      * Verifies that the event times are valid

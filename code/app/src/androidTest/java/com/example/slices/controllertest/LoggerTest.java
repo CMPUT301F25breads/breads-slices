@@ -35,6 +35,7 @@ public class LoggerTest {
         EntrantController.setTesting(true);
         EventController.setTesting(true);
         Logger.setTesting(true);
+        Logger.setMode(false);
         NotificationManager.setTesting(true);
         CountDownLatch latch = new CountDownLatch(4);
         EntrantController.clearEntrants(latch::countDown);
@@ -48,7 +49,6 @@ public class LoggerTest {
 
     @AfterClass
     public static void tearDown() throws InterruptedException {
-
         CountDownLatch latch = new CountDownLatch(4);
         EntrantController.clearEntrants(latch::countDown);
         EventController.clearEvents(latch::countDown);

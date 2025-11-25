@@ -57,8 +57,6 @@ public class Waitlist {
      * Adds an entrant to the waitlist
      * @param entrant
      *      Entrant to add
-     * @throws IllegalStateException
-     *      If the waitlist is already full
      */
     public void addEntrant(Entrant entrant) {
         entrants.add(entrant);

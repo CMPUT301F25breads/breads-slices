@@ -35,13 +35,16 @@ import java.util.List;
 public class EventTest {
     /**
      * Utility method to make timestamps easily
-     * @param ms
+     * @param millis
      *      Milliseconds since epoch
      * @return
      *      Timestamp object
      */
-    private Timestamp ts(long ms) {
-        return new Timestamp(ms, 0);
+    private Timestamp ts(long millis) {
+        return new Timestamp(
+                millis / 1000,                     // seconds
+                (int) ((millis % 1000) * 1_000_000) // nanos
+        );
     }
 
     /**
@@ -72,7 +75,6 @@ public class EventTest {
     @Test
     public void testFullConstructor() {
         long now = System.currentTimeMillis();
-
         Event e = new Event(
                 "Name", "Desc", "Loc", "Guide", "Img",
                 ts(now + 10000), ts(now), ts(now + 5000),
