@@ -149,8 +149,8 @@ public class BrowseFragment extends Fragment {
         if (current != null) {
             if (current.getName() != null)
                 nameInput.setText(current.getName());
-            if (current.getLoc() != null)
-                locationInput.setText(current.getLoc());
+            if (current.getAddress() != null)
+                locationInput.setText(current.getAddress());
 
             SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
             if (current.getAvailStart() != null)
@@ -193,7 +193,7 @@ public class BrowseFragment extends Fragment {
 
                     SearchSettings newSearch = new SearchSettings();
                     newSearch.setName(name);
-                    newSearch.setLoc(location);
+                    newSearch.setAddress(location);
                     newSearch.setAvailStart(startTimestamp);
                     newSearch.setAvailEnd(endTimestamp);
 

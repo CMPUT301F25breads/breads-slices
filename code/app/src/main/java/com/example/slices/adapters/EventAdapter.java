@@ -59,7 +59,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         holder.title.setText(eventInfo.getName());
         Date date = eventInfo.getEventDate().toDate();
         SimpleDateFormat formatter = new SimpleDateFormat("ha | MMM. dd, yyyy", Locale.CANADA);
-        holder.details.setText(formatter.format(date) + " | " + eventInfo.getLocation());
+        holder.details.setText(formatter.format(date) + " | " + eventInfo.getAddress());
 
         // Load image
         Glide.with(context)

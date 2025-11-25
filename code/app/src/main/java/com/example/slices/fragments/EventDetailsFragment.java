@@ -223,7 +223,7 @@ public class EventDetailsFragment extends Fragment {
             whenText = "Date/time TBD"; // in case of any errors in date/time, failsafe!
         }
         binding.eventDatetime.setText(whenText);
-        binding.eventLocation.setText(e.getEventInfo().getLocation());
+        binding.eventLocation.setText(e.getEventInfo().getAddress());
         Glide.with(this.getContext()).load(eventInfo.getImageUrl()).into(binding.eventImage);
 
         // counts style reflecting the "Waitlist | Participants" from the xml style

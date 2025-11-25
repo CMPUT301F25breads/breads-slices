@@ -19,6 +19,8 @@ public class EventInfo {
      */
     private Location location;
 
+    private String address;
+
     /**
      * Date of the event
      */
@@ -70,9 +72,9 @@ public class EventInfo {
 
     }
 
-    public EventInfo(String name, String description, Location location, String guidelines,
+    public EventInfo(String name, String description, String address, String guidelines,
                      String imgUrl, Timestamp eventDate, Timestamp regStart, Timestamp regEnd,
-                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
+                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID, Location location) {
         this.name = name;
         this.description = description;
         this.location = location;
@@ -88,6 +90,7 @@ public class EventInfo {
         this.entrantLoc = entrantLoc;
         this.entrantDist = entrantDist;
         this.organizerID = organizerID;
+        this.address = address;
 
     }
 
@@ -144,6 +147,14 @@ public class EventInfo {
 
     public Location getLocation() {
         return location;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     /**
