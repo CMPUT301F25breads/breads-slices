@@ -276,8 +276,14 @@ public class EntrantController {
     public static void updateEntrantAndEvents(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(String.valueOf(entrant.getId()))
                 .set(entrant)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write entrant")));
+                .addOnSuccessListener(aVoid -> {
+                    Logger.logEntrantUpdate(entrant.getId(), -1, null);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to update entrant id=" + entrant.getId(), null);
+                    callback.onFailure(new DBOpFailed("Failed to write entrant"));
+                });
 
         EventController.getEventsForEntrant(entrant, new EntrantEventCallback() {
             @Override
