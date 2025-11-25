@@ -1,6 +1,5 @@
 package com.example.slices.fragments;
 
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.InputType;
@@ -25,6 +24,7 @@ import com.example.slices.models.Event;
 import com.example.slices.databinding.BrowseFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
 import com.example.slices.models.SearchSettings;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.Timestamp;
 
 import java.text.ParseException;
@@ -160,7 +160,7 @@ public class BrowseFragment extends Fragment {
         }
 
 
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
                 .setTitle("Search Filters")
                 .setView(dialogView)
                 .setPositiveButton("Search", (dialog, which) -> {
@@ -168,7 +168,6 @@ public class BrowseFragment extends Fragment {
                     String name = nameInput.getText().toString().trim();
                     String location = locationInput.getText().toString().trim();
 
-                    // Parse dates
                     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
                     Timestamp startTimestamp = null;
                     Timestamp endTimestamp = null;
@@ -180,8 +179,13 @@ public class BrowseFragment extends Fragment {
                         if (!startStr.isEmpty())
                             startTimestamp = new Timestamp(sdf.parse(startStr));
 
-                        if (!endStr.isEmpty())
-                            endTimestamp = new Timestamp(sdf.parse(endStr));
+                        if (!endStr.isEmpty()) {
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(sdf.parse(endStr));
+                            cal.add(Calendar.DAY_OF_MONTH, 1);
+
+                            endTimestamp = new Timestamp(cal.getTime());
+                        }
 
                     } catch (ParseException e) {
                         Toast.makeText(requireContext(), "Invalid date format", Toast.LENGTH_SHORT).show();
@@ -194,8 +198,7 @@ public class BrowseFragment extends Fragment {
                     newSearch.setAvailEnd(endTimestamp);
 
                     vm.setSearch(newSearch);
-                    binding.searchEditText.setText(nameInput.getText());
-
+                    binding.searchEditText.setText(name);
 
                     setupEvents(newSearch);
                 })
