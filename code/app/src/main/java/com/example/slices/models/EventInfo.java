@@ -70,7 +70,7 @@ public class EventInfo {
 
     }
 
-    public EventInfo(String name, String description, Location location, String guidelines,
+    public EventInfo(String name, String description, String address, String guidelines,
                      String imgUrl, Timestamp eventDate, Timestamp regStart, Timestamp regEnd,
                      int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
         this.name = name;

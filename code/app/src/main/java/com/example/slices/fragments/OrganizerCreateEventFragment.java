@@ -203,9 +203,7 @@ public class OrganizerCreateEventFragment extends Fragment {
         String name = editEventName.getText().toString().trim();
         String desc = editDescription.getText().toString().trim();
         String guide = editGuidelines.getText().toString().trim();
-        //Change from Ryan
-        //String location = editLocation.getText().toString().trim();
-        Location location = null;
+        String address = editLocation.getText().toString().trim();
         String dateStr = editDate.getText().toString().trim();           // mm/dd/yyyy
         String timeStr = editTime.getText().toString().trim();           // hh:mm AM/PM
         String regStartStr = editRegStart.getText().toString().trim();  // mm/dd/yyyy
@@ -214,7 +212,7 @@ public class OrganizerCreateEventFragment extends Fragment {
         String maxPartStr = editMaxParticipants.getText().toString().trim();
         boolean entrantLoc = switchEntrantLocation.isChecked();
 
-        android.util.Log.d("CreateEvent", "Name: " + name + ", Desc: " + desc + ", Date: " + dateStr + ", Time: " + timeStr + ", Location: " + location);
+        android.util.Log.d("CreateEvent", "Name: " + name + ", Desc: " + desc + ", Date: " + dateStr + ", Time: " + timeStr + ", Location: " + address);
 
         // Check required fields
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(desc) || TextUtils.isEmpty(dateStr) ||
@@ -277,7 +275,7 @@ public class OrganizerCreateEventFragment extends Fragment {
             String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
             // Build an eventInfo
-            EventInfo eventInfo = new EventInfo(name, desc, location, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
+            EventInfo eventInfo = new EventInfo(name, desc, address, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
                     maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
 
 

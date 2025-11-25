@@ -155,7 +155,7 @@ public class EntrantControllerTest {
         Timestamp regStart = times.get(0);
         Timestamp regEnd = times.get(1);
         Timestamp eventDate = times.get(2);
-        EventController.createEvent("Evt", "Desc", "Loc", "Guide", "Img",
+        EventController.createEvent("Evt", "Desc", null, "Guide", "Img",
                 eventDate, regStart, regEnd, 10, 5, false, "none", 123,
                 new EventCallback() {
                     @Override
