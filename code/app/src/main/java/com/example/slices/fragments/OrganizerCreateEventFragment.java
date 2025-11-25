@@ -203,7 +203,9 @@ public class OrganizerCreateEventFragment extends Fragment {
         String name = editEventName.getText().toString().trim();
         String desc = editDescription.getText().toString().trim();
         String guide = editGuidelines.getText().toString().trim();
+        //Change from Ryan
         String address = editLocation.getText().toString().trim();
+        Location location = null;
         String dateStr = editDate.getText().toString().trim();           // mm/dd/yyyy
         String timeStr = editTime.getText().toString().trim();           // hh:mm AM/PM
         String regStartStr = editRegStart.getText().toString().trim();  // mm/dd/yyyy
@@ -276,7 +278,7 @@ public class OrganizerCreateEventFragment extends Fragment {
 
             // Build an eventInfo
             EventInfo eventInfo = new EventInfo(name, desc, address, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
-                    maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
+                    maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID, location);
 
 
             // Create event object - use testing constructor to bypass validation

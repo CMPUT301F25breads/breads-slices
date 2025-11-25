@@ -334,8 +334,8 @@ public class EventController {
      */
     public static void getAllEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
 
-        Query eventsQuery = eventRef.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = eventRef.whereArrayContains("waitlist.entrants", entrant);
+        Query eventsQuery = eventRef.whereArrayContains("entrantIds", entrant.getId());
+        Query waitlistQuery = eventRef.whereArrayContains("waitlist.entrantIds", entrant.getId());
 
         eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
             List<Event> events = new ArrayList<>();
@@ -568,7 +568,7 @@ public class EventController {
      * @param callback
      *      Callback invoked when the event is created
      */
-    public static void createEvent(String name, String description, String address, String guidelines, String imgUrl,
+    public static void createEvent(String name, String description, String address, Location location, String guidelines, String imgUrl,
                                    Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
                                    int maxWaiting, boolean entrantLoc, String entrantDist, int organizerID, EventCallback callback) {
         try {
@@ -579,7 +579,7 @@ public class EventController {
                 public void onSuccess(int id) {
 
                     Event event = new Event(name, description, address, guidelines, imgUrl,
-                            eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
+                            eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID, location);
                     writeEvent(event, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
@@ -994,8 +994,8 @@ public class EventController {
             q = q.whereLessThan("eventInfo.eventDate", search.getAvailEnd());
 
         // Location filter
-        if (search.getLoc() != null && !search.getLoc().trim().isEmpty())
-            q = q.whereEqualTo("eventInfo.location", search.getLoc().trim());
+        if (search.getAddress() != null && !search.getAddress().trim().isEmpty())
+            q = q.whereEqualTo("eventInfo.address", search.getAddress().trim());
 
         q.get().addOnSuccessListener(query -> {
             ArrayList<Event> events = new ArrayList<>();
@@ -1019,11 +1019,11 @@ public class EventController {
                     int id = search.getId();
 
                     boolean inEntrants = event.getEntrants() != null &&
-                            event.getEntrants().contains(id);
+                            event.getEntrantIds().contains(id);
 
                     boolean inWaitlist = event.getWaitlist() != null &&
-                            event.getWaitlist().getEntrants() != null &&
-                            event.getWaitlist().getEntrants().contains(id);
+                            event.getWaitlist().getEntrantIds() != null &&
+                            event.getWaitlist().getEntrantIds().contains(id);
 
                     if (!inEntrants && !inWaitlist) {
                         include = false;
