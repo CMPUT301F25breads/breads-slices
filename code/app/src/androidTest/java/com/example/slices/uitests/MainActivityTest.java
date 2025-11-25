@@ -67,7 +67,7 @@ public class MainActivityTest {
         onView(allOf(withId(R.id.BrowseFragment), isDescendantOfA(withId(R.id.bottom_nav))))
                 .perform(click());
 
-        onView(withId(R.id.browse_event_list)).check(matches(isDisplayed()));
+        onView(withId(R.id.browse_list)).check(matches(isDisplayed()));
     }
     @Test
     public void navigateToMyEventsTest() {
