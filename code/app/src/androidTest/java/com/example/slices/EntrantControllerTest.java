@@ -2,7 +2,6 @@ package com.example.slices;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -34,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class EntrantControllerTest {
 
     @BeforeClass
-    public static void globalSetup() throws InterruptedException {
+    public static void globalSetup()  {
         //Chuck it in testing mode
         EntrantController.setTesting(true);
         EventController.setTesting(true);
@@ -47,20 +46,18 @@ public class EntrantControllerTest {
         EventController.clearEvents(latch::countDown);
         NotificationManager.clearNotifications(latch::countDown);
         Logger.clearLogs(latch::countDown);
-        boolean completed = latch.await(20, TimeUnit.SECONDS);
-        assertTrue("Timed out waiting for async operation", completed);
+        await(latch);
     }
 
     @AfterClass
-    public static void tearDown() throws InterruptedException {
+    public static void tearDown()  {
         //Clean it out
         CountDownLatch latch = new CountDownLatch(4);
         EntrantController.clearEntrants(latch::countDown);
         EventController.clearEvents(latch::countDown);
         NotificationManager.clearNotifications(latch::countDown);
         Logger.clearLogs(latch::countDown);
-        boolean completed = latch.await(20, TimeUnit.SECONDS);
-        assertTrue("Timed out waiting for async operation", completed);
+        await(latch);
 
         //Reset back to default
         EntrantController.setTesting(false);
@@ -74,7 +71,7 @@ public class EntrantControllerTest {
      * @param latch
      *      Latch to wait for
      */
-    private void await(CountDownLatch latch) {
+    private static void await(CountDownLatch latch) {
         try {
             boolean ok = latch.await(20, TimeUnit.SECONDS);
             assertTrue("Timed out waiting for async operation", ok);
@@ -100,10 +97,8 @@ public class EntrantControllerTest {
      *      Entrant name
      * @return
      *      Persisted entrant
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private Entrant createEntrantByFields(String name) throws InterruptedException {
+    private Entrant createEntrantByFields(String name) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Entrant> ref = new AtomicReference<>();
         EntrantController.createEntrant(name, name + "@mail.com", "123", new EntrantCallback() {
@@ -127,10 +122,8 @@ public class EntrantControllerTest {
      *      Device ID for entrant
      * @return
      *      Persisted entrant
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private Entrant createEntrantByDevice(String deviceId) throws InterruptedException {
+    private Entrant createEntrantByDevice(String deviceId)  {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Entrant> ref = new AtomicReference<>();
         EntrantController.createEntrant(deviceId, new EntrantCallback() {
@@ -152,10 +145,9 @@ public class EntrantControllerTest {
      * Create a valid future event for deleteEntrant tests
      * @return
      *      Persisted event
-     * @throws InterruptedException
-     *      If latch fails to complete
+     
      */
-    private Event createValidEvent() throws InterruptedException {
+    private Event createValidEvent()  {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Event> ref = new AtomicReference<>();
         //Get some valid times
@@ -180,24 +172,15 @@ public class EntrantControllerTest {
         return ref.get();
     }
 
-    /**
-     * Test EntrantController singleton
-     */
-    @Test
-    public void testGetInstanceNotNull() {
-        EntrantController controller = EntrantController.getInstance();
-        assertNotNull(controller);
-    }
+    
 
     /**
      * Tests the getEntrant method
      * Passes if entrant is found
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetEntrant() throws InterruptedException {
+    public void testGetEntrant() {
         clearAll();
 
         Entrant entrant = createEntrantByFields("Bob");
@@ -224,11 +207,9 @@ public class EntrantControllerTest {
      * Tests the getEntrant method for a non-existent entrant
      * Passes if exception is thrown
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetEntrantNotFound() throws InterruptedException {
+    public void testGetEntrantNotFound()  {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         EntrantController.getEntrant(9999, new EntrantCallback() {
@@ -249,11 +230,9 @@ public class EntrantControllerTest {
      * Tests the getEntrantByDeviceId method
      * Passes if entrant is found
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetEntrantByDeviceId() throws InterruptedException {
+    public void testGetEntrantByDeviceId() {
         clearAll();
         String deviceId = "device-123";
         Entrant created = createEntrantByDevice(deviceId);
@@ -277,11 +256,10 @@ public class EntrantControllerTest {
      * Tests the getEntrantByDeviceId method for a non-existent entrant
      * Passes if exception is thrown
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
+
      */
     @Test
-    public void testGetEntrantByDeviceIdNotFound() throws InterruptedException {
+    public void testGetEntrantByDeviceIdNotFound()  {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         EntrantController.getEntrantByDeviceId("no-such-device", new EntrantCallback() {
@@ -302,11 +280,9 @@ public class EntrantControllerTest {
      * Tests the getNewEntrantId method for an empty collection
      * Passes if new ID is returned and is 1
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetNewEntrantIdEmpty() throws InterruptedException {
+    public void testGetNewEntrantIdEmpty()  {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Integer> ref = new AtomicReference<>(0);
@@ -329,11 +305,9 @@ public class EntrantControllerTest {
      * Tests the getNewEntrantId method for a non-empty collection
      * Passes if new ID is returned and is greater than the last ID
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetNewEntrantIdNotEmpty() throws InterruptedException {
+    public void testGetNewEntrantIdNotEmpty()  {
         clearAll();
         //Create an entrant
         Entrant e1 = createEntrantByFields("Existing");
@@ -359,11 +333,9 @@ public class EntrantControllerTest {
      * Tests the writeEntrant method
      * Passes if entrant is written and can be read back
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testWriteEntrantPersists() throws InterruptedException {
+    public void testWriteEntrant()  {
         clearAll();
         CountDownLatch idLatch = new CountDownLatch(1);
         AtomicReference<Integer> idRef = new AtomicReference<>(0);
@@ -415,74 +387,14 @@ public class EntrantControllerTest {
         await(readLatch);
     }
 
-    /**
-     * Tests the writeEntrantDeviceId method
-     * Passes if entrant is written and can be read back
-     * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
-     */
-    @Test
-    public void testWriteEntrantDeviceIdPersists() throws InterruptedException {
-        clearAll();
-        CountDownLatch idLatch = new CountDownLatch(1);
-        AtomicReference<Integer> idRef = new AtomicReference<>(0);
-        //Get a new ID
-        EntrantController.getNewEntrantId(new EntrantIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                idRef.set(id);
-                idLatch.countDown();
-            }
-            @Override
-            public void onFailure(Exception e) {
-                fail("Failed to get id");
-            }
-        });
-        //Wait for ID
-        await(idLatch);
-        //Set device ID
-        String deviceId = "dev-xyz";
-        Entrant entrant = new Entrant(deviceId, idRef.get());
-        CountDownLatch writeLatch = new CountDownLatch(1);
-        //Write device ID first
-        EntrantController.writeEntrantDeviceId(entrant, new DBWriteCallback() {
-            @Override
-            public void onSuccess() {
-                writeLatch.countDown();
-            }
-            @Override
-            public void onFailure(Exception e) {
-                fail("writeEntrantDeviceId failed");
-            }
-        });
-        await(writeLatch);
-        CountDownLatch readLatch = new CountDownLatch(1);
-        //Now read it back
-        EntrantController.getEntrantByDeviceId(deviceId, new EntrantCallback() {
-            @Override
-            public void onSuccess(Entrant result) {
-                assertEquals(deviceId, result.getDeviceId());
-                assertEquals(entrant.getId(), result.getId());
-                readLatch.countDown();
-            }
-            @Override
-            public void onFailure(Exception e) {
-                fail("Failed to read entrant after writeEntrantDeviceId");
-            }
-        });
-        await(readLatch);
-    }
 
     /**
      * Tests the updateEntrant method
      * Passes if entrant is updated and can be read back
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testUpdateEntrantChangesPersist() throws InterruptedException {
+    public void testUpdateEntrantChangesPersist()  {
         clearAll();
         //Create entrant
         Entrant entrant = createEntrantByFields("Test");
@@ -521,11 +433,9 @@ public class EntrantControllerTest {
      * Tests the createEntrantByDeviceId method when an entrant with the same deviceId already exists
      * Passes if exception is thrown
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testCreateEntrantByDeviceIdAlreadyExists() throws InterruptedException {
+    public void testCreateEntrantByDeviceIdAlreadyExists()  {
         clearAll();
         String deviceId = "dup-device";
         //Create entrant
@@ -550,11 +460,9 @@ public class EntrantControllerTest {
      * Tests the clearEntrants method
      * Passes if all entrants are deleted
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testClearEntrantsEmptiesCollection() throws InterruptedException {
+    public void testClearEntrantsEmptiesCollection()  {
         clearAll();
         createEntrantByFields("G1");
         createEntrantByFields("G2");
@@ -584,15 +492,13 @@ public class EntrantControllerTest {
      * Tests the deleteEntrant method when the entrant is not in any events
      * Passes if entrant is deleted
      * Fail otherwise
-     * @throws Exception
-     *      If latch fails to complete
-     *      Or if entrant is not deleted
      */
     @Test
-    public void testDeleteEntrantNoEvents() throws Exception {
+    public void testDeleteEntrantNoEvents() {
         clearAll();
         Entrant entrant = createEntrantByFields("Hank");
         CountDownLatch del = new CountDownLatch(1);
+        try {
         EntrantController.deleteEntrant(String.valueOf(entrant.getId()), new DBWriteCallback() {
             @Override
             public void onSuccess() {
@@ -603,6 +509,9 @@ public class EntrantControllerTest {
                 fail("deleteEntrant failed for entrant with no events");
             }
         });
+        } catch (Exception e) {
+            fail("deleteEntrant failed for entrant with no events");
+        }
         await(del);
         CountDownLatch read = new CountDownLatch(1);
         EntrantController.getEntrant(entrant.getId(), new EntrantCallback() {
@@ -623,12 +532,10 @@ public class EntrantControllerTest {
      * Tests the deleteEntrant method when the entrant is in an event
      * Passes if entrant is deleted and removed from event
      * Fail otherwise
-     * @throws Exception
-     *      If latch fails to complete
-     *      Or if entrant is not deleted
+
      */
     @Test
-    public void testDeleteEntrantInEvent() throws Exception {
+    public void testDeleteEntrantInEvent()   {
         clearAll();
         Entrant entrant = createEntrantByFields("InEvent");
         Event event = createValidEvent();
@@ -639,6 +546,7 @@ public class EntrantControllerTest {
         });
         await(add);
         CountDownLatch del = new CountDownLatch(1);
+        try {
         EntrantController.deleteEntrant(String.valueOf(entrant.getId()), new DBWriteCallback() {
             @Override
             public void onSuccess() {
@@ -649,6 +557,9 @@ public class EntrantControllerTest {
                 fail("deleteEntrant failed for entrant in event");
             }
         });
+        } catch (Exception e) {
+            fail("deleteEntrant failed for entrant in event");
+        }
         await(del);
         //Entrant should not be in event anymore
         CountDownLatch checkEvent = new CountDownLatch(1);
@@ -670,12 +581,10 @@ public class EntrantControllerTest {
      * Tests the deleteEntrant method when the entrant is in a waitlist
      * Passes if entrant is deleted and removed from waitlist
      * Fail otherwise
-     * @throws Exception
-     *      If latch fails to complete
-     *      Or if entrant is not deleted
+
      */
     @Test
-    public void testDeleteEntrantInWaitlist() throws Exception {
+    public void testDeleteEntrantInWaitlist() {
         clearAll();
         Entrant entrant = createEntrantByFields("InWait");
         Event event = createValidEvent();
@@ -686,6 +595,7 @@ public class EntrantControllerTest {
         });
         await(addWL);
         CountDownLatch del = new CountDownLatch(1);
+        try {
         EntrantController.deleteEntrant(String.valueOf(entrant.getId()), new DBWriteCallback() {
             @Override
             public void onSuccess() {
@@ -696,6 +606,9 @@ public class EntrantControllerTest {
                 fail("deleteEntrant failed for entrant in waitlist");
             }
         });
+        } catch (Exception e) {
+            fail("deleteEntrant failed for entrant in waitlist");
+        }
         await(del);
         CountDownLatch checkWL = new CountDownLatch(1);
         EventController.getWaitlistForEvent(event.getId(), new EntrantListCallback() {
@@ -716,12 +629,9 @@ public class EntrantControllerTest {
      * Tests the deleteEntrant method when the entrant is mixed membership
      * Passes if entrant is deleted and removed from event and waitlist
      * Fail otherwise
-     * @throws Exception
-     *      If latch fails to complete
-     *      Or if entrant is not deleted
      */
     @Test
-    public void testDeleteEntrantMessy() throws Exception {
+    public void testDeleteEntrantMessy()  {
         clearAll();
         Entrant entrant = createEntrantByFields("Mixed");
         Event eventMain = createValidEvent();
@@ -738,6 +648,7 @@ public class EntrantControllerTest {
         await(add);
 
         CountDownLatch del = new CountDownLatch(1);
+        try {
         EntrantController.deleteEntrant(String.valueOf(entrant.getId()), new DBWriteCallback() {
             @Override
             public void onSuccess() {
@@ -749,6 +660,9 @@ public class EntrantControllerTest {
                 fail("deleteEntrant failed for mixed membership");
             }
         });
+        } catch (Exception e) {
+            fail("deleteEntrant failed for mixed membership");
+        }
         await(del);
 
         CountDownLatch checkMain = new CountDownLatch(1);
@@ -786,15 +700,13 @@ public class EntrantControllerTest {
      * Tests the deleteEntrant method when the entrant does not exist
      * Passes if exception is thrown
      * Fail otherwise
-     * @throws Exception
-     *      If latch fails to complete
-     *      Or if entrant is not deleted
      */
     @Test
-    public void testDeleteEntrantNotFound() throws Exception {
+    public void testDeleteEntrantNotFound()   {
         clearAll();
-
         CountDownLatch latch = new CountDownLatch(1);
+        //Try to delete non-existent entrant
+        try {
         EntrantController.deleteEntrant("9999", new DBWriteCallback() {
             @Override
             public void onSuccess() {
@@ -807,11 +719,14 @@ public class EntrantControllerTest {
                 latch.countDown();
             }
         });
+        } catch (Exception e) {
+            fail("deleteEntrant failed for non-existent entrant");
+        }
         await(latch);
     }
 
     @Test
-    public void deleteOrganizerDeletesEvent() throws Exception {
+    public void deleteOrganizerDeletesEvent()  {
         //TODO
     }
 

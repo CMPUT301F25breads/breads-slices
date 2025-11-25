@@ -1,6 +1,8 @@
 package com.example.slices.models;
 
 
+import android.location.Location;
+
 import com.example.slices.exceptions.DuplicateEntry;
 import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.exceptions.EventFull;
@@ -9,6 +11,7 @@ import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -35,6 +38,8 @@ public class Event implements Comparable<Event> {
     private EventInfo eventInfo;
     private List<Integer> entrantIds;
 
+    private ArrayList<Location> entrantLocs;
+
 
 
 
@@ -45,7 +50,7 @@ public class Event implements Comparable<Event> {
 
 
 
-    public Event(String name, String description, String location, String guidelines, String imgUrl,
+    public Event(String name, String description, Location location, String guidelines, String imgUrl,
                  Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
                  int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
         this.eventInfo = new EventInfo(name, description, location, guidelines, imgUrl,

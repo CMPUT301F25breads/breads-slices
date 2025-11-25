@@ -66,7 +66,7 @@ public class OrganizerEditEventFragment extends Fragment {
 
     private EditText editEventName, editDate, editTime, editRegStart, editRegEnd,
             editMaxWaiting, editMaxParticipants, editMaxDistance;
-    private TextView textDescription, textGuidelines, textLocation;
+    private TextView textDescription, textGuidelines, textLocation, textEventTitle;
     private ImageView eventImage, qrCodeImageView;
     private Button buttonShareQRCode;
     private SwitchCompat switchEntrantLocation;
@@ -126,6 +126,7 @@ public class OrganizerEditEventFragment extends Fragment {
         textDescription = view.findViewById(R.id.textDescription);
         textGuidelines = view.findViewById(R.id.textGuidelines);
         textLocation = view.findViewById(R.id.textLocation);
+        textEventTitle = view.findViewById(R.id.textEventTitle);
         eventImage = view.findViewById(R.id.eventImage);
         qrCodeImageView = view.findViewById(R.id.qrCodeImageView);
         buttonShareQRCode = view.findViewById(R.id.buttonShareQRCode);
@@ -257,9 +258,10 @@ public class OrganizerEditEventFragment extends Fragment {
 
                 // --- Populate UI ---
                 editEventName.setText(eventInfo.getName());
+                textEventTitle.setText(eventInfo.getName());
                 textDescription.setText(eventInfo.getDescription());
                 textGuidelines.setText("event guidelines");
-                textLocation.setText(eventInfo.getLocation());
+                //textLocation.setText(eventInfo.getLocation());
                 editMaxParticipants.setText(String.valueOf(eventInfo.getMaxEntrants()));
 
                 // Display waiting list capacity (show empty if unlimited/default)
@@ -402,12 +404,9 @@ public class OrganizerEditEventFragment extends Fragment {
             // I added logic for all fields but I dont know what the UI looks like
             // -Ryan
             // ------------------------------------------
-
             // Update the EventInfo object based on which field was edited
             if (title.equals("Edit Description")) {
                 currentEventInfo.setDescription(newValue);
-            } else if (title.equals("Edit Location")) {
-                currentEventInfo.setLocation(newValue);
             } else if (title.equals("Edit Guidelines")) {
                 currentEventInfo.setGuidelines(newValue);
             } else if (title.equals("Edit Image")) {
@@ -657,6 +656,7 @@ public class OrganizerEditEventFragment extends Fragment {
         EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
             @Override
             public void onSuccess() {
+                textEventTitle.setText(newName);
                 Toast.makeText(getContext(), "Event name saved!", Toast.LENGTH_SHORT).show();
             }
 

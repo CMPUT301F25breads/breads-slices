@@ -61,7 +61,7 @@ public class BrowseFragment extends Fragment {
         eventAdapter = new EntrantEventAdapter(requireContext(), BrowseFragment.this, eventList);
         binding.browseList.setLayoutManager(new LinearLayoutManager(requireContext()));
         SearchSettings search = vm.getSearch();
-        
+
         // Load user's waitlisted events to populate button states correctly
         loadUserWaitlistedEvents();
 
@@ -76,7 +76,7 @@ public class BrowseFragment extends Fragment {
         // Set ViewModel on adapter before any data operations to prevent null reference crashes
         eventAdapter.setViewModel(vm);
         binding.browseList.setAdapter(eventAdapter);
-        
+
         EventController.queryEvents(search, new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
@@ -227,7 +227,7 @@ public class BrowseFragment extends Fragment {
     private void navigateToCamera() {
 
     }
-    
+
     /**
      * Loads the user's waitlisted events and populates the waitlistedEventIds in the ViewModel.
      * This ensures that the browse screen shows correct button states (Join vs Leave).
@@ -237,7 +237,7 @@ public class BrowseFragment extends Fragment {
         if (vm.getUser() == null || vm.getUser().getId() == 0) {
             return;
         }
-        
+
         // Check if already loaded to avoid redundant queries
         if (vm.getWaitlistedEvents() != null && !vm.getWaitlistedEvents().isEmpty()) {
             // Already loaded, just sync the IDs
@@ -246,18 +246,18 @@ public class BrowseFragment extends Fragment {
             }
             return;
         }
-        
+
         // Load from database
         EventController.getEventsForEntrant(vm.getUser(), new com.example.slices.interfaces.EntrantEventCallback() {
             @Override
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
                 vm.setWaitlistedEvents(waitEvents);
-                
+
                 // Populate waitlistedEventIds for button state tracking
                 for (Event event : waitEvents) {
                     vm.addWaitlistedId(String.valueOf(event.getId()));
                 }
-                
+
                 // Refresh the adapter to update button states
                 if (eventAdapter != null) {
                     eventAdapter.notifyDataSetChanged();

@@ -1,6 +1,5 @@
 package com.example.slices.models;
 
-import com.example.slices.interfaces.DBWriteCallback;
 
 public class Profile {
     /**
@@ -25,6 +24,8 @@ public class Profile {
 
     private int id;
 
+    //private (Something) location
+
 
     /**
      * Default constructor for the Profile class, need for serialization
@@ -37,14 +38,41 @@ public class Profile {
         this.phoneNumber = phoneNumber;
         this.sendNotifications = sendNotifications;
         this.id = id;
-
     }
+
+    /*
+    public Profile(String name, String email, String phoneNumber, boolean sendNotifications, int id, (Something) location) {
+        this.name = name;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.sendNotifications = sendNotifications;
+        this.id = id;
+        this.location = location;
+    }
+    */
+
+    /**
+     * Constructor for the Profile class that only sets the ID
+     * @param id
+     *      ID of the entrant
+     */
 
     public Profile(int id) {
         this.id = id;
         this.sendNotifications = true;
     }
 
+    /**
+     * Constructor for the Profile class that sets all fields
+     * @param name
+     *      Name of the entrant
+     * @param email
+     *      Email of the entrant
+     * @param phoneNumber
+     *      Phone number of the entrant
+     * @param id
+     *      ID of the entrant
+     */
     public Profile(String name, String email, String phoneNumber, int id) {
         this.name = name;
         this.email = email;
@@ -53,18 +81,47 @@ public class Profile {
         this.id = id;
     }
 
+    /**
+     * Getter for the name of the entrant
+     * @return
+     *      Name of the entrant
+     */
     public String getName() {
         return name;
     }
+
+    /**
+     * Getter for the email of the entrant
+     * @return
+     *      Email of the entrant
+     */
     public String getEmail() {
         return email;
     }
+
+    /**
+     * Getter for the phone number of the entrant
+     * @return
+     *      Phone number of the entrant
+     */
     public String getPhoneNumber() {
         return phoneNumber;
     }
+
+    /**
+     * Getter for the entrant's notification preference
+     * @return
+     *      True if the entrant has notifications enabled
+     */
     public boolean getSendNotifications() {
         return sendNotifications;
     }
+
+    /**
+     * Getter for the ID of the entrant
+     * @return
+     *      ID of the entrant
+     */
     public int getId() {
         return id;
     }
@@ -75,7 +132,6 @@ public class Profile {
      * @param name
      *      Name to set
      */
-
     public void setName(String name) {
         this.name = name;
     }
@@ -86,11 +142,9 @@ public class Profile {
      * @param email
      *      Email to set
      */
-
     public void setEmail(String email) {
         this.email = email;
     }
-
 
 
     /**
@@ -98,12 +152,9 @@ public class Profile {
      * @param phoneNumber
      *      Phone number to set
      */
-
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
-
-
 
 
     /**
@@ -111,7 +162,6 @@ public class Profile {
      * @param sendNotifications
      *      Notification preference to set
      */
-
     public void setSendNotifications(boolean sendNotifications) {
         this.sendNotifications = sendNotifications;
     }
@@ -122,10 +172,32 @@ public class Profile {
      * @param id
      *      ID to set
      */
-
     public void setId(int id) {
         this.id = id;
     }
+
+    /*
+    /**
+     * INTERNAL USE ONLY - Firestore requires this setter
+     * @param location
+     *      Location to set
+     */
+    /*
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+    */
+    /*
+    /**
+     * Getter for the location of the entrant
+     * @return
+     *      Location of the entrant
+     */
+    /*
+    public Location getLocation() {
+        return location;
+    }
+     */
 
 
 
