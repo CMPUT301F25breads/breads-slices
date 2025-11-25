@@ -810,7 +810,7 @@ public class EventController {
             q = q.whereGreaterThanOrEqualTo("eventInfo.eventDate", search.getAvailStart());
 
         if (search.getAvailEnd() != null)
-            q = q.whereLessThanOrEqualTo("eventInfo.eventDate", search.getAvailEnd());
+            q = q.whereLessThan("eventInfo.eventDate", search.getAvailEnd());
 
         if (search.getLoc() != null && !search.getLoc().trim().isEmpty())
             q = q.whereEqualTo("eventInfo.location", search.getLoc());
@@ -831,6 +831,12 @@ public class EventController {
                                     String filter = search.getName().toLowerCase();
                                     String eventName = event.getEventInfo().getName().toLowerCase();
                                     matchesName = eventName.contains(filter);
+                                }
+
+                                boolean skipEnrolled = false;
+                                if(search.isEnrolled()) {
+                                    boolean inEntrants = event.getEntrants() != null && event.getEntrants().contains(search.getId());
+                                    boolean inWaitlist = event.getWaitlist() != null && event.getWaitlist().getEntrants().contains(search.getId());
                                 }
 
                                 if (matchesName)
