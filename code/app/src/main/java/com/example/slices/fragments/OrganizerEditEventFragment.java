@@ -66,7 +66,7 @@ public class OrganizerEditEventFragment extends Fragment {
 
     private EditText editEventName, editDate, editTime, editRegStart, editRegEnd,
             editMaxWaiting, editMaxParticipants, editMaxDistance;
-    private TextView textDescription, textGuidelines, textLocation;
+    private TextView textDescription, textGuidelines, textLocation, textEventTitle;
     private ImageView eventImage, qrCodeImageView;
     private Button buttonShareQRCode;
     private SwitchCompat switchEntrantLocation;
@@ -126,6 +126,7 @@ public class OrganizerEditEventFragment extends Fragment {
         textDescription = view.findViewById(R.id.textDescription);
         textGuidelines = view.findViewById(R.id.textGuidelines);
         textLocation = view.findViewById(R.id.textLocation);
+        textEventTitle = view.findViewById(R.id.textEventTitle);
         eventImage = view.findViewById(R.id.eventImage);
         qrCodeImageView = view.findViewById(R.id.qrCodeImageView);
         buttonShareQRCode = view.findViewById(R.id.buttonShareQRCode);
@@ -257,6 +258,7 @@ public class OrganizerEditEventFragment extends Fragment {
 
                 // --- Populate UI ---
                 editEventName.setText(eventInfo.getName());
+                textEventTitle.setText(eventInfo.getName());
                 textDescription.setText(eventInfo.getDescription());
                 textGuidelines.setText("event guidelines");
                 textLocation.setText(eventInfo.getLocation());
@@ -657,6 +659,7 @@ public class OrganizerEditEventFragment extends Fragment {
         EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
             @Override
             public void onSuccess() {
+                textEventTitle.setText(newName);
                 Toast.makeText(getContext(), "Event name saved!", Toast.LENGTH_SHORT).show();
             }
 

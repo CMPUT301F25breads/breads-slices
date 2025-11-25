@@ -94,20 +94,27 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         }
 
         // Tries to fetch the event name from the database,
-        // if it fails it will set the text to "Event not found"
-        EventController.getEvent(n.getSenderId(), new EventCallback() {
-            @Override
-            public void onSuccess(Event event) {
-                EventInfo eventInfo = event.getEventInfo();
-                h.eventName.setText(eventInfo.getName());
-            }
-            @Override
-            public void onFailure(Exception e) {
-                h.eventName.setText("Event not found");
-                Log.e("NotificationAdapter", "Error fetching event", e);
-                Toast.makeText(context, "Error: Couldn't load event", Toast.LENGTH_SHORT).show();
-            }
-        });
+        // if eventId is 0 or invalid, it will set the text to "General Notification"
+        if (n.getEventId() == 0) {
+            h.eventName.setText("General Notification");
+        } else {
+            EventController.getEvent(n.getEventId(), new EventCallback() {
+                @Override
+                public void onSuccess(Event event) {
+                    if (event != null && event.getEventInfo() != null) {
+                        EventInfo eventInfo = event.getEventInfo();
+                        h.eventName.setText(eventInfo.getName());
+                    } else {
+                        h.eventName.setText("Event not found");
+                    }
+                }
+                @Override
+                public void onFailure(Exception e) {
+                    h.eventName.setText("Event not found");
+                    Log.e("NotificationAdapter", "Error fetching event for ID: " + n.getEventId(), e);
+                }
+            });
+        }
 
         // Configure action buttons based on notification type
         switch (n.getType()) {
