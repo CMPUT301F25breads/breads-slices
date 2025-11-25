@@ -274,7 +274,7 @@ public class OrganizerCreateEventFragment extends Fragment {
             String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
             // Build an eventInfo
-            EventInfo eventInfo = new EventInfo(name, desc, guide, location, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
+            EventInfo eventInfo = new EventInfo(name, desc, location, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
                     maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
 
 

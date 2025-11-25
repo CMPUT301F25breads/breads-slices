@@ -263,46 +263,44 @@ public class EventController {
      * @param callback Callback to call when the operation is complete
      */
     public static void getEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
-
-        Query q = eventRef.whereGreaterThan("eventInfo.eventDate", Timestamp.now());
-
-        Query eventsQuery = q.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = q.whereArrayContains("waitlist.entrants", entrant);
-
-        eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
-            List<Event> events = new ArrayList<>();
-            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                Event event = doc.toObject(Event.class);
-
-                if (event != null)
-                    events.add(event);
-            }
-
-
-            waitlistQuery.get().addOnSuccessListener(waitlistSnapshots -> {
-                List<Event> waitEvents = new ArrayList<>();
-                for (DocumentSnapshot doc : waitlistSnapshots.getDocuments()) {
-                    Event event = doc.toObject(Event.class);
-                    if (event != null)
-                        waitEvents.add(event);
-                }
-
-                if(!events.isEmpty() || !waitEvents.isEmpty())
+        // Fetch all future events and filter in-memory by entrant ID
+        // This is more reliable than whereArrayContains which requires exact object matching
+        eventRef.whereGreaterThan("eventInfo.eventDate", Timestamp.now())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    List<Event> waitEvents = new ArrayList<>();
+                    
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        Event event = doc.toObject(Event.class);
+                        if (event == null) continue;
+                        
+                        // Check if entrant is in the main event list
+                        if (event.getEntrants() != null) {
+                            for (Entrant e : event.getEntrants()) {
+                                if (e.getId() == entrant.getId()) {
+                                    events.add(event);
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Check if entrant is in the waitlist
+                        if (event.getWaitlist() != null && event.getWaitlist().getEntrants() != null) {
+                            for (Entrant e : event.getWaitlist().getEntrants()) {
+                                if (e.getId() == entrant.getId()) {
+                                    waitEvents.add(event);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
                     callback.onSuccess(events, waitEvents);
-                else
-                    callback.onSuccess(new ArrayList<>(), new ArrayList<>());
-
-
-
-            }).addOnFailureListener(e ->
-                    callback.onFailure(new DBOpFailed("Failed to get waitlist events"))
-            );
-
-        }).addOnFailureListener(e ->
-                callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
-        );
-
-
+                })
+                .addOnFailureListener(e ->
+                        callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
+                );
     }
 
 
@@ -313,42 +311,43 @@ public class EventController {
      * @param callback Callback to call when the operation is complete
      */
     public static void getAllEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
-
-        Query eventsQuery = eventRef.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = eventRef.whereArrayContains("waitlist.entrants", entrant);
-
-        eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
-            List<Event> events = new ArrayList<>();
-            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                Event event = doc.toObject(Event.class);
-
-                if (event != null)
-                    events.add(event);
-            }
-
-
-            waitlistQuery.get().addOnSuccessListener(waitlistSnapshots -> {
-                List<Event> waitEvents = new ArrayList<>();
-                for (DocumentSnapshot doc : waitlistSnapshots.getDocuments()) {
-                    Event event = doc.toObject(Event.class);
-                    if (event != null)
-                        waitEvents.add(event);
-                }
-
-                if(!events.isEmpty() || !waitEvents.isEmpty())
+        // Fetch all events and filter in-memory by entrant ID
+        // This is more reliable than whereArrayContains which requires exact object matching
+        eventRef.get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    List<Event> waitEvents = new ArrayList<>();
+                    
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        Event event = doc.toObject(Event.class);
+                        if (event == null) continue;
+                        
+                        // Check if entrant is in the main event list
+                        if (event.getEntrants() != null) {
+                            for (Entrant e : event.getEntrants()) {
+                                if (e.getId() == entrant.getId()) {
+                                    events.add(event);
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Check if entrant is in the waitlist
+                        if (event.getWaitlist() != null && event.getWaitlist().getEntrants() != null) {
+                            for (Entrant e : event.getWaitlist().getEntrants()) {
+                                if (e.getId() == entrant.getId()) {
+                                    waitEvents.add(event);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
                     callback.onSuccess(events, waitEvents);
-                else
-                    callback.onSuccess(new ArrayList<>(), new ArrayList<>());
-
-
-
-            }).addOnFailureListener(e ->
-                    callback.onFailure(new DBOpFailed("Failed to get waitlist events"))
-            );
-
-        }).addOnFailureListener(e ->
-                callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
-        );
+                })
+                .addOnFailureListener(e ->
+                        callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
+                );
     }
 
 
@@ -359,39 +358,44 @@ public class EventController {
      * @param callback Callback to call when the operation is complete
      */
     public static void getPastEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
-
-        Query q = eventRef.whereLessThan("eventInfo.eventDate", Timestamp.now());
-
-        Query eventsQuery = q.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = q.whereArrayContains("waitlist.entrants", entrant);
-
-        // First fetch main events
-
-        eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
-            List<Event> events = new ArrayList<>();
-            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                Event event = doc.toObject(Event.class);
-                if (event != null) events.add(event);
-            }
-
-            // Then fetch waitlist events
-            waitlistQuery.get().addOnSuccessListener(waitlistSnapshots -> {
-                List<Event> waitEvents = new ArrayList<>();
-                for (DocumentSnapshot doc : waitlistSnapshots.getDocuments()) {
-                    Event event = doc.toObject(Event.class);
-                    if (event != null) waitEvents.add(event);
-                }
-
-                callback.onSuccess(events, waitEvents);
-
-
-            }).addOnFailureListener(e ->
-                    callback.onFailure(new DBOpFailed("Failed to get waitlist events"))
-            );
-
-        }).addOnFailureListener(e ->
-                callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
-        );
+        // Fetch all past events and filter in-memory by entrant ID
+        // This is more reliable than whereArrayContains which requires exact object matching
+        eventRef.whereLessThan("eventInfo.eventDate", Timestamp.now())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    List<Event> waitEvents = new ArrayList<>();
+                    
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        Event event = doc.toObject(Event.class);
+                        if (event == null) continue;
+                        
+                        // Check if entrant is in the main event list
+                        if (event.getEntrants() != null) {
+                            for (Entrant e : event.getEntrants()) {
+                                if (e.getId() == entrant.getId()) {
+                                    events.add(event);
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Check if entrant is in the waitlist
+                        if (event.getWaitlist() != null && event.getWaitlist().getEntrants() != null) {
+                            for (Entrant e : event.getWaitlist().getEntrants()) {
+                                if (e.getId() == entrant.getId()) {
+                                    waitEvents.add(event);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    callback.onSuccess(events, waitEvents);
+                })
+                .addOnFailureListener(e ->
+                        callback.onFailure(new DBOpFailed("Failed to get events for entrant"))
+                );
     }
 
     public static void getEventsForOrganizer(int id, EventListCallback callback) {
