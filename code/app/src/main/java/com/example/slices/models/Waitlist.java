@@ -63,6 +63,7 @@ public class Waitlist {
     public void addEntrant(Entrant entrant) {
         entrants.add(entrant);
         entrantIds.add((Integer)entrant.getId());
+        currentEntrants++;
     }
 
     /**
