@@ -266,8 +266,8 @@ public class EventController {
 
         Query q = eventRef.whereGreaterThan("eventInfo.eventDate", Timestamp.now());
 
-        Query eventsQuery = q.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = q.whereArrayContains("waitlist.entrants", entrant);
+        Query eventsQuery = q.whereArrayContains("entrantIds", entrant.getId());
+        Query waitlistQuery = q.whereArrayContains("waitlist.entrantIds", entrant.getId());
 
         eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
             List<Event> events = new ArrayList<>();
@@ -362,8 +362,8 @@ public class EventController {
 
         Query q = eventRef.whereLessThan("eventInfo.eventDate", Timestamp.now());
 
-        Query eventsQuery = q.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = q.whereArrayContains("waitlist.entrants", entrant);
+        Query eventsQuery = q.whereArrayContains("entrantIds", entrant.getId());
+        Query waitlistQuery = q.whereArrayContains("waitlist.entrantIds", entrant.getId());
 
         // First fetch main events
 
