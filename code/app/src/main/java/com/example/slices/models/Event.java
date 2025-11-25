@@ -153,8 +153,6 @@ public class Event implements Comparable<Event> {
         }
         //Otherwise add the entrant to the waitlist
         waitlist.addEntrant(entrant);
-        //Increment the waitlist current entrants
-        waitlist.setCurrentEntrants(waitlist.getCurrentEntrants() + 1);
         return true;
     }
 
@@ -173,7 +171,6 @@ public class Event implements Comparable<Event> {
         }
         //Otherwise remove the entrant from the waitlist
         waitlist.removeEntrant(entrant);
-        // Note: waitlist.removeEntrant() already decrements currentEntrants
         return true;
     }
 

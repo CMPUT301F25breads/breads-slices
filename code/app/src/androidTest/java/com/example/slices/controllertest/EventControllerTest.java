@@ -1,4 +1,4 @@
-package com.example.slices;
+package com.example.slices.controllertest;
 
 import static org.junit.Assert.assertEquals;
 
