@@ -217,7 +217,7 @@ public class EventDetailsFragment extends Fragment {
         String whenText;
         if (when != null) {
             java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(
-                    "h:mm  |  MMM dd yyyy | ", java.util.Locale.getDefault());
+                    "h:mm a  |  MMM dd, yyyy", java.util.Locale.getDefault());
             whenText = fmt.format(when);
         } else {
             whenText = "Date/time TBD"; // in case of any errors in date/time, failsafe!

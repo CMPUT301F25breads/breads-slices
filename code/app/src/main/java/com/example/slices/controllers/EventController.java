@@ -648,6 +648,8 @@ public class EventController {
         });
     }
 
+
+
     /**
      * Verifies that the event times are valid
      * @param regStart

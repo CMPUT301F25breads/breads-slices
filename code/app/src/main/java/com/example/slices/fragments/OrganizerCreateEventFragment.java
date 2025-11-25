@@ -214,7 +214,7 @@ public class OrganizerCreateEventFragment extends Fragment {
         String maxPartStr = editMaxParticipants.getText().toString().trim();
         boolean entrantLoc = switchEntrantLocation.isChecked();
 
-        android.util.Log.d("CreateEvent", "Name: " + name + ", Desc: " + desc + ", Date: " + dateStr + ", Time: " + timeStr + ", Location: " + location);
+        android.util.Log.d("CreateEvent", "Name: " + name + ", Desc: " + desc + ", Date: " + dateStr + ", Time: " + timeStr + ", Location: " + address);
 
         // Check required fields
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(desc) || TextUtils.isEmpty(dateStr) ||

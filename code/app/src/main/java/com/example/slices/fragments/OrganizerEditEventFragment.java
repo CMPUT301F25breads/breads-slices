@@ -260,7 +260,7 @@ public class OrganizerEditEventFragment extends Fragment {
                 editEventName.setText(eventInfo.getName());
                 textEventTitle.setText(eventInfo.getName());
                 textDescription.setText(eventInfo.getDescription());
-                textGuidelines.setText("event guidelines");
+                textGuidelines.setText(eventInfo.getGuidelines());
                 textLocation.setText(eventInfo.getAddress());
                 editMaxParticipants.setText(String.valueOf(eventInfo.getMaxEntrants()));
 

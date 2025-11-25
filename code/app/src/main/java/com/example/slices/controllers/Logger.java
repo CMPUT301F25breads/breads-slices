@@ -76,7 +76,6 @@ public class Logger {
     }
 
     public static void logAction(LogType type, String description, Map<String, Object> data, DBWriteCallback callback) {
-        // If in LOCAL mode → write to Logcat only
         if (mode == Mode.LOCAL) {
             StringBuilder sb = new StringBuilder();
             sb.append("[").append(type).append("] ").append(description);
@@ -173,13 +172,15 @@ public class Logger {
 
 
     public static void getLogsOfType(LogType type, LogListCallback cb) {
-        logRef.whereEqualTo("type", type)
-                .orderBy("timestamp")
+        logRef.whereEqualTo("type", type.name())   // safer: query by string name
                 .get()
                 .addOnSuccessListener(q -> {
                     List<LogEntry> list = new ArrayList<>();
                     for (DocumentSnapshot d : q.getDocuments()) {
-                        list.add(d.toObject(LogEntry.class));
+                        LogEntry entry = d.toObject(LogEntry.class);
+                        if (entry != null) {
+                            list.add(entry);
+                        }
                     }
                     cb.onSuccess(list);
                 })
