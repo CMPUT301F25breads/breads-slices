@@ -1,5 +1,7 @@
 package com.example.slices.models;
 
+import android.location.Location;
+
 import com.example.slices.interfaces.DBWriteCallback;
 import com.google.firebase.Timestamp;
 
@@ -15,7 +17,7 @@ public class EventInfo {
     /**
      * Location of the event
      */
-    private String location; // Will be geolocation object later
+    private Location location;
 
     /**
      * Date of the event
@@ -68,7 +70,7 @@ public class EventInfo {
 
     }
 
-    public EventInfo(String name, String description, String location, String guidelines,
+    public EventInfo(String name, String description, Location location, String guidelines,
                      String imgUrl, Timestamp eventDate, Timestamp regStart, Timestamp regEnd,
                      int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
         this.name = name;
@@ -140,7 +142,7 @@ public class EventInfo {
 
 
 
-    public String getLocation() {
+    public Location getLocation() {
         return location;
     }
 
@@ -151,7 +153,7 @@ public class EventInfo {
      *      Location to set
      */
 
-    public void setLocation(String location) {
+    public void setLocation(Location location) {
         this.location = location;
 
     }

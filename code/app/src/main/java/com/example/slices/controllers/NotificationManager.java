@@ -1,6 +1,8 @@
 package com.example.slices.controllers;
 
-import androidx.annotation.NonNull;
+import android.annotation.SuppressLint;
+
+
 
 import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.exceptions.NotificationNotFound;
@@ -8,20 +10,18 @@ import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.NotificationCallback;
-import com.example.slices.interfaces.NotificationIDCallback;
 import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.Invitation;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationType;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
+
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
@@ -45,6 +45,7 @@ public class NotificationManager {
     private static NotificationManager instance;
 
 
+    @SuppressLint("StaticFieldLeak")
     private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private static CollectionReference notificationRef = db.collection("notifications");
 
@@ -67,6 +68,12 @@ public class NotificationManager {
         return instance;
     }
 
+    /**
+     * Sets the testing mode for the NotificationManager
+     * @param testing
+     *      True if testing mode is enabled, false otherwise
+     */
+
     public static void setTesting(boolean testing) {
         if (testing) {
             notificationRef = db.collection("test_notifications");
@@ -75,46 +82,23 @@ public class NotificationManager {
         }
     }
 
-    public static void sendNotifications(String title, String body, List<Entrant> recipients, int senderId,
-                                         DBWriteCallback callback) {
-        if (recipients.isEmpty()) {
-            callback.onSuccess();
-            return;
-        }
-
-        AtomicInteger completed = new AtomicInteger(0);
-        for (Entrant recipient : recipients) {
-            sendNotification(title, body, recipient.getId(), senderId, new DBWriteCallback() {
-                @Override
-                public void onSuccess() {
-                    if (completed.incrementAndGet() == recipients.size()) {
-                        callback.onSuccess();
-                    }
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    callback.onFailure(e);
-                }
-            });
-        }
-    }
-
-
 
 
     /**
      * Sends a standard notification to a recipient.
      * Creates a Notification object, writes it to the database, and logs it.
      *
-     * @param title Title of the notification
-     * @param body Body text of the notification
-     * @param recipientId ID of the recipient entrant
-     * @param senderId ID of the sender entrant
-     * @param callback Callback for success/failure of database write
+     * @param title
+     *      Title of the notification
+     * @param body
+     *      Body text of the notification
+     * @param recipientId
+     *      ID of the recipient entrant
+     * @param senderId
+     *      ID of the sender entrant
+     * @param callback
+     *      Callback for success/failure of database write
      */
-
-
 
     public static void sendNotification(String title, String body,
                                         int recipientId, int senderId,
@@ -128,26 +112,47 @@ public class NotificationManager {
 
         ref.set(notification)
                 .addOnSuccessListener(aVoid ->
-                        Logger.log(notification, new DBWriteCallback() {
+                        Logger.logNotification(title + " " + body, recipientId, senderId, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
+                                Logger.logSystem("Notification sent successfully to recipientId=" + recipientId, null);
                                 callback.onSuccess();
                             }
-
                             @Override
                             public void onFailure(Exception e) {
+                                Logger.logError("Failed to log notification for recipientId=" + recipientId, null);
                                 callback.onFailure(e);
                             }
                         }))
-                .addOnFailureListener(callback::onFailure);
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to send notification to recipientId=" + recipientId + " senderId=" + senderId, null);
+                    callback.onFailure(e);
+                });
     }
 
+    /**
+     * Sends a bulk notification to a list of recipients.
+     * @param title
+     *      Title of the notification
+     * @param body
+     *      Body text of the notification
+     * @param recipients
+     *      List of recipients to send the notification to
+     * @param senderId
+     *      ID of the sender entrant
+     * @param callback
+     *      Callback for success/failure of database write
+     */
     public static void sendBulkNotification(String title, String body, List<Integer> recipients,
                                             int senderId, DBWriteCallback callback) {
         if (recipients.isEmpty()) {
+            Logger.logSystem("sendBulkNotification called with empty recipients list", null);
             callback.onSuccess();
             return;
         }
+
+        Logger.logSystem("Starting bulk notification send to " + recipients.size() + " recipients", null);
+
         AtomicInteger completed = new AtomicInteger(0);
         AtomicBoolean failed = new AtomicBoolean(false);
         for (int recipient : recipients) {
@@ -159,6 +164,7 @@ public class NotificationManager {
                     }
                     if (completed.incrementAndGet() == recipients.size()) {
                         if (!failed.get()) {
+                            Logger.logSystem("Bulk notification send completed for " + recipients.size() + " recipients", null);
                             callback.onSuccess();
                         }
                     }
@@ -167,6 +173,7 @@ public class NotificationManager {
                 @Override
                 public void onFailure(Exception e) {
                     if (failed.compareAndSet(false, true)) {
+                        Logger.logError("Bulk notification send failed: " + e.getMessage(), null);
                         callback.onFailure(e);
                     }
                 }
@@ -175,12 +182,32 @@ public class NotificationManager {
         }
     }
 
+    /**
+     * Sends a bulk invitation to a list of recipients.
+     * @param title
+     *      Title of the invitation
+     * @param body
+     *      Body text of the invitation
+     * @param recipients
+     *      List of recipients to send the invitation to
+     * @param senderId
+     *      ID of the sender entrant
+     * @param eventID
+     *      ID of the associated event
+     * @param callback
+     *      Callback for success/failure of database write
+     */
     public static void sendBulkInvitation(String title, String body, List<Integer> recipients,
                                           int senderId, int eventID, DBWriteCallback callback) {
         if (recipients.isEmpty()) {
+            Logger.logSystem("sendBulkInvitation called with empty recipients list for eventId=" + eventID, null);
             callback.onSuccess();
             return;
         }
+
+        Logger.logSystem("Starting bulk invitation send for eventId=" + eventID
+                + " to " + recipients.size() + " recipients", null);
+
         AtomicInteger completed = new AtomicInteger(0);
         AtomicBoolean failed = new AtomicBoolean(false);
         for (int recipient : recipients) {
@@ -192,6 +219,7 @@ public class NotificationManager {
                     }
                     if (completed.incrementAndGet() == recipients.size()) {
                         if (!failed.get()) {
+                            Logger.logSystem("Bulk invitation send completed for eventId=" + eventID, null);
                             callback.onSuccess();
                         }
                     }
@@ -199,6 +227,7 @@ public class NotificationManager {
                 @Override
                 public void onFailure(Exception e) {
                     if (failed.compareAndSet(false, true)) {
+                        Logger.logError("Bulk invitation send failed for eventId=" + eventID + ": " + e.getMessage(), null);
                         callback.onFailure(e);
                     }
                 }
@@ -216,11 +245,16 @@ public class NotificationManager {
      * Sends an invitation notification for an event.
      * Creates an Invitation object, writes it to the database, and logs it.
      *
-     * @param title Title of the invitation
-     * @param body Body text of the invitation
-     * @param recipientId ID of the recipient entrant
-     * @param senderId ID of the sender entrant
-     * @param eventId ID of the associated event
+     * @param title
+     *      Title of the invitation
+     * @param body
+     *      Body text of the invitation
+     * @param recipientId
+     *      ID of the recipient entrant
+     * @param senderId
+     *      ID of the sender entrant
+     * @param eventId
+     *      ID of the associated event
      */
     public static void sendInvitation(String title, String body,
                                       int recipientId, int senderId,
@@ -235,47 +269,31 @@ public class NotificationManager {
 
         ref.set(invitation)
                 .addOnSuccessListener(aVoid ->
-                        Logger.log(invitation, new DBWriteCallback() {
+                        Logger.logInvSent(eventId, recipientId, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
+                                Logger.logSystem("Invitation sent successfully for eventId=" + eventId
+                                        + " to recipientId=" + recipientId, null);
                                 callback.onSuccess();
                             }
 
                             @Override
                             public void onFailure(Exception e) {
+                                Logger.logError("Failed to log invitation sent for eventId=" + eventId
+                                        + " recipientId=" + recipientId, null);
                                 callback.onFailure(e);
                             }
                         }))
-                .addOnFailureListener(callback::onFailure);
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to send invitation for eventId=" + eventId
+                            + " to recipientId=" + recipientId, null);
+                    callback.onFailure(e);
+                });
     }
 
 
 
 
-
-
-
-
-    /**
-     * Gets the next available notification ID
-     * @param callback
-     *      Callback to call when the operation is complete
-     *      */
-    public static void getNotificationId(NotificationIDCallback callback) {
-        notificationRef.get()
-                .addOnSuccessListener(querySnapshot -> {
-                    int highestId = 0;
-                    if (!querySnapshot.isEmpty()) {
-                        for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                            int id = doc.getLong("id").intValue();
-                            if (id > highestId) highestId = id;
-                        }
-                    }
-                    // Always call callback once
-                    callback.onSuccess(highestId + 1);
-                })
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to get next notification ID")));
-    }
 
     /**
      * Gets all notifications from the database asynchronously
@@ -285,28 +303,23 @@ public class NotificationManager {
 
     public static void getAllNotifications (NotificationListCallback callback){
         notificationRef.get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Notification> notifications = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Notification notification = doc.toObject(Notification.class);
-                                notifications.add(notification);
-                            }
-                            callback.onSuccess(notifications);
-
-
-                        } else {
-                            callback.onSuccess(new ArrayList<Notification>());
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<Notification> notifications = new ArrayList<>();
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Notification notification = doc.toObject(Notification.class);
+                            notifications.add(notification);
                         }
+                        Logger.logSystem("Fetched " + notifications.size() + " notifications", null);
+                        callback.onSuccess(notifications);
+                    } else {
+                        Logger.logSystem("No notifications found in getAllNotifications", null);
+                        callback.onSuccess(new ArrayList<>());
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
-                    }
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get notifications in getAllNotifications: " + e.getMessage(), null);
+                    callback.onFailure(new DBOpFailed("Failed to get notifications"));
                 });
     }
 
@@ -319,8 +332,14 @@ public class NotificationManager {
     public static void deleteNotification (String id, DBWriteCallback callback){
         notificationRef.document(String.valueOf(id))
                 .delete()
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to delete notification")));
+                .addOnSuccessListener(aVoid -> {
+                    Logger.logSystem("Deleted notification with id=" + id, null);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to delete notification with id=" + id, null);
+                    callback.onFailure(new DBOpFailed("Failed to delete notification"));
+                });
     }
 
 
@@ -335,8 +354,14 @@ public class NotificationManager {
     public static void writeNotification (Notification notification, DBWriteCallback callback){
         notificationRef.document(String.valueOf(notification.getId()))
                 .set(notification)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write notification")));
+                .addOnSuccessListener(aVoid -> {
+                    Logger.logSystem("Notification written with id=" + notification.getId(), null);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to write notification with id=" + notification.getId(), null);
+                    callback.onFailure(new DBOpFailed("Failed to write notification"));
+                });
     }
 
     /**
@@ -349,8 +374,14 @@ public class NotificationManager {
     public static void updateNotification (Notification notification, DBWriteCallback callback){
         notificationRef.document(String.valueOf(notification.getId()))
                 .set(notification)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write notification")));
+                .addOnSuccessListener(aVoid -> {
+                    Logger.logSystem("Notification updated with id=" + notification.getId(), null);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to update notification with id=" + notification.getId(), null);
+                    callback.onFailure(new DBOpFailed("Failed to write notification"));
+                });
     }
 
     /**
@@ -363,22 +394,27 @@ public class NotificationManager {
     public static void clearNotifications(Runnable onComplete) {
         notificationRef.get()
                 .addOnSuccessListener(querySnapshot -> {
-
                     if (querySnapshot.isEmpty()) {
+                        Logger.logSystem("clearNotifications: no notifications to clear", null);
                         onComplete.run();
                         return;
                     }
-
                     WriteBatch batch = db.batch();
                     for (DocumentSnapshot doc : querySnapshot) {
                         batch.delete(doc.getReference());
                     }
-
                     batch.commit()
-                            .addOnSuccessListener(aVoid -> onComplete.run())
-                            .addOnFailureListener(e -> onComplete.run());
+                            .addOnSuccessListener(aVoid -> {
+                                Logger.logSystem("All notifications cleared successfully", null);
+                                onComplete.run();
+                            })
+                            .addOnFailureListener(e -> {
+                                Logger.logError("Failed to clear notifications in batch commit: " + e.getMessage(), null);
+                                onComplete.run();
+                            });
                 })
                 .addOnFailureListener(e -> {
+                    Logger.logError("Failed to clear notifications: " + e.getMessage(), null);
                     System.out.println("Failed to clear notifications: " + e.getMessage());
                     onComplete.run();
                 });
@@ -395,23 +431,20 @@ public class NotificationManager {
         notificationRef.whereEqualTo("id", id)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
-                            Notification notification = doc.toObject(Notification.class);
-                            callback.onSuccess(notification);
-                        } else {
-                            callback.onFailure(new NotificationNotFound("Notification not found", String.valueOf(id)));
-                        }
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
+                        Notification notification = doc.toObject(Notification.class);
+                        Logger.logSystem("Found notification with id " + id, null);
+                        callback.onSuccess(notification);
+                    } else {
+                        Logger.logSystem("No notification found with id " + id, null);
+                        callback.onFailure(new NotificationNotFound("Notification not found", String.valueOf(id)));
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notification"));
-                    }
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get notification with id " + id, null);
+                    callback.onFailure(new DBOpFailed("Failed to get notification"));
                 });
     }
 
@@ -433,26 +466,23 @@ public class NotificationManager {
         notificationRef.whereEqualTo("recipientId", recipientId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Notification> notifications = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Notification notification = doc.toObject(Notification.class);
-                                notifications.add(notification);
-                            }
-                            callback.onSuccess(notifications);
-                        } else {
-                            callback.onSuccess(new ArrayList<Notification>());
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<Notification> notifications = new ArrayList<>();
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Notification notification = doc.toObject(Notification.class);
+                            notifications.add(notification);
                         }
+                        Logger.logSystem("Found " + notifications.size() + " notifications by recipientID " + recipientId, null);
+                        callback.onSuccess(notifications);
+                    } else {
+                        Logger.logSystem("No notifications found by recipientID " + recipientId, null);
+                        callback.onSuccess(new ArrayList<>());
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
-                    }
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get notifications by recipientID " + recipientId, null);
+                    callback.onFailure(new DBOpFailed("Failed to get notifications"));
                 });
     }
 
@@ -469,27 +499,23 @@ public class NotificationManager {
         notificationRef.whereEqualTo("senderId", senderId)
                 .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Notification> notifications = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Notification notification = doc.toObject(Notification.class);
-                                notifications.add(notification);
-                            }
-                            callback.onSuccess(notifications);
-                        } else {
-                            callback.onSuccess(new ArrayList<Notification>());
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<Notification> notifications = new ArrayList<>();
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Notification notification = doc.toObject(Notification.class);
+                            notifications.add(notification);
                         }
+                        Logger.logSystem("Found " + notifications.size() + " notifications by senderID " + senderId, null);
+                        callback.onSuccess(notifications);
+                    } else {
+                        Logger.logSystem("No notifications found by senderID " + senderId, null);
+                        callback.onSuccess(new ArrayList<>());
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
-
-                    }
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get notifications by senderID " + senderId , null);
+                    callback.onFailure(new DBOpFailed("Failed to get notifications"));
                 });
     }
 
@@ -505,23 +531,20 @@ public class NotificationManager {
         notificationRef.whereEqualTo("id", id )
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
-                            Invitation invitation = doc.toObject(Invitation.class);
-                            callback.onSuccess(invitation);
-                        } else {
-                            callback.onFailure(new NotificationNotFound("Notification not found", String.valueOf(id)));
-                        }
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        DocumentSnapshot doc = queryDocumentSnapshots.getDocuments().get(0);
+                        Invitation invitation = doc.toObject(Invitation.class);
+                        Logger.logSystem("Found invitation with id " + id, null);
+                        callback.onSuccess(invitation);
+                    } else {
+                        Logger.logSystem("No invitation found with id " + id, null);
+                        callback.onFailure(new NotificationNotFound("Notification not found", String.valueOf(id)));
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notification"));
-                    }
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get invitation with id " + id, null);
+                    callback.onFailure(new DBOpFailed("Failed to get notification"));
                 });
     }
 
@@ -536,33 +559,44 @@ public class NotificationManager {
         notificationRef.whereEqualTo("recipientId", recipientId)
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Notification> notifications = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Invitation invitation = doc.toObject(Invitation.class);
-                                notifications.add(invitation);
-                            }
-                            callback.onSuccess(notifications);
-                        } else {
-                            callback.onSuccess(new ArrayList<Notification>());
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<Notification> notifications = new ArrayList<>();
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Invitation invitation = doc.toObject(Invitation.class);
+                            notifications.add(invitation);
                         }
+                        Logger.logSystem("Found " + notifications.size() + " invitations by recipient " + recipientId, null);
+                        callback.onSuccess(notifications);
+                    } else {
+                        Logger.logSystem("No invitations found by recipient " + recipientId, null);
+                        callback.onSuccess(new ArrayList<>());
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
-                    }
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get invitations by recipientId " + recipientId, null);
+                    callback.onFailure(new DBOpFailed("Failed to get notifications by recipient"));
                 });
     }
+
+    /**
+     * Updates a notification in the database
+     * @param invitation
+     *      Notification to update in the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void updateInvitation(Invitation invitation, DBWriteCallback callback) {
         notificationRef.document(String.valueOf(invitation.getId()))
                 .set(invitation)
-                .addOnSuccessListener(aVoid -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onFailure(new DBOpFailed("Failed to write invitation")));
+                .addOnSuccessListener(aVoid -> {
+                    Logger.logSystem("Invitation updated with id=" + invitation.getId(), null);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to update invitation with id=" + invitation.getId(), null);
+                    callback.onFailure(new DBOpFailed("Failed to write invitation to database"));
+                });
     }
 
 
@@ -578,26 +612,24 @@ public class NotificationManager {
         notificationRef.whereEqualTo("senderId", senderId)
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Notification> notifications = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Invitation invitation = doc.toObject(Invitation.class);
-                                notifications.add(invitation);
-                            }
-                            callback.onSuccess(notifications);
-                        } else {
-                            callback.onSuccess(new ArrayList<Notification>());
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<Notification> notifications = new ArrayList<>();
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Invitation invitation = doc.toObject(Invitation.class);
+                            notifications.add(invitation);
                         }
+                        Logger.logSystem("Found " + notifications.size() + " invitations", null);
+                        callback.onSuccess(notifications);
+                    } else {
+                        Logger.logSystem("No invitations found", null);
+                        callback.onSuccess(new ArrayList<>());
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
-                    }
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get notifications", null);
+                    callback.onFailure(new DBOpFailed("Failed to get notifications"));
+
                 });
     }
 
@@ -612,41 +644,47 @@ public class NotificationManager {
         notificationRef.whereEqualTo("eventId", eventId)
                 .whereEqualTo("type", NotificationType.INVITATION)
                 .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<Notification> notifications = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                Invitation invitation = doc.toObject(Invitation.class);
-                                notifications.add(invitation);
-                            }
-                            callback.onSuccess(notifications);
-                        } else {
-                            callback.onSuccess(new ArrayList<Notification>());
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<Notification> notifications = new ArrayList<>();
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Invitation invitation = doc.toObject(Invitation.class);
+                            notifications.add(invitation);
                         }
+                        Logger.logSystem("Found " + notifications.size() + " invitations", null);
+                        callback.onSuccess(notifications);
+                    } else {
+                        Logger.logSystem("No invitations found", null);
+                        callback.onSuccess(new ArrayList<>());
                     }
                 })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get notifications"));
-                    }
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get notifications", null);
+                    callback.onFailure(new DBOpFailed("Failed to get notifications"));
                 });
 
     }
 
+    /**
+     * Accepts an invitation to an event
+     * @param invitation
+     *      Invitation to accept
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void acceptInvitation(Invitation invitation, DBWriteCallback callback) {
 
         // Mark accepted immediately
         invitation.setAccepted(true);
         invitation.setDeclined(false);
 
+        Logger.logInvAccepted(invitation.getEventId(), invitation.getRecipientId(), null);
+
+
         // 1. Get the event
         EventController.getEvent(invitation.getEventId(), new EventCallback() {
             @Override
             public void onSuccess(Event event) {
-
                 // 2. Get the entrant
                 EntrantController.getEntrant(invitation.getRecipientId(), new EntrantCallback() {
                     @Override
@@ -656,21 +694,23 @@ public class NotificationManager {
                         EventController.removeEntrantFromWaitlist(event, entrant, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
-
+                                Logger.logWaitlistModified("Removed from waitlist", event.getId(), entrant.getId(), null);
                                 // 4. Add to event
                                 EventController.addEntrantToEvent(event, entrant, new DBWriteCallback() {
                                     @Override
                                     public void onSuccess() {
-
+                                        Logger.logEntrantJoin(entrant.getId(), event.getId(), null);
                                         // 5. Update invitation in DB
                                         updateInvitation(invitation, new DBWriteCallback() {
                                             @Override
                                             public void onSuccess() {
+                                                Logger.logSystem("Invitation accept pipeline completed successfully", null);
                                                 callback.onSuccess();
                                             }
 
                                             @Override
                                             public void onFailure(Exception e) {
+                                                Logger.logError("Invitation accept pipeline failed", null);
                                                 callback.onFailure(e);
                                             }
                                         });
@@ -678,6 +718,7 @@ public class NotificationManager {
 
                                     @Override
                                     public void onFailure(Exception e) {
+                                        Logger.logError("Failed to add entrant to event during invitation accept pipeline", null);
                                         callback.onFailure(e);
                                     }
                                 });
@@ -685,6 +726,7 @@ public class NotificationManager {
 
                             @Override
                             public void onFailure(Exception e) {
+                                Logger.logError("Failed to remove entrant from waitlist during invitation accept pipeline", null);
                                 callback.onFailure(e);
                             }
                         });
@@ -692,6 +734,7 @@ public class NotificationManager {
 
                     @Override
                     public void onFailure(Exception e) {
+                        Logger.logError("Failed to get entrant during invitation accept pipeline", null);
                         callback.onFailure(e);
                     }
                 });
@@ -699,14 +742,26 @@ public class NotificationManager {
 
             @Override
             public void onFailure(Exception e) {
+                Logger.logError("Failed to get event during invitation accept pipeline", null);
                 callback.onFailure(e);
             }
         });
     }
+
+    /**
+     * Declines an invitation to an event
+     * @param invitation
+     *      Invitation to decline
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void declineInvitation(Invitation invitation, DBWriteCallback callback) {
 
         invitation.setDeclined(true);
         invitation.setAccepted(false);
+
+        Logger.logInvDeclined(invitation.getEventId(), invitation.getRecipientId(), null);
+
 
         // 1. Get event
         EventController.getEvent(invitation.getEventId(), new EventCallback() {
@@ -722,16 +777,19 @@ public class NotificationManager {
                         EventController.removeEntrantFromWaitlist(event, entrant, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
+                                Logger.logWaitlistModified("Removed from waitlist", event.getId(), entrant.getId(), null);
 
                                 // 4. Update invitation in DB
                                 updateInvitation(invitation, new DBWriteCallback() {
                                     @Override
                                     public void onSuccess() {
+                                        Logger.logSystem("Invitation decline pipeline completed successfully", null);
                                         callback.onSuccess();
                                     }
 
                                     @Override
                                     public void onFailure(Exception e) {
+                                        Logger.logError("Invitation decline pipeline failed", null);
                                         callback.onFailure(e);
                                     }
                                 });
@@ -739,6 +797,7 @@ public class NotificationManager {
 
                             @Override
                             public void onFailure(Exception e) {
+                                Logger.logError("Failed to remove entrant from waitlist during invitation decline pipeline", null);
                                 callback.onFailure(e);
                             }
                         });
@@ -746,6 +805,7 @@ public class NotificationManager {
 
                     @Override
                     public void onFailure(Exception e) {
+                        Logger.logError("Failed to get entrant during invitation decline pipeline", null);
                         callback.onFailure(e);
                     }
                 });
@@ -753,6 +813,7 @@ public class NotificationManager {
 
             @Override
             public void onFailure(Exception e) {
+                Logger.logError("Failed to get event during invitation decline pipeline", null);
                 callback.onFailure(e);
             }
         });

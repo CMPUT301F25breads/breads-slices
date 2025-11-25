@@ -7,8 +7,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -16,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.bumptech.glide.Glide;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.Logger;
 import com.example.slices.exceptions.DuplicateEntry;
 import com.example.slices.exceptions.WaitlistFull;
 import com.example.slices.interfaces.EventCallback;
@@ -26,6 +30,8 @@ import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.databinding.EventDetailsFragmentBinding;
 import com.example.slices.models.EventInfo;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 
 /** EventDetailsFragment
  * A fragment for displaying the details of a tapped-on event in the Browse window
@@ -38,6 +44,16 @@ public class EventDetailsFragment extends Fragment {
 
     private boolean isWaitlisted = false;
     private Event e;
+    private FusedLocationProviderClient fusedClient;
+
+    private final ActivityResultLauncher<String> requestLocationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    onLocationPermissionGranted();
+                } else {
+                    onLocationPermissionDenied();
+                }
+            });
 
     /**
      * updateWaitlistButton
@@ -75,6 +91,7 @@ public class EventDetailsFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         binding = EventDetailsFragmentBinding.inflate(inflater, container, false);
+        fusedClient = LocationServices.getFusedLocationProviderClient(requireActivity());
         return binding.getRoot();
     }
 
@@ -175,36 +192,40 @@ public class EventDetailsFragment extends Fragment {
                 isWaitlisted = true;
                 vm.addWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
-                try {
-                    EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {
-                            // success means do nothing else
-                        }
+                if (e.getEventInfo().getEntrantLoc()) {
+                    // check for location permission before joining waitlist
+                    if (ActivityCompat.checkSelfPermission(requireContext(),
+                            Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        requestLocationPermission();
+                    } else {
+                        getUserLocationAndJoin();
+                    }
+                }
+                else {
+                    try {
+                        EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                Logger.logEntrantJoin(vm.getUser().getId(), e.getId(), null);
+                                // success means do nothing
+                            }
 
-                        @Override
-                        public void onFailure(Exception e1) {
-                            isWaitlisted = false;
-                            vm.removeWaitlistedId(eventIdStr);
-                            updateWaitlistButton(isWaitlisted);
-                            Toast.makeText(requireContext(),
-                                    "Failed to join waitlist. Please try again.",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-                catch (DuplicateEntry e1) {
-                    Toast.makeText(requireContext(),
-                            "You are already on the waitlist for this event.",
-                            Toast.LENGTH_SHORT).show();
-                }
-                catch (WaitlistFull e1) {
-                    Toast.makeText(requireContext(),
-                            "Waitlist is full for this event.",
-                            Toast.LENGTH_SHORT).show();
+                            @Override
+                            public void onFailure(Exception e1) {
+                                isWaitlisted = false;
+                                vm.removeWaitlistedId(String.valueOf(e.getId()));
+                                updateWaitlistButton(isWaitlisted);
+                                Toast.makeText(requireContext(), "Failed to join waitlist. Please try again.", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                    catch (Exception ex) {
+                        Toast.makeText(requireContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 }
 
             }
+
         });
         EventInfo eventInfo = e.getEventInfo();
 
@@ -249,6 +270,71 @@ public class EventDetailsFragment extends Fragment {
                     })
                     .show();
         }
+
+    /**
+     * Requests location permission from the user
+     */
+    private void requestLocationPermission() {
+        requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+    }
+
+    /**
+     * Called when the location permission is granted
+     */
+    private void onLocationPermissionGranted() {
+        getUserLocationAndJoin();
+    }
+
+    /**
+     * Called when the location permission is denied
+     */
+    private void onLocationPermissionDenied() {
+        Toast.makeText(requireContext(),
+                "Location permission is required to join this waitlist.",
+                Toast.LENGTH_LONG).show();
+    }
+
+    /**
+     * Gets the user's location and joins the waitlist
+     */
+    private void getUserLocationAndJoin() {
+        if (ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            requestLocationPermission();
+            return;
+        }
+
+        fusedClient.getLastLocation().addOnSuccessListener(location -> {
+            if (location == null) {
+                Toast.makeText(requireContext(),
+                        "Unable to get your current location.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // Pass location to the EventController
+            try {
+                EventController.addEntrantToWaitlist(e, vm.getUser(), location, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                Logger.logEntrantJoin(vm.getUser().getId(), e.getId(), null);
+                                // success means do nothing
+                            }
+                            @Override
+                            public void onFailure(Exception e1) {
+                                isWaitlisted = false;
+                                vm.removeWaitlistedId(String.valueOf(e.getId()));
+                                updateWaitlistButton(isWaitlisted);
+                                Toast.makeText(requireContext(), "Failed to join waitlist. Please try again.", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                );
+            }
+            catch (Exception ex) {
+                Toast.makeText(requireContext(), ex.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+
+        });
+    }
 
 }
 
