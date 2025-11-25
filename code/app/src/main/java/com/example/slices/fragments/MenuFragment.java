@@ -157,7 +157,7 @@ public class  MenuFragment extends Fragment {
 
 
 
-        EntrantController.updateEntrant(newUser, new DBWriteCallback() {
+        EntrantController.updateEntrantAndEvents(newUser, new DBWriteCallback() {
             @Override public void onSuccess() {
                 vm.setUser(newUser);
                 name = newName;
