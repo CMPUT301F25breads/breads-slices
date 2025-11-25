@@ -1001,15 +1001,16 @@ public class EventController {
                                 continue;
 
                             boolean matchesName = true;
+                            if (search.getName() != null && !search.getName().trim().isEmpty()) {
+                                String filter = search.getName().toLowerCase();
+                                String eventName = event.getEventInfo().getName().toLowerCase();
+                                matchesName = eventName.contains(filter);
+                            }
 
-                                boolean skipEnrolled = false;
-                                if(search.isEnrolled()) {
-                                    boolean inEntrants = event.getEntrants() != null && event.getEntrants().contains(search.getId());
-                                    boolean inWaitlist = event.getWaitlist() != null && event.getWaitlist().getEntrants().contains(search.getId());
-                                }
-
-                                if (matchesName)
-                                    events.add(event);
+                            boolean skipEnrolled = false;
+                            if(search.isEnrolled()) {
+                                boolean inEntrants = event.getEntrants() != null && event.getEntrantIds().contains(search.getId());
+                                boolean inWaitlist = event.getWaitlist() != null && event.getWaitlist().getEntrantIds().contains(search.getId());
                             }
 
                             if (matchesName)
