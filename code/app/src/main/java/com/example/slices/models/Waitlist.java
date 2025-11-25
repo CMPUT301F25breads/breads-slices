@@ -18,6 +18,8 @@ public class Waitlist {
      */
     private List<Entrant> entrants;
 
+    private List<Integer> entrantIds;
+
     /**
      * Maximum capacity of the waitlist
      */
@@ -36,6 +38,7 @@ public class Waitlist {
         this.entrants = new ArrayList<>();
         this.currentEntrants = 0;
         this.maxCapacity = 32768;
+        this.entrantIds = new ArrayList<>();
     }
 
     /**
@@ -47,17 +50,18 @@ public class Waitlist {
         this.entrants = new ArrayList<>();
         this.maxCapacity = maxCapacity;
         this.currentEntrants = 0;
+        this.entrantIds = new ArrayList<>();
     }
 
     /**
      * Adds an entrant to the waitlist
      * @param entrant
      *      Entrant to add
-     * @throws IllegalStateException
-     *      If the waitlist is already full
      */
     public void addEntrant(Entrant entrant) {
         entrants.add(entrant);
+        entrantIds.add((Integer)entrant.getId());
+        currentEntrants++;
     }
 
     /**
@@ -85,6 +89,7 @@ public class Waitlist {
      */
     public void removeEntrant(Entrant entrant) {
         entrants.remove(entrant);
+        entrantIds.remove((Integer)entrant.getId());
         currentEntrants--;
     }
 
@@ -160,6 +165,14 @@ public class Waitlist {
             }
         }
         return null;
+    }
+
+    public List<Integer> getEntrantIds() {
+        return entrantIds;
+    }
+
+    public void setEntrantIds(List<Integer> entrantIds) {
+        this.entrantIds = entrantIds;
     }
 
     /**

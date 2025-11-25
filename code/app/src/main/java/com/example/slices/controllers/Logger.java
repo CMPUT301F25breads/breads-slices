@@ -1,29 +1,27 @@
 package com.example.slices.controllers;
 
-import androidx.annotation.NonNull;
 
-import com.example.slices.exceptions.DBOpFailed;
+import android.util.Log;
+
 import com.example.slices.interfaces.DBWriteCallback;
-import com.example.slices.interfaces.LogIDCallback;
+
 import com.example.slices.interfaces.LogListCallback;
-import com.example.slices.models.Invitation;
-import com.example.slices.models.InvitationLogEntry;
+
 import com.example.slices.models.LogEntry;
 import com.example.slices.models.LogType;
-import com.example.slices.models.Notification;
-import com.example.slices.models.NotificationLogEntry;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
+
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Singleton class to log notifications.
@@ -44,6 +42,14 @@ public class Logger {
     private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private static CollectionReference logRef = db.collection("logs");
 
+    private enum Mode {
+        LOCAL,
+        DATABASE
+    }
+
+    private static Mode mode = Mode.LOCAL;
+
+
 
 
     /**
@@ -51,18 +57,6 @@ public class Logger {
      */
     private Logger() {
         // Private constructor to prevent instantiation from outside the class
-    }
-
-    /**
-     * Returns the singleton instance of Logger
-     * @return
-     *      Logger instance
-     */
-    public static Logger getInstance() {
-        if (instance == null) {
-            instance = new Logger();
-        }
-        return instance;
     }
 
     public static void setTesting(boolean testing) {
@@ -73,77 +67,138 @@ public class Logger {
         }
     }
 
-    /**
-     * Logs a notification.
-     * Creates a NotificationLogEntry object, writes it to the database, and logs it.
-     * @param notification
-     *      Notification to log
-     */
-    public static void log(Notification notification, DBWriteCallback callback) {
-        //Create Firestore doc with auto-generated ID.
+    public static void setMode(boolean local){
+        if (local){
+            mode = Mode.LOCAL;
+        } else {
+            mode = Mode.DATABASE;
+        }
+    }
+
+    public static void logAction(LogType type, String description, Map<String, Object> data, DBWriteCallback callback) {
+        if (mode == Mode.LOCAL) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[").append(type).append("] ").append(description);
+
+            if (data != null && !data.isEmpty()) {
+                sb.append(" | data=");
+                sb.append(data.toString());
+            }
+            Log.d("Logger", sb.toString());
+            if (callback != null) callback.onSuccess();
+            return;
+        }
         DocumentReference ref = logRef.document();
         String id = ref.getId();
-
-        //Create Log Entry
-        LogEntry entry = new NotificationLogEntry(notification, id);
-
+        LogEntry entry = new LogEntry(id, Timestamp.now(), description, type, data);
         ref.set(entry)
                 .addOnSuccessListener(aVoid -> {
-                    System.out.println("Logged notification successfully");
                     if (callback != null) callback.onSuccess();
                 })
                 .addOnFailureListener(e -> {
-                    System.out.println("Failed to log notification: " + e.getMessage());
                     if (callback != null) callback.onFailure(e);
                 });
     }
 
-    public static void log(Invitation inv, DBWriteCallback callback) {
-        //Create Firestore doc with auto-generated ID.
-        DocumentReference ref = logRef.document();
-        String id = ref.getId();
+    public static void logEntrantJoin(int entrantId, int eventId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("entrantId", entrantId, "eventId", eventId);
+        logAction(LogType.ENTRANT_JOINED, "Entrant joined event", data, callback);
+    }
 
-        //Create Log Entry
-        LogEntry entry = new InvitationLogEntry(inv, id);
+    public static void logEntrantLeft(int entrantId, int eventId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("entrantId", entrantId, "eventId", eventId);
+        logAction(LogType.ENTRANT_LEFT, "Entrant left event", data, callback);
+    }
 
-        ref.set(entry)
-                .addOnSuccessListener(aVoid -> {
-                    System.out.println("Logged invitation successfully");
-                    if (callback != null) callback.onSuccess();
-                })
-                .addOnFailureListener(e -> {
-                    System.out.println("Failed to log invitation: " + e.getMessage());
-                    if (callback != null) callback.onFailure(e);
-                });
+    public static void logEntrantUpdate(int entrantId, int eventId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("entrantId", entrantId, "eventId", eventId);
+        logAction(LogType.ENTRANT_UPDATED, "Entrant updated", data, callback);
+    }
+
+    public static void logEventUpdate(int eventId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("eventId", eventId);
+        logAction(LogType.EVENT_UPDATED, "Event updated", data, callback);
+    }
+
+    public static void logEventDelete(int eventId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("eventId", eventId);
+        logAction(LogType.EVENT_DELETED, "Event deleted", data, callback);
+    }
+
+    public static void logEventCreate(int eventId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("eventId", eventId);
+        logAction(LogType.EVENT_CREATED, "Event created", data, callback);
+    }
+
+    public static void logLotteryRun(int eventId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("eventId", eventId);
+        logAction(LogType.LOTTERY_RUN, "Lottery run", data, callback);
+    }
+
+    public static void logInvSent(int eventId, int entrantId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("eventId", eventId, "entrantId", entrantId);
+        logAction(LogType.INVITATION_SENT, "Invitation sent from " + eventId + " to " + entrantId, data, callback);
+    }
+
+    public static void logInvAccepted(int eventId, int entrantId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("eventId", eventId, "entrantId", entrantId);
+        logAction(LogType.INVITATION_ACCEPTED, "Invitation accepted", data, callback);
+    }
+
+    public static void logInvDeclined(int eventId, int entrantId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("eventId", eventId, "entrantId", entrantId);
+        logAction(LogType.INVITATION_DECLINED, "Invitation declined", data, callback);
+    }
+
+    public static void logSystem(String message, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("message", message);
+        logAction(LogType.SYSTEM, "System message", data, callback);
+    }
+
+    public static void logError(String message, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("message", message);
+        logAction(LogType.ERROR, "Error message", data, callback);
+    }
+
+    public static void logNotification(String message, int recipientId, int senderId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("message", message, "recipientId", recipientId, "senderId", senderId);
+        logAction(LogType.NOTIFICATION_SENT, "Notification", data, callback);
+    }
+
+    public static void logWaitlistModified(String message, int eventId, int entrantId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("message", message, "eventId", eventId, "entrantId", entrantId);
+        logAction(LogType.WAITLIST_MODIFIED, "Waitlist modified", data, callback);
     }
 
 
-
-
-    /**
-     * Probably not particularly useful
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
-
-    public static void getAllNotificationLogs(LogListCallback callback) {
-        logRef.whereEqualTo("type", LogType.NOTIFICATION)
+    public static void getLogsOfType(LogType type, LogListCallback cb) {
+        logRef.whereEqualTo("type", type.name())   // safer: query by string name
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        List<LogEntry> logs = new ArrayList<>();
-                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                            LogEntry log = doc.toObject(NotificationLogEntry.class);
-                            logs.add(log);
+                .addOnSuccessListener(q -> {
+                    List<LogEntry> list = new ArrayList<>();
+                    for (DocumentSnapshot d : q.getDocuments()) {
+                        LogEntry entry = d.toObject(LogEntry.class);
+                        if (entry != null) {
+                            list.add(entry);
                         }
-                        callback.onSuccess(logs);
-                    } else {
-                        callback.onSuccess(new ArrayList<LogEntry>());
                     }
+                    cb.onSuccess(list);
                 })
-                .addOnFailureListener(e -> {
-                    callback.onFailure(new DBOpFailed("Failed to get notification logs"));
-                });
+                .addOnFailureListener(cb::onFailure);
+    }
+
+    public static void getLogsForEvent(int eventId, LogListCallback cb) {
+        logRef.whereEqualTo("eventId", eventId)
+                .orderBy("timestamp")
+                .get()
+                .addOnSuccessListener(q -> {
+                    List<LogEntry> list = new ArrayList<>();
+                    for (DocumentSnapshot d : q.getDocuments()) {
+                        list.add(d.toObject(LogEntry.class));
+                    }
+                    cb.onSuccess(list);
+                })
+                .addOnFailureListener(cb::onFailure);
     }
 
     /**
@@ -165,41 +220,6 @@ public class Logger {
                 });
     }
 
-
-
-
-    /**
-     * Gets all invitation logs from the database asynchronously
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
-
-    public static void getAllInvitationLogs(LogListCallback callback) {
-        logRef.whereEqualTo("type", LogType.INVITATION)
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        if (!queryDocumentSnapshots.isEmpty()) {
-                            List<LogEntry> logs = new ArrayList<>();
-                            for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                                LogEntry log = doc.toObject(InvitationLogEntry.class);
-                                logs.add(log);
-                            }
-                            callback.onSuccess(logs);
-                        } else {
-                            callback.onSuccess(new ArrayList<LogEntry>());
-                        }
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to get invitation logs"));
-                    }
-
-                });
-
-    }
 
     public static void clearLogs(Runnable onComplete) {
         logRef.get()

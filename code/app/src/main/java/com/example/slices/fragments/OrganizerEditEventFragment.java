@@ -404,12 +404,9 @@ public class OrganizerEditEventFragment extends Fragment {
             // I added logic for all fields but I dont know what the UI looks like
             // -Ryan
             // ------------------------------------------
-
             // Update the EventInfo object based on which field was edited
             if (title.equals("Edit Description")) {
                 currentEventInfo.setDescription(newValue);
-            } else if (title.equals("Edit Location")) {
-                currentEventInfo.setLocation(newValue);
             } else if (title.equals("Edit Guidelines")) {
                 currentEventInfo.setGuidelines(newValue);
             } else if (title.equals("Edit Image")) {
