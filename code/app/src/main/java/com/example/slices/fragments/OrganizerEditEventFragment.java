@@ -261,7 +261,7 @@ public class OrganizerEditEventFragment extends Fragment {
                 textEventTitle.setText(eventInfo.getName());
                 textDescription.setText(eventInfo.getDescription());
                 textGuidelines.setText("event guidelines");
-                textLocation.setText(eventInfo.getLocation());
+                //textLocation.setText(eventInfo.getLocation());
                 editMaxParticipants.setText(String.valueOf(eventInfo.getMaxEntrants()));
 
                 // Display waiting list capacity (show empty if unlimited/default)
@@ -404,12 +404,9 @@ public class OrganizerEditEventFragment extends Fragment {
             // I added logic for all fields but I dont know what the UI looks like
             // -Ryan
             // ------------------------------------------
-
             // Update the EventInfo object based on which field was edited
             if (title.equals("Edit Description")) {
                 currentEventInfo.setDescription(newValue);
-            } else if (title.equals("Edit Location")) {
-                currentEventInfo.setLocation(newValue);
             } else if (title.equals("Edit Guidelines")) {
                 currentEventInfo.setGuidelines(newValue);
             } else if (title.equals("Edit Image")) {

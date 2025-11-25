@@ -2,12 +2,14 @@ package com.example.slices.models;
 
 import com.google.firebase.Timestamp;
 
+import java.util.Map;
+
 /**
  * Class representing a log entry
  * @author Ryan Haubrich
  * @version 1.0
  */
-public abstract class LogEntry {
+public class LogEntry {
     /**
      * Message content of the log entry
      */
@@ -27,6 +29,39 @@ public abstract class LogEntry {
      * Type of the log entry
      */
     protected LogType type;
+
+    protected int eventId;
+
+    protected int entrantId;
+
+    Map<String, Object> data;
+
+    /**
+     * Default constructor for LogEntry
+     */
+    public LogEntry() {
+    }
+
+    public LogEntry(String message, Timestamp timestamp, String logId, LogType type, Map<String, Object> data) {
+        this.message = message;
+        this.timestamp = timestamp;
+        this.logId = logId;
+        this.type = type;
+        this.data = data;
+    }
+
+    public LogEntry(String message, Timestamp timestamp, String logId, LogType type, int eventId, int entrantId, Map<String, Object> data) {
+        this.message = message;
+        this.timestamp = timestamp;
+        this.logId = logId;
+        this.type = type;
+        this.eventId = eventId;
+        this.entrantId = entrantId;
+        this.data = data;
+    }
+
+
+
 
     /**
      * Getter for the log ID
@@ -99,4 +134,30 @@ public abstract class LogEntry {
     public void setType(LogType type) {
         this.type = type;
     }
+
+    public int getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(int eventId) {
+        this.eventId = eventId;
+    }
+
+    public int getEntrantId() {
+        return entrantId;
+    }
+
+    public void setEntrantId(int entrantId) {
+        this.entrantId = entrantId;
+    }
+
+    public Map<String, Object> getData() {
+        return data;
+    }
+
+    public void setData(Map<String, Object> data) {
+        this.data = data;
+    }
+
+
 }

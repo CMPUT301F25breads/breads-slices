@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.navigation.ui)
     implementation(libs.navigation.fragment)
     implementation(libs.firebase.auth)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("org.mockito:mockito-core:5.7.0")
