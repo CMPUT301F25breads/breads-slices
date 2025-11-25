@@ -334,8 +334,8 @@ public class EventController {
      */
     public static void getAllEventsForEntrant(Entrant entrant, EntrantEventCallback callback) {
 
-        Query eventsQuery = eventRef.whereArrayContains("entrants", entrant);
-        Query waitlistQuery = eventRef.whereArrayContains("waitlist.entrants", entrant);
+        Query eventsQuery = eventRef.whereArrayContains("entrantIds", entrant.getId());
+        Query waitlistQuery = eventRef.whereArrayContains("waitlist.entrantIds", entrant.getId());
 
         eventsQuery.get().addOnSuccessListener(queryDocumentSnapshots -> {
             List<Event> events = new ArrayList<>();
