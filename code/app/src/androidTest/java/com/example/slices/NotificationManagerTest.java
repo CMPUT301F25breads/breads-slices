@@ -14,7 +14,6 @@ import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.NotificationCallback;
-import com.example.slices.interfaces.NotificationIDCallback;
 import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
@@ -109,10 +108,8 @@ public class NotificationManagerTest {
      *      Entrant name
      * @return
      *      Entrant created
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private Entrant createEntrant(String name) throws InterruptedException {
+    private Entrant createEntrant(String name) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Entrant> ref = new AtomicReference<>();
 
@@ -139,10 +136,8 @@ public class NotificationManagerTest {
      * Create a valid event (uses EventController helper for future times)
      * @return
      *      Event
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private Event createValidEvent() throws InterruptedException {
+    private Event createValidEvent() {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Event> ref = new AtomicReference<>();
 
@@ -169,17 +164,14 @@ public class NotificationManagerTest {
         return ref.get();
     }
 
-
     /**
      * Helper to get all notifications for a recipient
      * @param recipientId
      *      Recipient ID
      * @return
      *      List of notifications
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private List<Notification> getNotificationsForRecipient(int recipientId) throws InterruptedException {
+    private List<Notification> getNotificationsForRecipient(int recipientId) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<List<Notification>> ref = new AtomicReference<>(new ArrayList<>());
 
@@ -206,10 +198,8 @@ public class NotificationManagerTest {
      *      Sender ID
      * @return
      *      List of notifications
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private List<Notification> getNotificationsForSender(int senderId) throws InterruptedException {
+    private List<Notification> getNotificationsForSender(int senderId) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<List<Notification>> ref = new AtomicReference<>(new ArrayList<>());
 
@@ -219,7 +209,6 @@ public class NotificationManagerTest {
                 ref.set(notifications);
                 latch.countDown();
             }
-
             @Override
             public void onFailure(Exception e) {
                 latch.countDown();
@@ -236,10 +225,8 @@ public class NotificationManagerTest {
      *      Recipient ID
      * @return
      *      List of invitations
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private List<Invitation> getInvitationsForRecipient(int recipientId) throws InterruptedException {
+    private List<Invitation> getInvitationsForRecipient(int recipientId)  {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<List<Invitation>> ref = new AtomicReference<>(new ArrayList<>());
 
@@ -270,10 +257,8 @@ public class NotificationManagerTest {
      *      Event ID
      * @return
      *      List of invitations
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private List<Invitation> getInvitationsForEvent(int eventId) throws InterruptedException {
+    private List<Invitation> getInvitationsForEvent(int eventId) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<List<Invitation>> ref = new AtomicReference<>(new ArrayList<>());
 
@@ -302,10 +287,8 @@ public class NotificationManagerTest {
      *      Sender ID
      * @return
      *      List of invitations
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private List<Invitation> getInvitationsForSender(int senderId) throws InterruptedException {
+    private List<Invitation> getInvitationsForSender(int senderId) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<List<Invitation>> ref = new AtomicReference<>(new ArrayList<>());
         NotificationManager.getInvitationBySenderId(senderId, new NotificationListCallback() {
@@ -329,27 +312,14 @@ public class NotificationManagerTest {
     }
 
 
-    /**
-     * Tests the singleton instance
-     * Pass if the singleton is not null
-     * Fail otherwise
-     */
-    @Test
-    public void testGetInstanceNotNull() {
-        NotificationManager mgr = NotificationManager.getInstance();
-        assertNotNull(mgr);
-    }
-
 
     /**
      * Tests the sendNotification method
      * Pass if the notification is written to the database
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testSendNotificationCreatesNotification() throws InterruptedException {
+    public void testSendNotification()  {
         clearAll();
         Entrant recipient = createEntrant("Rec1");
         Entrant sender = createEntrant("Sender1");
@@ -389,14 +359,12 @@ public class NotificationManagerTest {
      * Tests the sendNotifications method on empty list
      * Pass if nothing is written to the database
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testSendNotificationsEmptyList() throws InterruptedException {
+    public void testSendNotificationsEmptyList() {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
-        NotificationManager.sendNotifications("T", "B", new ArrayList<>(), 123, new DBWriteCallback() {
+        NotificationManager.sendBulkNotification("T", "B", new ArrayList<>(), 123, new DBWriteCallback() {
             @Override
             public void onSuccess() {
                 latch.countDown();
@@ -406,7 +374,6 @@ public class NotificationManagerTest {
                 fail("Should not fail when recipients list is empty");
             }
         });
-
         await(latch);
         CountDownLatch check = new CountDownLatch(1);
         NotificationManager.getAllNotifications(new NotificationListCallback() {
@@ -427,11 +394,9 @@ public class NotificationManagerTest {
      * Tests the sendNotifications method on multiple recipients
      * Pass if all notifications are written to the database
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testSendNotificationsMultipleRecipients() throws InterruptedException {
+    public void testSendNotificationsMultipleRecipients() {
         clearAll();
 
         Entrant r1 = createEntrant("R1");
@@ -441,9 +406,13 @@ public class NotificationManagerTest {
         List<Entrant> recips = new ArrayList<>();
         recips.add(r1);
         recips.add(r2);
-
+        //Convert to ids
+        List<Integer> ids = new ArrayList<>();
+        for (Entrant e : recips) {
+            ids.add(e.getId());
+        }
         CountDownLatch latch = new CountDownLatch(1);
-        NotificationManager.sendNotifications("Multi", "Body", recips, sender.getId(), new DBWriteCallback() {
+        NotificationManager.sendBulkNotification("Multi", "Body", ids, sender.getId(), new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
                         NotificationManager.getAllNotifications(new NotificationListCallback() {
@@ -477,46 +446,16 @@ public class NotificationManagerTest {
     }
 
 
-    /**
-     * Tests the getNotificationId method on empty database
-     * Pass if the ID is 1
-     * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
-     */
-    @Test
-    public void testGetNotificationId() throws InterruptedException {
-        clearAll();
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Integer> ref = new AtomicReference<>(0);
-        //Get the id
-        NotificationManager.getNotificationId(new NotificationIDCallback() {
-            @Override
-            public void onSuccess(int id) {
-                ref.set(id);
-                latch.countDown();
-            }
-            @Override
-            public void onFailure(Exception e) {
-                fail("getNotificationId failed: " + e.getMessage());
-            }
-        });
-        await(latch);
-        assertEquals(1, (int)ref.get());
-    }
-
 
 
     /**
      * Tests the getAllNotifications method on empty database
      * Pass if the list is empty
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
 
     @Test
-    public void testGetAllNotificationsEmpty() throws InterruptedException {
+    public void testGetAllNotificationsEmpty() {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         NotificationManager.getAllNotifications(new NotificationListCallback() {
@@ -537,11 +476,9 @@ public class NotificationManagerTest {
      * Tests the getAllNotifications method on non-empty database
      * Pass if the list is not empty
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetAllNotificationsMultiple() throws InterruptedException {
+    public void testGetAllNotificationsMultiple() {
         clearAll();
         Entrant r = createEntrant("R");
         Entrant s = createEntrant("S");
@@ -575,7 +512,6 @@ public class NotificationManagerTest {
                 assertEquals(2, notifications.size());
                 check.countDown();
             }
-
             @Override
             public void onFailure(Exception e) {
                 fail("getAllNotifications failed");
@@ -589,11 +525,9 @@ public class NotificationManagerTest {
      * Tests the writeNotification method and updateNotification method
      * Pass if the notification is written to the database
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testWriteAndUpdateNotification() throws InterruptedException {
+    public void testWriteAndUpdateNotification() {
         clearAll();
 
         Notification n = new Notification("Title", "Body", "42", 1, 2);
@@ -659,11 +593,9 @@ public class NotificationManagerTest {
      * Tests the deleteNotification method
      * Pass if the notification is removed from the database
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testDeleteNotificationRemovesFromDb() throws InterruptedException {
+    public void testDeleteNotificationRemovesFromDb() {
         clearAll();
         Notification n = new Notification("Del", "Me", "7", 1, 2);
         CountDownLatch wLatch = new CountDownLatch(1);
@@ -712,11 +644,9 @@ public class NotificationManagerTest {
      * Tests the getNotificationById method on non-existent notification
      * Pass if the notification is not found
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetNotificationByIdNotFound() throws InterruptedException {
+    public void testGetNotificationByIdNotFound() {
         clearAll();
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -739,11 +669,9 @@ public class NotificationManagerTest {
      * Tests the getNotificationsByRecipientId method
      * Pass if the list is not empty
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetNotificationsByRecipientIdMultiple() throws InterruptedException {
+    public void testGetNotificationsByRecipientIdMultiple() {
         clearAll();
 
         Entrant rec = createEntrant("RecX");
@@ -794,11 +722,9 @@ public class NotificationManagerTest {
      * Tests the getNotificationsBySenderId method
      * Pass if the list is not empty
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetNotificationsBySenderIdMultiple() throws InterruptedException {
+    public void testGetNotificationsBySenderIdMultiple() {
         clearAll();
 
         Entrant rec1 = createEntrant("RecY1");
@@ -849,12 +775,10 @@ public class NotificationManagerTest {
      * Tests the sendInvitation method
      * Pass if the invitation is written to the database
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
 
     @Test
-    public void testSendInvitationCreatesInvitation() throws InterruptedException {
+    public void testSendInvitationCreatesInvitation() {
         clearAll();
 
         Entrant rec = createEntrant("InvRec");
@@ -892,11 +816,9 @@ public class NotificationManagerTest {
      * Tests the getInvitationById method on non-existent invitation
      * Pass if the invitation is not found
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetInvitationByIdNotFound() throws InterruptedException {
+    public void testGetInvitationByIdNotFound()  {
         clearAll();
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -919,12 +841,10 @@ public class NotificationManagerTest {
      * Tests the updateInvitation method
      * Pass if the invitation is updated
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
 
     @Test
-    public void testUpdateInvitationPersistsChanges() throws InterruptedException {
+    public void testUpdateInvitationPersistsChanges() {
         clearAll();
 
         Entrant rec = createEntrant("InvUpdRec");
@@ -991,11 +911,9 @@ public class NotificationManagerTest {
      * Tests the getInvitationByRecipientId and getInvitationBySenderId and getInvitationByEventId methods
      * Pass if the list is not empty
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testGetInvitationByRecipientAndSenderAndEvent() throws InterruptedException {
+    public void testGetInvitationByRecipientAndSenderAndEvent() {
         clearAll();
 
         Entrant r1 = createEntrant("IR1");
@@ -1054,11 +972,9 @@ public class NotificationManagerTest {
      * Tests the acceptInvitation method
      * Pass if the invitation is accepted
      * Fail otherwise
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
     @Test
-    public void testAcceptInvitationMovesEntrantFromWaitlistToEvent() throws InterruptedException {
+    public void testAcceptInvitationMovesEntrantFromWaitlistToEvent() {
         clearAll();
 
         Entrant entrant = createEntrant("AccInv");
@@ -1165,11 +1081,9 @@ public class NotificationManagerTest {
      * Tests the acceptInvitation method on invitation when recipient is not on waitlist
      * Pass if the invitation is not accepted
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testAcceptInvitationFailsWhenNotOnWaitlist() throws InterruptedException {
+    public void testAcceptInvitationFailsWhenNotOnWaitlist() {
         clearAll();
 
         Entrant entrant = createEntrant("AccFail");
@@ -1218,11 +1132,10 @@ public class NotificationManagerTest {
      * Tests the declineInvitation method
      * Pass if the invitation is declined
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
+
      */
     @Test
-    public void testDeclineInvitationRemovesFromWaitlistOnly() throws InterruptedException {
+    public void testDeclineInvitationRemovesFromWaitlistOnly()  {
         clearAll();
 
         Entrant entrant = createEntrant("DecInv");
@@ -1328,11 +1241,9 @@ public class NotificationManagerTest {
      * Tests the declineInvitation method on invitation when recipient is not on waitlist
      * Pass if the invitation is not declined
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testDeclineInvitationFailsWhenNotOnWaitlist() throws InterruptedException {
+    public void testDeclineInvitationFailsWhenNotOnWaitlist() {
         clearAll();
 
         Entrant entrant = createEntrant("DecFail");

@@ -1,7 +1,9 @@
 package com.example.slices.fragments;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.Log;
@@ -11,7 +13,11 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -20,11 +26,14 @@ import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.controllers.EventController;
+import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.Event;
 
 import com.example.slices.databinding.BrowseFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
 import com.example.slices.models.SearchSettings;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.Timestamp;
 
 import java.text.ParseException;
@@ -43,6 +52,8 @@ public class BrowseFragment extends Fragment {
     private ArrayList<Event> eventList = new ArrayList<>();
     private SharedViewModel vm;
     private EntrantEventAdapter eventAdapter;
+    private FusedLocationProviderClient fusedClient;
+    private Event pendingJoinEvent;
 
     @Override
     public View onCreateView(
@@ -60,6 +71,19 @@ public class BrowseFragment extends Fragment {
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         eventAdapter = new EntrantEventAdapter(requireContext(), BrowseFragment.this, eventList);
         binding.browseList.setLayoutManager(new LinearLayoutManager(requireContext()));
+        // init fused location client
+        fusedClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+
+        // hook up location callback from adapter
+        eventAdapter.setLocationCallback(event -> {
+            pendingJoinEvent = event;
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                // already have permission → go straight to location
+                fetchLocationAndJoinPendingEvent();
+            } else {
+                // ask for permission
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);}
+        });
         SearchSettings search = vm.getSearch();
         
         // Load user's waitlisted events to populate button states correctly
@@ -71,7 +95,66 @@ public class BrowseFragment extends Fragment {
 
     }
 
+    /**
+     * Helper for location permission handling
+     */
+    private void fetchLocationAndJoinPendingEvent() {
+        if (pendingJoinEvent == null || vm == null || vm.getUser() == null) {
+            return;
+        }
+        if (ActivityCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Should not happen if we get here, but guard just in case
+            return;
+        }
+        fusedClient.getLastLocation()
+                .addOnSuccessListener(loc -> {
+                    if (loc == null) {
+                        Toast.makeText(requireContext(),
+                                "Unable to get your current location.",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
+                    Event event = pendingJoinEvent;
+                    pendingJoinEvent = null;
+
+                    EventController.addEntrantToWaitlist(event, vm.getUser(), loc,
+                            new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    vm.addWaitlistedId(String.valueOf(event.getId()));
+                                    eventAdapter.notifyDataSetChanged();
+                                    Toast.makeText(requireContext(),
+                                            "Joined waitlist.",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    vm.removeWaitlistedId(String.valueOf(event.getId()));
+                                    eventAdapter.notifyDataSetChanged();
+
+                                    String message = "Failed to join waitlist";
+                                    if (e.getMessage() != null) {
+                                        if (e.getMessage().contains("full")) {
+                                            message = "Waitlist is full";
+                                        } else if (e.getMessage().contains("already")) {
+                                            message = "You're already on the waitlist";
+                                        } else {
+                                            message = e.getMessage();
+                                        }
+                                    }
+                                    Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(),
+                            "Unable to get your current location.",
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
     public void setupEvents(SearchSettings search) {
         // Set ViewModel on adapter before any data operations to prevent null reference crashes
         eventAdapter.setViewModel(vm);
@@ -99,6 +182,17 @@ public class BrowseFragment extends Fragment {
             }
         });
     }
+
+    private final ActivityResultLauncher<String> locationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    fetchLocationAndJoinPendingEvent();
+                } else {
+                    Toast.makeText(requireContext(),
+                            "Location permission is required to join this waitlist.",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
 
     /**
      * Setup on item click listeners so clicking an events navigates to event details

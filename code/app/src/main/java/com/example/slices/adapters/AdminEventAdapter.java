@@ -143,8 +143,9 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
             String lowerQuery = query.toLowerCase();
             for (Event e : eventListFull) {
                 EventInfo eventInfo = e.getEventInfo();
-                if (eventInfo.getName().toLowerCase().contains(lowerQuery)
-                        || (eventInfo.getLocation() != null && eventInfo.getLocation().toLowerCase().contains(lowerQuery))) {
+                //if (eventInfo.getName().toLowerCase().contains(lowerQuery)
+                        //|| (eventInfo.getLocation() != null && eventInfo.getLocation().toLowerCase().contains(lowerQuery))) {
+                if (eventInfo.getName().toLowerCase().contains(lowerQuery)) {
                     filtered.add(e);
                 }
             }

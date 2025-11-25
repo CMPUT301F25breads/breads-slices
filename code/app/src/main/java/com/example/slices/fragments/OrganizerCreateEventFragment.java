@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -202,7 +203,9 @@ public class OrganizerCreateEventFragment extends Fragment {
         String name = editEventName.getText().toString().trim();
         String desc = editDescription.getText().toString().trim();
         String guide = editGuidelines.getText().toString().trim();
-        String location = editLocation.getText().toString().trim();
+        //Change from Ryan
+        //String location = editLocation.getText().toString().trim();
+        Location location = null;
         String dateStr = editDate.getText().toString().trim();           // mm/dd/yyyy
         String timeStr = editTime.getText().toString().trim();           // hh:mm AM/PM
         String regStartStr = editRegStart.getText().toString().trim();  // mm/dd/yyyy
@@ -215,7 +218,7 @@ public class OrganizerCreateEventFragment extends Fragment {
 
         // Check required fields
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(desc) || TextUtils.isEmpty(dateStr) ||
-                TextUtils.isEmpty(timeStr) || TextUtils.isEmpty(location)) {
+                TextUtils.isEmpty(timeStr)) {
             Toast.makeText(getContext(), "Please fill in all required fields.", Toast.LENGTH_SHORT).show();
             android.util.Log.d("CreateEvent", "Validation failed - missing required fields");
             return;
@@ -268,13 +271,13 @@ public class OrganizerCreateEventFragment extends Fragment {
             android.util.Log.d("CreateEvent", "Current Time: " + new Timestamp(Calendar.getInstance().getTime()).toDate().toString());
 
             //How far away can the entrants be
-            String entrantDist = "10";
+            String entrantDist = "1000000";
 
             //Placeholder image
             String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
             // Build an eventInfo
-            EventInfo eventInfo = new EventInfo(name, desc, guide, location, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
+            EventInfo eventInfo = new EventInfo(name, desc, location, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
                     maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
 
 

@@ -16,6 +16,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.Logger;
 import com.example.slices.exceptions.DuplicateEntry;
 import com.example.slices.exceptions.WaitlistFull;
 import com.example.slices.models.Event;
@@ -46,6 +47,9 @@ import java.util.Locale;
  * @author Raj Prasad
  */
 public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapter.EventViewHolder> {
+    public interface LocationRequestCallback {
+        void requestUserLocation(Event event);
+    }
 
     private final Context context;
     private final Fragment fragment; // for NavController
@@ -56,6 +60,8 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
 
     @Nullable
     private EventActions actions;
+
+    @Nullable private LocationRequestCallback locationCallback;
 
     /**
      * Constructor for EntrantEventAdapter for displaying events that the entrant can join or leave
@@ -68,6 +74,15 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
         this.context = context;
         this.fragment = fragment;
         this.events = events;
+    }
+
+    /**
+     * Sets the callback for requesting user location
+     * @param callback
+     *      the callback to set
+     */
+    public void setLocationCallback(@Nullable LocationRequestCallback callback) {
+        this.locationCallback = callback;
     }
 
     /**
@@ -197,36 +212,38 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
                         }
                     });
                 } else {
-                    // switch to Leave
-                    updateWaitlistButton(actionBtn, true);
+                    //If location is required
+                    if (event.getEventInfo().getEntrantLoc()) {
+                        // switch UI now but revert if failure
+                        updateWaitlistButton(actionBtn, true);
 
-                    EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {
-                            vm.addWaitlistedId(eventIdStr);
-                            if (actions != null)
-                                actions.onJoinClicked(event);
+                        if (locationCallback != null) {
+                            // Adapter tells fragment: “I need the user’s location”
+                            locationCallback.requestUserLocation(event);
                         }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            // reverts on failure
-                            updateWaitlistButton(actionBtn, false);
-
-                            // Show user-friendly error message
-                            String message = "Failed to join waitlist";
-                            if (e.getMessage() != null) {
-                                if (e.getMessage().contains("full")) {
-                                    message = "Waitlist is full";
-                                } else if (e.getMessage().contains("already")) {
-                                    message = "You're already on the waitlist";
-                                } else {
-                                    message = e.getMessage();
+                    }
+                    else {
+                        try {
+                            EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    vm.addWaitlistedId(eventIdStr);
+                                    Logger.logEntrantJoin(vm.getUser().getId(), event.getId(), null);
                                 }
-                            }
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    updateWaitlistButton(actionBtn, false);
+                                    Toast.makeText(context, "Failed to join waitlist. Please try again.", Toast.LENGTH_SHORT).show();
+                                }
+
+                            });
                         }
-                    });
+                        catch (Exception ex) {
+                            Toast.makeText(context, ex.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
 
                 }
             });

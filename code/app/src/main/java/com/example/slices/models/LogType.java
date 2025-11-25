@@ -9,10 +9,40 @@ public enum LogType {
     /**
      * Log entry is a general notification
      */
-    NOTIFICATION,
+    NOTIFICATION_SENT,
 
     /**
      * Log entry is an invitation
      */
-    INVITATION
+    INVITATION_SENT,
+
+    ENTRANT_JOINED,
+
+    ENTRANT_LEFT,
+
+    ENTRANT_UPDATED,
+
+    EVENT_UPDATED,
+
+    EVENT_DELETED,
+
+    EVENT_CREATED,
+
+    LOTTERY_RUN,
+
+    SYSTEM,
+
+    ERROR,
+
+    INVITATION_ACCEPTED,
+
+    INVITATION_DECLINED,
+
+    WAITLIST_MODIFIED
+
+
+
+
+
+
 }
