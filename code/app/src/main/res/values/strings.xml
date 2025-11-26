@@ -33,6 +33,13 @@
     <string name="no_entrants_selected">Please select at least one entrant</string>
     <string name="notification_title_required">Please enter a notification title</string>
     <string name="notification_message_required">Please enter a notification message</string>
+    
+    <!-- Map strings -->
+    <string name="show_map">Show entrant locations on map</string>
+    <string name="entrant_locations">Entrant Locations</string>
+    <string name="no_locations_available">No location data available for entrants</string>
+    <string name="location_not_enabled">This event does not have geolocation enabled</string>
+    
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

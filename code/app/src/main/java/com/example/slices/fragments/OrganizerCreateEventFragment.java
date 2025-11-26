@@ -312,9 +312,9 @@ public class OrganizerCreateEventFragment extends Fragment {
             //Placeholder image
             String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
-            // Build an eventInfo
+            // Build an eventInfo (location not passed - not stored in Firebase)
             EventInfo eventInfo = new EventInfo(name, desc, address, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
-                    maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID, location);
+                    maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
 
 
             // Create event object - use testing constructor to bypass validation

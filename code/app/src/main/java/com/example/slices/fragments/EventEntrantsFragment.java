@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.example.slices.R;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.controllers.NotificationDialog;
@@ -92,6 +93,9 @@ public class EventEntrantsFragment extends Fragment {
         // Set up notification buttons
         setupNotificationButtons();
 
+        // Set up map button
+        setupMapButton();
+
         // Load event data for notifications
         loadEventData();
     }
@@ -148,6 +152,55 @@ public class EventEntrantsFragment extends Fragment {
         binding.btnSendToParticipants.setEnabled(false);
     }
 
+    /**
+     * Set up map button to show entrant locations
+     */
+    private void setupMapButton() {
+        if (binding == null) return;
+
+        binding.fabShowMap.setOnClickListener(v -> {
+            if (currentEvent == null) {
+                android.widget.Toast.makeText(requireContext(),
+                        "Event data not loaded yet",
+                        android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            if (currentEvent.getEventInfo() == null) {
+                android.widget.Toast.makeText(requireContext(),
+                        "Event information not available",
+                        android.widget.Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Check if geolocation is enabled for this event
+            if (currentEvent.getEventInfo().getEntrantLoc()) {
+                showEntrantMap();
+            } else {
+                android.widget.Toast.makeText(requireContext(),
+                        "Location tracking is not enabled for this event",
+                        android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Initially disable and hide map button until event is loaded
+        binding.fabShowMap.setEnabled(false);
+        binding.fabShowMap.setVisibility(View.GONE);
+    }
+
+    /**
+     * Navigate to the map fragment to show entrant locations
+     */
+    private void showEntrantMap() {
+        // Use Navigation Component to navigate to EntrantMapFragment
+        Bundle args = new Bundle();
+        args.putInt("event_id", eventId);
+        args.putString("event_name", eventName);
+        
+        androidx.navigation.Navigation.findNavController(requireView())
+                .navigate(R.id.action_EventEntrantsFragment_to_EntrantMapFragment, args);
+    }
+
     // Load event data from database for notification operations
     private void loadEventData() {
         if (eventId == -1) {
@@ -162,6 +215,7 @@ public class EventEntrantsFragment extends Fragment {
                     getActivity().runOnUiThread(() -> {
                         currentEvent = event;
                         updateNotificationButtonStates();
+                        updateMapButtonVisibility();
                         displayEntrants();
                     });
                 }
@@ -176,11 +230,26 @@ public class EventEntrantsFragment extends Fragment {
                         if (binding != null) {
                             binding.btnSendToWaitlist.setEnabled(false);
                             binding.btnSendToParticipants.setEnabled(false);
+                            binding.fabShowMap.setVisibility(View.GONE);
                         }
                     });
                 }
             }
         });
+    }
+
+    // Update map button visibility based on event geolocation setting
+    private void updateMapButtonVisibility() {
+        if (binding == null || currentEvent == null) return;
+
+        // Show map button only if geolocation is enabled for this event
+        if (currentEvent.getEventInfo() != null && currentEvent.getEventInfo().getEntrantLoc()) {
+            binding.fabShowMap.setVisibility(View.VISIBLE);
+            binding.fabShowMap.setEnabled(true);
+        } else {
+            binding.fabShowMap.setVisibility(View.GONE);
+            binding.fabShowMap.setEnabled(false);
+        }
     }
     
     // Display entrants in the RecyclerView

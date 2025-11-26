@@ -579,7 +579,12 @@ public class EventController {
                 public void onSuccess(int id) {
 
                     Event event = new Event(name, description, address, guidelines, imgUrl,
-                            eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID, location);
+                            eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
+                    
+                    // Set location in memory for validation (not stored in Firebase)
+                    if (location != null) {
+                        event.getEventInfo().setLocation(location);
+                    }
                     writeEvent(event, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
@@ -825,12 +830,39 @@ public class EventController {
         if (!checkLocs(event, loc)) {
             Logger.logError("Location not in event id=" + event.getId(), null);
             callback.onFailure(new Exception("Location not in event"));
+            return;
         }
-        else {
-            //Record where the entrant joined from
-            addEntrantToWaitlist(event, entrant, callback);
+        
+        if (event.getEntrants() != null && event.getEntrants().contains(entrant)) {
+            Logger.logError("Attempted to add entrant already in event to waitlist event id=" + event.getId(), null);
+            callback.onFailure(new Exception("Entrant already in event"));
+            return;
         }
 
+        if (event.getWaitlist() == null) {
+            Logger.logError("Waitlist null for event id=" + event.getId(), null);
+            callback.onFailure(new Exception("Event waitlist is not initialized"));
+            return;
+        }
+
+        try {
+            // Add entrant with location
+            boolean added = event.addEntrantToWaitlist(entrant, loc);
+            if (added) {
+                // Increment currentEntrants after successful add
+                event.getEventInfo().setCurrentEntrants(
+                    event.getEventInfo().getCurrentEntrants() + 1
+                );
+                Logger.logWaitlistModified("Added to waitlist with location", event.getId(), entrant.getId(), null);
+                updateEvent(event, callback);
+            } else {
+                Logger.logError("Failed to add entrant to waitlist event id=" + event.getId(), null);
+                callback.onFailure(new Exception("Failed to add entrant to waitlist"));
+            }
+        } catch (Exception e) {
+            Logger.logError("Exception adding entrant to waitlist event id=" + event.getId(), null);
+            callback.onFailure(e);
+        }
     }
 
 
