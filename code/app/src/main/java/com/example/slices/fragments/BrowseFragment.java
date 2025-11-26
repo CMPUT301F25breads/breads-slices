@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.slices.R;
@@ -20,6 +21,7 @@ import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.controllers.EventController;
 import com.example.slices.models.Event;
+import com.example.slices.interfaces.EventCallback;
 
 import com.example.slices.databinding.BrowseFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
@@ -62,6 +64,16 @@ public class BrowseFragment extends Fragment {
         binding.browseList.setLayoutManager(new LinearLayoutManager(requireContext()));
         SearchSettings search = vm.getSearch();
 
+        // set scanner ready for QR code results
+        getParentFragmentManager().setFragmentResultListener("qr_scan_result",
+                this, (requestKey, bundle) -> {
+            int eventId = bundle.getInt("scanned_event_id", -1);
+
+            if (eventId != -1) {
+                openEventDetailsFromQR(eventId);
+            }
+        });
+
         // Load user's waitlisted events to populate button states correctly
         loadUserWaitlistedEvents();
 
@@ -71,6 +83,34 @@ public class BrowseFragment extends Fragment {
 
     }
 
+    /**
+     * openEventDetailsFromQR
+     *   called when the CameraFragment returns a scanned EventID from FireStore DB
+     *
+     *   This method receives the QR code's EventID and redirects to the event using the
+     *   EventDetailsFragment
+     * @param eventId
+     *   The event ID extracted from the QR code
+     */
+    private void openEventDetailsFromQR(int eventId) {
+        EventController.getEvent(eventId, new EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+                // store selected event in viewmodel
+                vm.setSelectedEvent(event);
+
+                // navigate to EventDetailsFragment
+                NavHostFragment.findNavController(BrowseFragment.this)
+                        .navigate(R.id.eventDetailsFragment);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(requireContext(),
+                        "Event not found, try again", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
     public void setupEvents(SearchSettings search) {
         // Set ViewModel on adapter before any data operations to prevent null reference crashes
@@ -224,8 +264,11 @@ public class BrowseFragment extends Fragment {
         datePicker.show();
     }
 
+    /**
+     * Opens the camera app when tapped
+     */
     private void navigateToCamera() {
-
+        NavHostFragment.findNavController(BrowseFragment.this).navigate(R.id.cameraFragment);
     }
 
     /**

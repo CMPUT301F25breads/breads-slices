@@ -62,6 +62,8 @@ dependencies {
     implementation(libs.navigation.fragment)
     implementation(libs.firebase.auth)
     implementation(libs.play.services.location)
+    implementation(libs.camera.view)
+    implementation(libs.camera.lifecycle)
     testImplementation(libs.junit)
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("org.mockito:mockito-core:5.7.0")
@@ -78,4 +80,7 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.guava:guava:31.1-android")
+    implementation("androidx.camera:camera-camera2:1.5.1")
+    implementation("com.google.zxing:core:3.5.4")
 }

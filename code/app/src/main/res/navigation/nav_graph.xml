@@ -23,6 +23,11 @@
     </fragment>
 
     <fragment
+        android:id="@+id/cameraFragment"
+        android:name="com.example.slices.fragments.CameraFragment"
+        android:label="Camera" />
+
+    <fragment
         android:id="@+id/BrowseFragment"
         android:name="com.example.slices.fragments.BrowseFragment"
         android:label="Browse Events"
@@ -31,6 +36,9 @@
         <action
             android:id="@+id/action_BrowseFragment_to_eventDetailsFragment"
             app:destination="@id/eventDetailsFragment" />
+        <action
+            android:id="@+id/action_BrowseFragment_to_cameraFragment"
+            app:destination="@id/cameraFragment" />
     </fragment>
     <fragment
         android:id="@+id/NotifFragment"
