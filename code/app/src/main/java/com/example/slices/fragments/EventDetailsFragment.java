@@ -175,35 +175,35 @@ public class EventDetailsFragment extends Fragment {
                 isWaitlisted = true;
                 vm.addWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
-                try {
-                    EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
+                
+                // Check if event requires location
+                if (e.getEventInfo().getEntrantLoc()) {
+                    // Get user's location before joining
+                    com.example.slices.controllers.LocationManager locationManager = 
+                        new com.example.slices.controllers.LocationManager();
+                    
+                    locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
                         @Override
-                        public void onSuccess() {
-                            // success means do nothing else
+                        public void onSuccess(android.location.Location location) {
+                            // Join waitlist with location
+                            joinWaitlistWithLocation(eventIdStr, location);
                         }
-
+                        
                         @Override
                         public void onFailure(Exception e1) {
+                            // Revert on location failure
                             isWaitlisted = false;
                             vm.removeWaitlistedId(eventIdStr);
                             updateWaitlistButton(isWaitlisted);
                             Toast.makeText(requireContext(),
-                                    "Failed to join waitlist. Please try again.",
+                                    "Location permission required to join this event.",
                                     Toast.LENGTH_SHORT).show();
                         }
                     });
+                } else {
+                    // Join waitlist without location
+                    joinWaitlistWithLocation(eventIdStr, null);
                 }
-                catch (DuplicateEntry e1) {
-                    Toast.makeText(requireContext(),
-                            "You are already on the waitlist for this event.",
-                            Toast.LENGTH_SHORT).show();
-                }
-                catch (WaitlistFull e1) {
-                    Toast.makeText(requireContext(),
-                            "Waitlist is full for this event.",
-                            Toast.LENGTH_SHORT).show();
-                }
-
             }
         });
         EventInfo eventInfo = e.getEventInfo();
@@ -248,6 +248,69 @@ public class EventDetailsFragment extends Fragment {
                     .setPositiveButton("OK", (dialogInterface, i) -> {
                     })
                     .show();
+        }
+        
+        /**
+         * Helper method to join waitlist with or without location
+         * @param eventIdStr Event ID as string
+         * @param location User's location (can be null if location not required)
+         */
+        private void joinWaitlistWithLocation(String eventIdStr, android.location.Location location) {
+            try {
+                if (location != null) {
+                    // Join with location
+                    EventController.addEntrantToWaitlist(e, vm.getUser(), location, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // success means do nothing else
+                        }
+
+                        @Override
+                        public void onFailure(Exception e1) {
+                            isWaitlisted = false;
+                            vm.removeWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            Toast.makeText(requireContext(),
+                                    "Failed to join waitlist. " + e1.getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    // Join without location
+                    EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // success means do nothing else
+                        }
+
+                        @Override
+                        public void onFailure(Exception e1) {
+                            isWaitlisted = false;
+                            vm.removeWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            Toast.makeText(requireContext(),
+                                    "Failed to join waitlist. Please try again.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+            catch (DuplicateEntry e1) {
+                isWaitlisted = false;
+                vm.removeWaitlistedId(eventIdStr);
+                updateWaitlistButton(isWaitlisted);
+                Toast.makeText(requireContext(),
+                        "You are already on the waitlist for this event.",
+                        Toast.LENGTH_SHORT).show();
+            }
+            catch (WaitlistFull e1) {
+                isWaitlisted = false;
+                vm.removeWaitlistedId(eventIdStr);
+                updateWaitlistButton(isWaitlisted);
+                Toast.makeText(requireContext(),
+                        "Waitlist is full for this event.",
+                        Toast.LENGTH_SHORT).show();
+            }
         }
 
 }

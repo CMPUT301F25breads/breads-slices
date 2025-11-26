@@ -8,6 +8,7 @@ import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.exceptions.EventFull;
 import com.example.slices.exceptions.WaitlistFull;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.IgnoreExtraProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.Objects;
  * @version 1.5
  *
  */
+@IgnoreExtraProperties
 public class Event implements Comparable<Event> {
 
     /**
@@ -38,6 +40,7 @@ public class Event implements Comparable<Event> {
     private EventInfo eventInfo;
     private List<Integer> entrantIds;
 
+    @com.google.firebase.firestore.Exclude
     private ArrayList<Location> entrantLocs;
 
 
@@ -52,10 +55,9 @@ public class Event implements Comparable<Event> {
 
     public Event(String name, String description, String address, String guidelines, String imgUrl,
                  Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
-                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID,
-                 Location location)  {
+                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID)  {
         this.eventInfo = new EventInfo(name, description, address,  guidelines, imgUrl,
-                eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID, location);
+                eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
         this.id = id;
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist(maxWaiting);
@@ -144,6 +146,17 @@ public class Event implements Comparable<Event> {
      *      Entrant to add to the waitlist
      */
     public boolean addEntrantToWaitlist(Entrant entrant) {
+        return addEntrantToWaitlist(entrant, null);
+    }
+    
+    /**
+     * Adds an entrant to the event's waitlist with their join location
+     * @param entrant
+     *      Entrant to add to the waitlist
+     * @param location
+     *      Location where the entrant joined (can be null)
+     */
+    public boolean addEntrantToWaitlist(Entrant entrant, Location location) {
         //Check if the waitlist is full
         if (waitlist.getEntrants().size() >= waitlist.getMaxCapacity()) {
             throw new WaitlistFull("Waitlist is full");
@@ -154,6 +167,10 @@ public class Event implements Comparable<Event> {
         }
         //Otherwise add the entrant to the waitlist
         waitlist.addEntrant(entrant);
+        //Store the location if provided
+        if (location != null) {
+            waitlist.setEntrantLocation(entrant.getId(), location);
+        }
         return true;
     }
 
