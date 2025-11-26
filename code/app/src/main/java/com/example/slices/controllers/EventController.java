@@ -765,6 +765,10 @@ public class EventController {
     public static void removeEntrantFromWaitlist(Event event, Entrant entrant, DBWriteCallback callback) {
         boolean removed = event.removeEntrantFromWaitlist(entrant);
         if (removed) {
+            // Decrement currentEntrants after successful removal, with defensive check
+            event.getEventInfo().setCurrentEntrants(
+                Math.max(0, event.getEventInfo().getCurrentEntrants() - 1)
+            );
             Logger.logWaitlistModified("Removed from waitlist", event.getId(), entrant.getId(), null);
             updateEvent(event, callback);
         }
@@ -800,6 +804,10 @@ public class EventController {
         try {
             boolean added = event.addEntrantToWaitlist(entrant);
             if (added) {
+                // Increment currentEntrants after successful add
+                event.getEventInfo().setCurrentEntrants(
+                    event.getEventInfo().getCurrentEntrants() + 1
+                );
                 Logger.logWaitlistModified("Added to waitlist", event.getId(), entrant.getId(), null);
                 updateEvent(event, callback);
             } else {
@@ -1167,6 +1175,7 @@ public class EventController {
         List<Consumer<DBWriteCallback>> ops = new ArrayList<>();
         for (Entrant e : entrants) {
             ops.add(cb -> addEntrantToEvent(event, e, cb));
+            // removeEntrantFromWaitlist already decrements currentEntrants
             ops.add(cb -> removeEntrantFromWaitlist(event, e, cb));
         }
         AsyncBatchExecutor.runBatch(ops, callback);
