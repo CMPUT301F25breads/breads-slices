@@ -389,14 +389,14 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginLeft="50dp"
-                    android:text="Maximum Distance"
+                    android:text="Maximum Distance (km)"
                     android:textStyle="bold" />
 
                 <EditText
                     android:id="@+id/editMaxDistance"
                     android:layout_width="60dp"
                     android:layout_height="wrap_content"
-                    android:hint="10m"
+                    android:hint="500"
                     android:inputType="number"
                     android:background="@android:drawable/edit_text"
                     android:padding="8dp" />

@@ -147,8 +147,20 @@ public class OrganizerEditEventFragment extends Fragment {
                 layoutMaxDistance.setVisibility(View.GONE);
                 editMaxDistance.setText(""); // clear if turned off
             }
+            // Only save if user is interacting (not during initial load)
+            // buttonView.isPressed() returns true only when user actually clicks
+            if (buttonView.isPressed()) {
+                saveEntrantLocationSettings();
+            }
         });
         layoutMaxDistance.setVisibility(View.GONE);
+
+        // Add listener for max distance field
+        editMaxDistance.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                saveEntrantLocationSettings();
+            }
+        });
 
         // --- Load placeholder image with Glide ---
         Glide.with(this)
@@ -281,13 +293,34 @@ public class OrganizerEditEventFragment extends Fragment {
                 SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
                 editTime.setText(timeFormat.format(eventInfo.getEventDate().toDate()));
 
-
-                // To be implemented later
-                //        switchEntrantLocation.setChecked(event.isLocationRequired());
-                //        if (event.isLocationRequired()) {
-                //            layoutMaxDistance.setVisibility(View.VISIBLE);
-                //            editMaxDistance.setText(String.valueOf(event.getMaxDistance()));
-                //        }
+                // Load entrant location settings
+                boolean requiresLocation = eventInfo.getEntrantLoc();
+                switchEntrantLocation.setChecked(requiresLocation);
+                if (requiresLocation) {
+                    layoutMaxDistance.setVisibility(View.VISIBLE);
+                    String distMetersStr = eventInfo.getEntrantDist();
+                    if (distMetersStr != null && !distMetersStr.isEmpty()) {
+                        try {
+                            // Convert meters to kilometers for display
+                            int distanceMeters = Integer.parseInt(distMetersStr);
+                            int distanceKm = distanceMeters / 1000;
+                            // Only show the value if it's greater than 0
+                            if (distanceKm > 0) {
+                                editMaxDistance.setText(String.valueOf(distanceKm));
+                            } else {
+                                editMaxDistance.setText("500"); // Default if 0
+                            }
+                        } catch (NumberFormatException e) {
+                            // If parsing fails, show default
+                            editMaxDistance.setText("500");
+                        }
+                    } else {
+                        // No distance set, show default
+                        editMaxDistance.setText("500");
+                    }
+                } else {
+                    layoutMaxDistance.setVisibility(View.GONE);
+                }
 
                 Glide.with(requireContext())
                         .load(eventInfo.getImageUrl())
@@ -841,5 +874,67 @@ public class OrganizerEditEventFragment extends Fragment {
 
         // Show Android's share dialog
         startActivity(Intent.createChooser(shareIntent, "Share QR Code"));
+    }
+
+    /**
+     * Saves the entrant location settings (toggle and max distance) to the database
+     * Distance is stored in meters but displayed in kilometers
+     */
+    private void saveEntrantLocationSettings() {
+        if (currentEvent == null) return;
+
+        boolean requiresLocation = switchEntrantLocation.isChecked();
+        String maxDistKmStr = editMaxDistance.getText().toString().trim();
+
+        // Store in meters in database
+        String entrantDistMeters;
+        
+        if (requiresLocation) {
+            // Location is required - validate and convert the distance
+            if (maxDistKmStr.isEmpty()) {
+                // If field is empty but location is required, use default
+                entrantDistMeters = "500000"; // Default: 500km in meters
+            } else {
+                try {
+                    int distanceKm = Integer.parseInt(maxDistKmStr);
+                    // Validate range: 1km to 500km
+                    if (distanceKm < 1) {
+                        Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (distanceKm > 500) {
+                        Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    // Convert km to meters for storage
+                    entrantDistMeters = String.valueOf(distanceKm * 1000);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+        } else {
+            // Location not required - keep existing value or use default
+            EventInfo currentEventInfo = currentEvent.getEventInfo();
+            String existingDist = currentEventInfo.getEntrantDist();
+            entrantDistMeters = (existingDist != null && !existingDist.isEmpty()) ? existingDist : "500000";
+        }
+
+        EventInfo currentEventInfo = currentEvent.getEventInfo();
+        currentEventInfo.setEntrantLoc(requiresLocation);
+        currentEventInfo.setEntrantDist(entrantDistMeters);
+
+        EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(getContext(), "Location settings saved!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(getContext(), "Failed to save location settings: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

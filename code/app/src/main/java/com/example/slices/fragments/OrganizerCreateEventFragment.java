@@ -59,8 +59,9 @@ public class OrganizerCreateEventFragment extends Fragment {
 
     private EditText editEventName, editDescription, editGuidelines, editLocation;
     private SharedViewModel svm;
-    private EditText editDate, editTime, editRegStart, editRegEnd, editMaxWaiting, editMaxParticipants;
+    private EditText editDate, editTime, editRegStart, editRegEnd, editMaxWaiting, editMaxParticipants, editMaxDistance;
     private SwitchCompat switchEntrantLocation;
+    private LinearLayout layoutMaxDistance;
     private ImageView eventImage;
     private Uri imageUri;
     private Button buttonConfirm;
@@ -121,11 +122,23 @@ public class OrganizerCreateEventFragment extends Fragment {
         editRegEnd = view.findViewById(R.id.editRegEnd);
         editMaxWaiting = view.findViewById(R.id.editMaxWaiting);
         editMaxParticipants = view.findViewById(R.id.editMaxParticipants);
+        editMaxDistance = view.findViewById(R.id.editMaxDistance);
         switchEntrantLocation = view.findViewById(R.id.switchEntrantLocation);
+        layoutMaxDistance = view.findViewById(R.id.layoutMaxDistance);
         eventImage = view.findViewById(R.id.eventImage);
         uploadButton = view.findViewById(R.id.uploadButton);
         backButton = view.findViewById(R.id.backButton);
         buttonConfirm = view.findViewById(R.id.buttonConfirm);
+
+        // Handle switch visibility logic for Maximum Distance
+        switchEntrantLocation.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                layoutMaxDistance.setVisibility(View.VISIBLE);
+            } else {
+                layoutMaxDistance.setVisibility(View.GONE);
+                editMaxDistance.setText(""); // clear if turned off
+            }
+        });
 
         // TODO: Back button → navigate to organizer events (implement navigation)
 //        backButton.setOnClickListener(v -> NavHostFragment.findNavController(this)
@@ -270,8 +283,31 @@ public class OrganizerCreateEventFragment extends Fragment {
             android.util.Log.d("CreateEvent", "Reg Deadline: " + regEndTimestamp.toDate().toString());
             android.util.Log.d("CreateEvent", "Current Time: " + new Timestamp(Calendar.getInstance().getTime()).toDate().toString());
 
-            //How far away can the entrants be
-            String entrantDist = "1000000";
+            // Get entrant distance if location is required
+            // Store in meters in database, but UI shows kilometers
+            String entrantDist = "500000"; // Default: 500km in meters
+            if (entrantLoc) {
+                String maxDistKmStr = editMaxDistance.getText().toString().trim();
+                if (!TextUtils.isEmpty(maxDistKmStr)) {
+                    try {
+                        int distanceKm = Integer.parseInt(maxDistKmStr);
+                        // Validate range: 1km to 500km
+                        if (distanceKm < 1) {
+                            Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        if (distanceKm > 500) {
+                            Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        // Convert km to meters for storage
+                        entrantDist = String.valueOf(distanceKm * 1000);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+            }
 
             //Placeholder image
             String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
