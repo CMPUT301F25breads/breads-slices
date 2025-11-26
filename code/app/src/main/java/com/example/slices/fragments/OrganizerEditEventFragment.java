@@ -64,6 +64,8 @@ import java.util.Locale;
 
 public class OrganizerEditEventFragment extends Fragment {
 
+    private static final int PICK_IMAGE_REQUEST = 1001;
+
     private EditText editEventName, editDate, editTime, editRegStart, editRegEnd,
             editMaxWaiting, editMaxParticipants, editMaxDistance;
     private TextView textDescription, textGuidelines, textLocation, textEventTitle;
@@ -76,6 +78,7 @@ public class OrganizerEditEventFragment extends Fragment {
     private String qrCodeData; // QR code data for the event
     private Bitmap qrCodeBitmap; // QR code bitmap for sharing
     private Event currentEvent; // The event being edited
+    private Uri selectedImageUri; // URI of the selected image
 
     /**
      * Default constructor.
@@ -222,10 +225,8 @@ public class OrganizerEditEventFragment extends Fragment {
         // --- Share QR Code button ---
         buttonShareQRCode.setOnClickListener(v -> shareQRCode());
 
-        // --- Other buttons (functionality not implemented yet)---
-        buttonEditImage.setOnClickListener(v ->
-                Toast.makeText(getContext(), "Edit Image clicked", Toast.LENGTH_SHORT).show()
-        );
+        // --- Edit Image button - opens gallery ---
+        buttonEditImage.setOnClickListener(v -> openImagePicker());
 
         backButton.setOnClickListener(v -> requireActivity().onBackPressed());
 
@@ -934,6 +935,69 @@ public class OrganizerEditEventFragment extends Fragment {
             public void onFailure(Exception e) {
                 Toast.makeText(getContext(), "Failed to save location settings: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Opens the device's image picker to select a new event poster
+     */
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+
+    /**
+     * Handles the result from the image picker
+     */
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == android.app.Activity.RESULT_OK && data != null) {
+            selectedImageUri = data.getData();
+            
+            if (selectedImageUri != null) {
+                // Display the selected image immediately
+                Glide.with(this)
+                        .load(selectedImageUri)
+                        .placeholder(R.drawable.ic_image)
+                        .into(eventImage);
+
+                // Save the image URL to the database
+                saveEventImage(selectedImageUri.toString());
+            }
+        }
+    }
+
+    /**
+     * Saves the new event image URL to the database
+     * @param imageUrl The URL/URI of the new image
+     */
+    private void saveEventImage(String imageUrl) {
+        if (currentEvent == null) return;
+
+        EventInfo currentEventInfo = currentEvent.getEventInfo();
+        currentEventInfo.setImageUrl(imageUrl);
+
+        EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(getContext(), "Event poster updated!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(getContext(), "Failed to update poster: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+                // Revert to old image on failure
+                if (currentEvent.getEventInfo().getImageUrl() != null) {
+                    Glide.with(requireContext())
+                            .load(currentEvent.getEventInfo().getImageUrl())
+                            .placeholder(R.drawable.ic_image)
+                            .into(eventImage);
+                }
             }
         });
     }
