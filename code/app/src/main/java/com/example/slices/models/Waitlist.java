@@ -98,6 +98,7 @@ public class Waitlist {
 
     /**
      * Removes an entrant from the waitlist
+     * Also removes their stored location if present
      * @param entrant
      *      Entrant to remove
      */
@@ -105,6 +106,10 @@ public class Waitlist {
         entrants.remove(entrant);
         entrantIds.remove((Integer)entrant.getId());
         currentEntrants--;
+        // Remove the entrant's location from the map if it exists
+        if (entrantLocations != null) {
+            entrantLocations.remove(String.valueOf(entrant.getId()));
+        }
     }
 
     /**

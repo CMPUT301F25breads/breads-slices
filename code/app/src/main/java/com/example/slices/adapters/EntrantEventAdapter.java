@@ -1,6 +1,7 @@
 package com.example.slices.adapters;
 
 import android.content.Context;
+import android.location.Location;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -47,6 +48,21 @@ import java.util.Locale;
  */
 public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapter.EventViewHolder> {
 
+    /**
+     * Callback interface for requesting location from the fragment
+     */
+    public interface LocationRequestCallback {
+        void onLocationRequested(Event event, JoinWithLocationCallback callback);
+    }
+
+    /**
+     * Callback interface for receiving location and completing join operation
+     */
+    public interface JoinWithLocationCallback {
+        void onLocationObtained(Location location);
+        void onLocationFailed();
+    }
+
     private final Context context;
     private final Fragment fragment; // for NavController
     private final List<Event> events;
@@ -56,6 +72,9 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
 
     @Nullable
     private EventActions actions;
+
+    @Nullable
+    private LocationRequestCallback locationRequestCallback;
 
     /**
      * Constructor for EntrantEventAdapter for displaying events that the entrant can join or leave
@@ -87,6 +106,15 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
      */
     public void setActions(@Nullable EventActions actions) {
         this.actions = actions;
+    }
+
+    /**
+     * Sets the location request callback for handling geolocation-enabled events
+     * @param callback
+     *      the LocationRequestCallback
+     */
+    public void setLocationRequestCallback(@Nullable LocationRequestCallback callback) {
+        this.locationRequestCallback = callback;
     }
 
     @NonNull
@@ -171,6 +199,11 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
 
             // initial waitlist state comes from shared view model
             boolean isOn = vm.isWaitlisted(eventIdStr);
+            
+            // Debug: Log the state
+            android.util.Log.d("EntrantEventAdapter", "Event " + eventIdStr + " - isWaitlisted: " + isOn + 
+                ", User ID: " + vm.getUser().getId());
+            
             updateWaitlistButton(actionBtn, isOn);
 
             // toggle join/leave on click using shared state + controller
@@ -200,34 +233,93 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
                     // switch to Leave
                     updateWaitlistButton(actionBtn, true);
 
-                    EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {
-                            vm.addWaitlistedId(eventIdStr);
-                            if (actions != null)
-                                actions.onJoinClicked(event);
-                        }
+                    // Check if event requires geolocation
+                    boolean requiresLocation = event.getEventInfo() != null && event.getEventInfo().getEntrantLoc();
 
-                        @Override
-                        public void onFailure(Exception e) {
-                            // reverts on failure
-                            updateWaitlistButton(actionBtn, false);
-
-                            // Show user-friendly error message
-                            String message = "Failed to join waitlist";
-                            if (e.getMessage() != null) {
-                                if (e.getMessage().contains("full")) {
-                                    message = "Waitlist is full";
-                                } else if (e.getMessage().contains("already")) {
-                                    message = "You're already on the waitlist";
-                                } else {
-                                    message = e.getMessage();
+                    if (requiresLocation && locationRequestCallback != null) {
+                        // Request location from fragment
+                        locationRequestCallback.onLocationRequested(event, new JoinWithLocationCallback() {
+                            @Override
+                            public void onLocationObtained(Location location) {
+                                // Check if fragment is still attached before proceeding
+                                if (!fragment.isAdded()) {
+                                    android.util.Log.d("EntrantEventAdapter", "Fragment detached, cancelling join operation");
+                                    return;
                                 }
-                            }
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                                
+                                // Join with location
+                                EventController.addEntrantToWaitlist(event, vm.getUser(), location, new DBWriteCallback() {
+                                    @Override
+                                    public void onSuccess() {
+                                        // Check if fragment is still attached before updating UI
+                                        if (!fragment.isAdded()) {
+                                            android.util.Log.d("EntrantEventAdapter", "Fragment detached after join success");
+                                            return;
+                                        }
+                                        
+                                        vm.addWaitlistedId(eventIdStr);
+                                        if (actions != null)
+                                            actions.onJoinClicked(event);
+                                    }
 
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        // Check if fragment is still attached before updating UI
+                                        if (!fragment.isAdded()) {
+                                            android.util.Log.d("EntrantEventAdapter", "Fragment detached after join failure");
+                                            return;
+                                        }
+                                        
+                                        // reverts on failure
+                                        updateWaitlistButton(actionBtn, false);
+                                        showJoinError(e);
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onLocationFailed() {
+                                // Check if fragment is still attached before updating UI
+                                if (!fragment.isAdded()) {
+                                    android.util.Log.d("EntrantEventAdapter", "Fragment detached after location failure");
+                                    return;
+                                }
+                                
+                                // Revert button state
+                                updateWaitlistButton(actionBtn, false);
+                                Toast.makeText(context, "Location required to join this event", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    } else {
+                        // Join without location (non-geolocation event or no callback)
+                        EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                // Check if fragment is still attached before updating UI
+                                if (!fragment.isAdded()) {
+                                    android.util.Log.d("EntrantEventAdapter", "Fragment detached after join success");
+                                    return;
+                                }
+                                
+                                vm.addWaitlistedId(eventIdStr);
+                                if (actions != null)
+                                    actions.onJoinClicked(event);
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                // Check if fragment is still attached before updating UI
+                                if (!fragment.isAdded()) {
+                                    android.util.Log.d("EntrantEventAdapter", "Fragment detached after join failure");
+                                    return;
+                                }
+                                
+                                // reverts on failure
+                                updateWaitlistButton(actionBtn, false);
+                                showJoinError(e);
+                            }
+                        });
+                    }
                 }
             });
         }
@@ -252,6 +344,23 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
                 button.setTextColor(ContextCompat.getColor(context, android.R.color.white));
                 button.setTag("join");
             }
+        }
+
+        /**
+         * Shows user-friendly error message for join failures
+         */
+        private void showJoinError(Exception e) {
+            String message = "Failed to join waitlist";
+            if (e.getMessage() != null) {
+                if (e.getMessage().contains("full")) {
+                    message = "Waitlist is full";
+                } else if (e.getMessage().contains("already")) {
+                    message = "You're already on the waitlist";
+                } else {
+                    message = e.getMessage();
+                }
+            }
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
         }
     }
 }

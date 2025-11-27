@@ -1,5 +1,6 @@
 package com.example.slices.fragments;
 
+import android.Manifest;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -7,6 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -35,6 +38,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 public class EventDetailsFragment extends Fragment {
     private EventDetailsFragmentBinding binding;
     private SharedViewModel vm;
+    private ActivityResultLauncher<String[]> locationPermissionLauncher;
 
     private boolean isWaitlisted = false;
     private Event e;
@@ -91,6 +95,9 @@ public class EventDetailsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        
+        // Set up location permission launcher
+        setupLocationPermissionLauncher();
 
         // Get args and use them if there are any
         // Or just use the SharedViewModel - Brad
@@ -129,7 +136,128 @@ public class EventDetailsFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
-        vm = null;
+        // Don't nullify vm - async callbacks may still need it
+    }
+
+    /**
+     * Sets up the location permission launcher to handle permission request results
+     * This must be called in onViewCreated() before any permission requests
+     */
+    private void setupLocationPermissionLauncher() {
+        locationPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(),
+            permissions -> {
+                // Check if any location permission was granted
+                Boolean fineLocationGranted = permissions.get(Manifest.permission.ACCESS_FINE_LOCATION);
+                Boolean coarseLocationGranted = permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION);
+                
+                if ((fineLocationGranted != null && fineLocationGranted) || 
+                    (coarseLocationGranted != null && coarseLocationGranted)) {
+                    // Permission granted - get location and join waitlist
+                    final String eventIdStr = String.valueOf(e.getId());
+                    com.example.slices.controllers.LocationManager locationManager = 
+                        new com.example.slices.controllers.LocationManager();
+                    
+                    locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
+                        @Override
+                        public void onSuccess(android.location.Location location) {
+                            if (isAdded()) {
+                                Toast.makeText(requireContext(), 
+                                    "Location obtained: " + location.getLatitude() + ", " + location.getLongitude(), 
+                                    Toast.LENGTH_SHORT).show();
+                                joinWaitlistWithLocation(eventIdStr, location);
+                            }
+                        }
+                        
+                        @Override
+                        public void onFailure(Exception e1) {
+                            // Check if fragment is still attached
+                            if (!isAdded() || vm == null) return;
+                            
+                            // Revert on location failure - permissions granted but location unavailable
+                            isWaitlisted = false;
+                            vm.removeWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            
+                            // Display specific error message
+                            String errorMsg = e1.getMessage();
+                            if (errorMsg == null || errorMsg.isEmpty()) {
+                                errorMsg = "Unable to get your location. Please ensure location services are enabled and try again.";
+                            }
+                            Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } else {
+                    // Permission denied - revert button state and show error
+                    final String eventIdStr = String.valueOf(e.getId());
+                    isWaitlisted = false;
+                    vm.removeWaitlistedId(eventIdStr);
+                    updateWaitlistButton(isWaitlisted);
+                    Toast.makeText(requireContext(),
+                            "Location permission required to join this event.",
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        );
+    }
+
+    /**
+     * Checks if location permissions are granted
+     * @return true if either FINE or COARSE location permission is granted
+     */
+    private boolean hasLocationPermission() {
+        return com.example.slices.controllers.LocationManager.hasLocationPermission(requireContext());
+    }
+
+    /**
+     * Checks location permission state and either gets location immediately or requests permission
+     * If permissions are granted: immediately gets location and joins waitlist
+     * If permissions are not granted: launches permission request dialog
+     */
+    private void checkAndRequestLocationPermission() {
+        final String eventIdStr = String.valueOf(e.getId());
+        
+        if (hasLocationPermission()) {
+            // Permissions already granted - get location and join waitlist immediately
+            com.example.slices.controllers.LocationManager locationManager = 
+                new com.example.slices.controllers.LocationManager();
+            
+            locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
+                @Override
+                public void onSuccess(android.location.Location location) {
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), 
+                            "Location obtained: " + location.getLatitude() + ", " + location.getLongitude(), 
+                            Toast.LENGTH_SHORT).show();
+                        joinWaitlistWithLocation(eventIdStr, location);
+                    }
+                }
+                
+                @Override
+                public void onFailure(Exception e1) {
+                    // Check if fragment is still attached
+                    if (!isAdded() || vm == null) return;
+                    
+                    // Revert on location failure
+                    isWaitlisted = false;
+                    vm.removeWaitlistedId(eventIdStr);
+                    updateWaitlistButton(isWaitlisted);
+                    
+                    // Show helpful error message
+                    String errorMsg = "Unable to get your location. Please:\n" +
+                                     "1. Enable Location Services in Settings\n" +
+                                     "2. Ensure GPS is turned on\n" +
+                                     "3. Try again";
+                    Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
+                }
+            });
+        } else {
+            // Permissions not granted - launch permission request
+            locationPermissionLauncher.launch(new String[]{
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        }
     }
 
     private void setupUI() {
@@ -151,24 +279,52 @@ public class EventDetailsFragment extends Fragment {
 
             // checks to see if waitlisted and communicating with DB for join/leave functions
             if (isWaitlisted) {
+                // Optimistically update UI
                 isWaitlisted = false;
-                vm.removeWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
+                
                 EventController.removeEntrantFromWaitlist(e, vm.getUser(), new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
-                        // success means do nothing else
+                        // Update ViewModel only after database operation succeeds
+                        vm.removeWaitlistedId(eventIdStr);
+                        android.util.Log.d("EventDetailsFragment", "Successfully left waitlist for event " + eventIdStr);
+                        
+                        // Refresh the event object from database after successful removal
+                        EventController.getEvent(eventId, new EventCallback() {
+                            @Override
+                            public void onSuccess(Event refreshedEvent) {
+                                e = refreshedEvent;
+                                android.util.Log.d("EventDetailsFragment", "Event refreshed after leaving waitlist");
+                            }
+
+                            @Override
+                            public void onFailure(Exception ex) {
+                                android.util.Log.e("EventDetailsFragment", "Failed to refresh event after leaving waitlist");
+                            }
+                        });
                     }
 
                     @Override
                     public void onFailure(Exception e1) {
-                        // revert on exception
+                        // Check if fragment is still attached
+                        if (!isAdded() || vm == null) return;
+                        
+                        // Revert UI state on exception
                         isWaitlisted = true;
-                        vm.addWaitlistedId(eventIdStr);
                         updateWaitlistButton(isWaitlisted);
-                        Toast.makeText(requireContext(),
-                                "Failed to leave waitlist. Please try again.",
-                                Toast.LENGTH_SHORT).show();
+                        
+                        // Provide specific error message based on failure type
+                        String errorMessage;
+                        if (e1.getMessage() != null && e1.getMessage().contains("Entrant not in event")) {
+                            errorMessage = "You are not on this waitlist";
+                            android.util.Log.i("EventDetailsFragment", "User attempted to leave waitlist they're not on: event " + eventIdStr);
+                        } else {
+                            errorMessage = "Network error. Please try again.";
+                            android.util.Log.e("EventDetailsFragment", "Failed to leave waitlist for event " + eventIdStr + ": " + e1.getMessage());
+                        }
+                        
+                        Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
                     }
                 });
             } else {
@@ -176,32 +332,14 @@ public class EventDetailsFragment extends Fragment {
                 vm.addWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
                 
-                // Check if event requires location
-                if (e.getEventInfo().getEntrantLoc()) {
-                    // Get user's location before joining
-                    com.example.slices.controllers.LocationManager locationManager = 
-                        new com.example.slices.controllers.LocationManager();
-                    
-                    locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
-                        @Override
-                        public void onSuccess(android.location.Location location) {
-                            // Join waitlist with location
-                            joinWaitlistWithLocation(eventIdStr, location);
-                        }
-                        
-                        @Override
-                        public void onFailure(Exception e1) {
-                            // Revert on location failure
-                            isWaitlisted = false;
-                            vm.removeWaitlistedId(eventIdStr);
-                            updateWaitlistButton(isWaitlisted);
-                            Toast.makeText(requireContext(),
-                                    "Location permission required to join this event.",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                // Check if event requires geolocation
+                boolean requiresLocation = e.getEventInfo() != null && e.getEventInfo().getEntrantLoc();
+                
+                if (requiresLocation) {
+                    // For geolocation events, check and request permission if needed
+                    checkAndRequestLocationPermission();
                 } else {
-                    // Join waitlist without location
+                    // For non-geolocation events, join directly without location
                     joinWaitlistWithLocation(eventIdStr, null);
                 }
             }
@@ -256,17 +394,46 @@ public class EventDetailsFragment extends Fragment {
          * @param location User's location (can be null if location not required)
          */
         private void joinWaitlistWithLocation(String eventIdStr, android.location.Location location) {
+            // Check if fragment is still attached and vm/user are available
+            if (!isAdded() || vm == null || vm.getUser() == null) {
+                return;
+            }
+            
             try {
                 if (location != null) {
                     // Join with location
+                    Toast.makeText(requireContext(), 
+                        "Joining waitlist with location...", 
+                        Toast.LENGTH_SHORT).show();
+                    
                     EventController.addEntrantToWaitlist(e, vm.getUser(), location, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
-                            // success means do nothing else
+                            if (isAdded()) {
+                                Toast.makeText(requireContext(), 
+                                    "Successfully joined waitlist!", 
+                                    Toast.LENGTH_SHORT).show();
+                                
+                                // Refresh the event object from database after successful join
+                                int eventIdInt = Integer.parseInt(eventIdStr);
+                                EventController.getEvent(eventIdInt, new EventCallback() {
+                                    @Override
+                                    public void onSuccess(Event refreshedEvent) {
+                                        e = refreshedEvent;
+                                        android.util.Log.d("EventDetailsFragment", "Event refreshed after joining waitlist");
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception ex) {
+                                        android.util.Log.e("EventDetailsFragment", "Failed to refresh event after joining waitlist");
+                                    }
+                                });
+                            }
                         }
 
                         @Override
                         public void onFailure(Exception e1) {
+                            if (!isAdded() || vm == null) return;
                             isWaitlisted = false;
                             vm.removeWaitlistedId(eventIdStr);
                             updateWaitlistButton(isWaitlisted);
@@ -277,14 +444,38 @@ public class EventDetailsFragment extends Fragment {
                     });
                 } else {
                     // Join without location
+                    Toast.makeText(requireContext(), 
+                        "Joining waitlist without location...", 
+                        Toast.LENGTH_SHORT).show();
+                    
                     EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
-                            // success means do nothing else
+                            if (isAdded()) {
+                                Toast.makeText(requireContext(), 
+                                    "Successfully joined waitlist!", 
+                                    Toast.LENGTH_SHORT).show();
+                                
+                                // Refresh the event object from database after successful join
+                                int eventIdInt = Integer.parseInt(eventIdStr);
+                                EventController.getEvent(eventIdInt, new EventCallback() {
+                                    @Override
+                                    public void onSuccess(Event refreshedEvent) {
+                                        e = refreshedEvent;
+                                        android.util.Log.d("EventDetailsFragment", "Event refreshed after joining waitlist (no location)");
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception ex) {
+                                        android.util.Log.e("EventDetailsFragment", "Failed to refresh event after joining waitlist (no location)");
+                                    }
+                                });
+                            }
                         }
 
                         @Override
                         public void onFailure(Exception e1) {
+                            if (!isAdded() || vm == null) return;
                             isWaitlisted = false;
                             vm.removeWaitlistedId(eventIdStr);
                             updateWaitlistButton(isWaitlisted);
@@ -296,6 +487,7 @@ public class EventDetailsFragment extends Fragment {
                 }
             }
             catch (DuplicateEntry e1) {
+                if (!isAdded() || vm == null) return;
                 isWaitlisted = false;
                 vm.removeWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
@@ -304,6 +496,7 @@ public class EventDetailsFragment extends Fragment {
                         Toast.LENGTH_SHORT).show();
             }
             catch (WaitlistFull e1) {
+                if (!isAdded() || vm == null) return;
                 isWaitlisted = false;
                 vm.removeWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);

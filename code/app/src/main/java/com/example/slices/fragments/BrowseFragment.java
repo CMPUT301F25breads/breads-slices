@@ -1,5 +1,6 @@
 package com.example.slices.fragments;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.InputType;
@@ -10,6 +11,8 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -20,6 +23,8 @@ import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.LocationManager;
+import com.example.slices.interfaces.LocationCallback;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
 
@@ -45,6 +50,8 @@ public class BrowseFragment extends Fragment {
     private ArrayList<Event> eventList = new ArrayList<>();
     private SharedViewModel vm;
     private EntrantEventAdapter eventAdapter;
+    private ActivityResultLauncher<String[]> locationPermissionLauncher;
+    private EntrantEventAdapter.JoinWithLocationCallback pendingJoinCallback;
 
     @Override
     public View onCreateView(
@@ -63,6 +70,30 @@ public class BrowseFragment extends Fragment {
         eventAdapter = new EntrantEventAdapter(requireContext(), BrowseFragment.this, eventList);
         binding.browseList.setLayoutManager(new LinearLayoutManager(requireContext()));
         SearchSettings search = vm.getSearch();
+
+        // Set up location permission launcher
+        setupLocationPermissionLauncher();
+
+        // Set up location request callback for adapter
+        eventAdapter.setLocationRequestCallback((event, callback) -> {
+            pendingJoinCallback = callback;
+            checkAndRequestLocationPermission();
+        });
+
+        // Set up event actions callback to refresh after leave
+        eventAdapter.setActions(new com.example.slices.interfaces.EventActions() {
+            @Override
+            public void onJoinClicked(Event event) {
+                // Refresh user's waitlisted events
+                loadUserWaitlistedEvents();
+            }
+
+            @Override
+            public void onLeaveClicked(Event event) {
+                // Refresh user's waitlisted events after leaving
+                loadUserWaitlistedEvents();
+            }
+        });
 
         // set scanner ready for QR code results
         getParentFragmentManager().setFragmentResultListener("qr_scan_result",
@@ -278,32 +309,34 @@ public class BrowseFragment extends Fragment {
     private void loadUserWaitlistedEvents() {
         // Only load if user is initialized
         if (vm.getUser() == null || vm.getUser().getId() == 0) {
+            Log.d("BrowseFragment", "Skipping loadUserWaitlistedEvents - user not initialized");
             return;
         }
 
-        // Check if already loaded to avoid redundant queries
-        if (vm.getWaitlistedEvents() != null && !vm.getWaitlistedEvents().isEmpty()) {
-            // Already loaded, just sync the IDs
-            for (Event event : vm.getWaitlistedEvents()) {
-                vm.addWaitlistedId(String.valueOf(event.getId()));
-            }
-            return;
-        }
+        Log.d("BrowseFragment", "Loading user's waitlisted events from database");
 
-        // Load from database
+        // Always load from database to ensure fresh state
         EventController.getEventsForEntrant(vm.getUser(), new com.example.slices.interfaces.EntrantEventCallback() {
             @Override
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
+                if (!isAdded()) return;
+                
                 vm.setWaitlistedEvents(waitEvents);
 
+                // Clear existing waitlisted IDs and rebuild from fresh data
+                vm.clearWaitlistedIds();
+                
                 // Populate waitlistedEventIds for button state tracking
                 for (Event event : waitEvents) {
                     vm.addWaitlistedId(String.valueOf(event.getId()));
                 }
+                
+                Log.d("BrowseFragment", "Loaded " + waitEvents.size() + " waitlisted events");
 
-                // Refresh the adapter to update button states
+                // Refresh the adapter to update button states after ViewModel is fully updated
                 if (eventAdapter != null) {
                     eventAdapter.notifyDataSetChanged();
+                    Log.d("BrowseFragment", "Adapter refreshed with updated button states");
                 }
             }
 
@@ -315,10 +348,122 @@ public class BrowseFragment extends Fragment {
         });
     }
 
+    /**
+     * Sets up the location permission launcher to handle permission request results
+     */
+    private void setupLocationPermissionLauncher() {
+        locationPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(),
+            permissions -> {
+                Boolean fineLocationGranted = permissions.get(Manifest.permission.ACCESS_FINE_LOCATION);
+                Boolean coarseLocationGranted = permissions.get(Manifest.permission.ACCESS_COARSE_LOCATION);
+                
+                if ((fineLocationGranted != null && fineLocationGranted) || 
+                    (coarseLocationGranted != null && coarseLocationGranted)) {
+                    // Permission granted - get location
+                    getUserLocationAndJoin();
+                } else {
+                    // Permission denied
+                    if (pendingJoinCallback != null) {
+                        pendingJoinCallback.onLocationFailed();
+                        pendingJoinCallback = null;
+                    }
+                }
+            }
+        );
+    }
+
+    /**
+     * Checks if location permissions are granted
+     */
+    private boolean hasLocationPermission() {
+        return LocationManager.hasLocationPermission(requireContext());
+    }
+
+    /**
+     * Checks location permission state and either gets location immediately or requests permission
+     */
+    private void checkAndRequestLocationPermission() {
+        if (hasLocationPermission()) {
+            // Permissions already granted - get location immediately
+            getUserLocationAndJoin();
+        } else {
+            // Permissions not granted - launch permission request
+            locationPermissionLauncher.launch(new String[]{
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        }
+    }
+
+    /**
+     * Gets user location and completes the join operation
+     */
+    private void getUserLocationAndJoin() {
+        if (pendingJoinCallback == null) return;
+
+        LocationManager locationManager = new LocationManager();
+        locationManager.getUserLocation(requireContext(), new LocationCallback() {
+            @Override
+            public void onSuccess(android.location.Location location) {
+                if (pendingJoinCallback != null && isAdded()) {
+                    pendingJoinCallback.onLocationObtained(location);
+                    pendingJoinCallback = null;
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                if (pendingJoinCallback != null && isAdded()) {
+                    pendingJoinCallback.onLocationFailed();
+                    pendingJoinCallback = null;
+                    Toast.makeText(requireContext(),
+                        "Unable to get your location. Please ensure location services are enabled.",
+                        Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.d("BrowseFragment", "onResume - refreshing events and waitlist state");
+        
+        // Refresh events when fragment resumes to ensure button states are current
+        SearchSettings search = vm.getSearch();
+        EventController.queryEvents(search, new EventListCallback() {
+            @Override
+            public void onSuccess(List<Event> events) {
+                if (!isAdded()) return;
+                
+                Log.d("BrowseFragment", "Query succeeded with " + events.size() + " events");
+                eventList.clear();
+                eventList.addAll(events);
+                
+                // Load user's waitlisted events AFTER event list is updated
+                // This ensures proper synchronization between event data and button states
+                loadUserWaitlistedEvents();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // On failure, preserve existing state but still try to refresh waitlist
+                Log.e("BrowseFragment", "Failed to refresh events on resume", e);
+                
+                // Still attempt to refresh waitlist state even if event query failed
+                if (isAdded()) {
+                    loadUserWaitlistedEvents();
+                }
+            }
+        });
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+        pendingJoinCallback = null;
     }
 
 }
