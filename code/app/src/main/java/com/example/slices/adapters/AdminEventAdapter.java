@@ -67,19 +67,32 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Event event = eventList.get(position);
-        EventInfo eventInfo = event.getEventInfo();
 
-        holder.title.setText(eventInfo.getName());
-        holder.details.setText(eventInfo.getDescription() != null ? eventInfo.getDescription() : "No description");
-
-        // Safe handling of null image URL or null context
-        String imageUrl = eventInfo.getImageUrl();
-        Context ctx = holder.itemView.getContext();
-
-        if (ctx == null || holder.icon == null) {
-            Log.e("AdminEventAdapter", "Icon is null for event: " + eventInfo.getName());
+        if (event == null) {
+            Log.e("AdminEventAdapter", "Null Event at position " + position);
+            holder.title.setText("Unknown Event");
+            holder.details.setText("");
             return;
         }
+
+        EventInfo eventInfo = event.getEventInfo();
+
+        if (eventInfo == null) {
+            Log.e("AdminEventAdapter", "Null EventInfo for event ID = " + event.getId());
+            holder.title.setText("Unnamed Event");
+            holder.details.setText("No description");
+            Glide.with(holder.itemView.getContext())
+                    .load(R.drawable.ic_event_avatar)
+                    .into(holder.icon);
+            return;
+        }
+
+        // SAFE AFTER THIS POINT
+        holder.title.setText(eventInfo.getName() != null ? eventInfo.getName() : "Unnamed Event");
+        holder.details.setText(eventInfo.getDescription() != null ? eventInfo.getDescription() : "No description");
+
+        String imageUrl = eventInfo.getImageUrl();
+        Context ctx = holder.itemView.getContext();
 
         if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             Glide.with(ctx)
@@ -88,13 +101,11 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
                     .error(R.drawable.ic_event_avatar)
                     .into(holder.icon);
         } else {
-            // fallback if null
             Glide.with(ctx)
                     .load(R.drawable.ic_event_avatar)
                     .into(holder.icon);
         }
 
-        // Remove button click
         holder.removeButton.setOnClickListener(v -> {
             String eventId = String.valueOf(event.getId());
 
