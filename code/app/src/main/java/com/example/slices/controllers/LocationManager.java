@@ -23,21 +23,30 @@ public class LocationManager {
     public LocationManager() {}
 
     /**
+     * Checks if location permissions are granted
+     * @param context The application context
+     * @return true if either FINE or COARSE location permission is granted
+     */
+    public static boolean hasLocationPermission(Context context) {
+        return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+               ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
      * Returns the users current location
-     * First checks permissions and requests them if they aren't granted
-     * @param context
-     * @param callback
+     * Only attempts to get location if permissions are already granted
+     * @param context The application context
+     * @param callback Callback to handle success or failure
      */
     public void getUserLocation(Context context, LocationCallback callback) {
-        FusedLocationProviderClient fusedLocationProvider = LocationServices.getFusedLocationProviderClient(context);
-
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-        ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions((Activity) context,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1001);
-            callback.onFailure(new Exception("Permissions not granted for location"));
+        // Check if permissions are granted before attempting to get location
+        if (!hasLocationPermission(context)) {
+            callback.onFailure(new Exception("Location permissions not granted"));
             return;
         }
+
+        FusedLocationProviderClient fusedLocationProvider = LocationServices.getFusedLocationProviderClient(context);
+
         fusedLocationProvider.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
         .addOnSuccessListener(new OnSuccessListener<Location>() {
             @Override
@@ -45,9 +54,16 @@ public class LocationManager {
                 if (location != null) {
                     callback.onSuccess(location);
                 } else {
-                    callback.onFailure(new Exception("Failed to get location"));
+                    // Location is null - could be due to location services disabled,
+                    // no location available, or timeout
+                    callback.onFailure(new Exception("Unable to obtain location. Please ensure location services are enabled."));
                 }
             }
+        })
+        .addOnFailureListener(e -> {
+            // Task failed - could be due to location services disabled, 
+            // settings issue, or other system errors
+            callback.onFailure(new Exception("Location service error: " + e.getMessage(), e));
         });
     }
 

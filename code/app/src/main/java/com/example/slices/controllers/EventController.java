@@ -581,13 +581,24 @@ public class EventController {
                     Event event = new Event(name, description, address, guidelines, imgUrl,
                             eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
                     
-                    // Set location in memory for validation (not stored in Firebase)
+                    // Set location if provided
                     if (location != null) {
                         event.getEventInfo().setLocation(location);
+                        Logger.logSystem("Event created with location: lat=" + location.getLatitude() + 
+                                       ", lon=" + location.getLongitude() + ", eventId=" + id, null);
+                    } else if (entrantLoc) {
+                        Logger.logSystem("WARNING: Geolocation event created without location, eventId=" + id, null);
+                    } else {
+                        Logger.logSystem("Event created without geolocation, eventId=" + id, null);
                     }
+                    
                     writeEvent(event, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
+                            if (location != null) {
+                                Logger.logSystem("Event location stored: lat=" + event.getEventInfo().getEventLatitude() + 
+                                               ", lon=" + event.getEventInfo().getEventLongitude() + ", eventId=" + id, null);
+                            }
                             Logger.logEventCreate(id, null);
                             callback.onSuccess(event);
 
@@ -630,9 +641,23 @@ public class EventController {
 
                 Event event = new Event(eventInfo);
 
+                // Log geolocation status
+                if (eventInfo.getEntrantLoc() && eventInfo.getEventLatitude() != null && eventInfo.getEventLongitude() != null) {
+                    Logger.logSystem("Event created with geolocation: lat=" + eventInfo.getEventLatitude() + 
+                                   ", lon=" + eventInfo.getEventLongitude() + ", eventId=" + id, null);
+                } else if (eventInfo.getEntrantLoc()) {
+                    Logger.logSystem("WARNING: Geolocation event created without coordinates, eventId=" + id, null);
+                } else {
+                    Logger.logSystem("Event created without geolocation, eventId=" + id, null);
+                }
+
                 writeEvent(event, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
+                        if (eventInfo.getEntrantLoc() && eventInfo.getEventLatitude() != null) {
+                            Logger.logSystem("Event location stored: lat=" + eventInfo.getEventLatitude() + 
+                                           ", lon=" + eventInfo.getEventLongitude() + ", eventId=" + id, null);
+                        }
                         Logger.logEventCreate(id, null);
                         callback.onSuccess(event);
                     }
@@ -868,30 +893,47 @@ public class EventController {
 
     private static boolean checkLocs(Event event, Location entrantLoc) {
         EventInfo info = event.getEventInfo();
-        //Is location required?
+        
+        // Is location required?
         if (!info.getEntrantLoc()) {
-            return true;
+            return true; // No location required, allow join
         }
-        //Does the event have a location
+        
+        // Does the event have a location?
         Location eventLoc = info.getLocation();
         if (eventLoc == null) {
-            return false; // event requires location but doesn't have one
+            Logger.logError("Geolocation event has no location set, event id=" + event.getId(), null);
+            return false; // Event requires location but doesn't have one
         }
-        //Did the entrant provide a location?
+        
+        // Did the entrant provide a location?
         if (entrantLoc == null) {
-            return false;
+            Logger.logError("Geolocation event requires entrant location but none provided, event id=" + event.getId(), null);
+            return false; // Location required but not provided
         }
-
-        //Check format
+        
+        // Parse max distance
         int maxDistanceMeters;
         try {
             maxDistanceMeters = Integer.parseInt(info.getEntrantDist());
         } catch (Exception e) {
+            Logger.logError("Invalid distance format for event id=" + event.getId(), null);
             return false;
         }
-        //Calculate distance
+        
+        // Calculate distance between event and entrant
         float distance = eventLoc.distanceTo(entrantLoc);
-        return distance <= maxDistanceMeters;
+        
+        Logger.logSystem("Distance check: event id=" + event.getId() + 
+                       ", distance=" + distance + "m, max=" + maxDistanceMeters + "m", null);
+        
+        if (distance <= maxDistanceMeters) {
+            Logger.logSystem("Entrant within range, allowing join", null);
+            return true;
+        } else {
+            Logger.logSystem("Entrant too far (" + distance + "m > " + maxDistanceMeters + "m), rejecting join", null);
+            return false;
+        }
     }
 
 

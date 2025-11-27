@@ -269,8 +269,8 @@ public class OrganizerCreateEventFragment extends Fragment {
             Timestamp regStartTimestamp = new Timestamp(regStartCal.getTime());
             Timestamp regEndTimestamp = new Timestamp(regEndCal.getTime());
 
-            // Max participants / waiting list
-            int maxParticipants = TextUtils.isEmpty(maxPartStr) ? 0 : Integer.parseInt(maxPartStr);
+            // Max participants / waiting list - default to 100 if not specified
+            int maxParticipants = TextUtils.isEmpty(maxPartStr) ? 100 : Integer.parseInt(maxPartStr);
 
             // Just changed this because I kept creating events with a max waitlist of 0 - Brad
             int maxWaiting = TextUtils.isEmpty(maxWaitStr) ? Integer.MAX_VALUE : Integer.parseInt(maxWaitStr);
@@ -312,44 +312,88 @@ public class OrganizerCreateEventFragment extends Fragment {
             //Placeholder image
             String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
-            // Build an eventInfo (location not passed - not stored in Firebase)
+            // Build an eventInfo
             EventInfo eventInfo = new EventInfo(name, desc, address, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
                     maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
 
-
-            // Create event object - use testing constructor to bypass validation
-            // The boolean flag bypasses date validation
-            EventController.createEvent(eventInfo, new EventCallback() {
+            // If geolocation is required, get organizer's location to use as event location
+            if (entrantLoc) {
+                android.util.Log.d("CreateEvent", "Geolocation required - getting location for event");
+                
+                com.example.slices.controllers.LocationManager locationManager = 
+                    new com.example.slices.controllers.LocationManager();
+                
+                // Check if we have location permission
+                if (com.example.slices.controllers.LocationManager.hasLocationPermission(requireContext())) {
+                    locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
                         @Override
-                            public void onSuccess(Event createdEvent) {
-                            android.util.Log.d("CreateEvent", "Event created with ID: " + createdEvent.getId());
-
-                            // Generate QR code for the event
-                            String qrCodeData = QRCodeManager.generateQRCodeData(createdEvent.getId());
-                            Bitmap qrCodeBitmap = QRCodeManager.generateQRCode(createdEvent.getId());
-
-                            if (qrCodeBitmap != null) {
-                                Toast.makeText(getContext(), "Event created successfully with QR code!", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(getContext(), "Event created successfully! (QR code generation failed)", Toast.LENGTH_SHORT).show();
-                            }
-
-                            // Navigate back to organizer events to see the new event
-                            NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
-                                    .navigateUp();
+                        public void onSuccess(Location eventLocation) {
+                            android.util.Log.d("CreateEvent", "Got location for event: lat=" + 
+                                             eventLocation.getLatitude() + ", lon=" + eventLocation.getLongitude());
+                            
+                            // Set the location on EventInfo - this will extract and store coordinates
+                            eventInfo.setLocation(eventLocation);
+                            
+                            // Now create the event with coordinates
+                            createEventWithInfo(eventInfo);
                         }
 
                         @Override
                         public void onFailure(Exception e) {
-                            android.util.Log.e("CreateEvent", "Failed to create event", e);
-                            Toast.makeText(getContext(), "Failed to write event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            android.util.Log.w("CreateEvent", "Failed to get location, creating without coordinates", e);
+                            Toast.makeText(getContext(), "Warning: Location unavailable. Distance validation won't work.", Toast.LENGTH_LONG).show();
+                            // Still create the event, just without coordinates
+                            createEventWithInfo(eventInfo);
                         }
                     });
+                } else {
+                    // No location permission - create without coordinates
+                    android.util.Log.w("CreateEvent", "No location permission for geolocation event");
+                    Toast.makeText(getContext(), "Warning: Grant location permission for distance validation to work.", Toast.LENGTH_LONG).show();
+                    createEventWithInfo(eventInfo);
+                }
+            } else {
+                // No geolocation required - create event normally
+                createEventWithInfo(eventInfo);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * Helper method to create event with the given EventInfo
+     * Extracted to avoid code duplication when handling location async
+     */
+    private void createEventWithInfo(EventInfo eventInfo) {
+        EventController.createEvent(eventInfo, new EventCallback() {
+            @Override
+            public void onSuccess(Event createdEvent) {
+                android.util.Log.d("CreateEvent", "Event created with ID: " + createdEvent.getId());
+
+                // Generate QR code for the event
+                String qrCodeData = QRCodeManager.generateQRCodeData(createdEvent.getId());
+                Bitmap qrCodeBitmap = QRCodeManager.generateQRCode(createdEvent.getId());
+
+                if (qrCodeBitmap != null) {
+                    Toast.makeText(getContext(), "Event created successfully with QR code!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getContext(), "Event created successfully! (QR code generation failed)", Toast.LENGTH_SHORT).show();
+                }
+
+                // Navigate back to organizer events to see the new event
+                NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
+                        .navigateUp();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                android.util.Log.e("CreateEvent", "Failed to create event", e);
+                Toast.makeText(getContext(), "Failed to write event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     /**

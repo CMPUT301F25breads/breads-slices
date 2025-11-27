@@ -24,6 +24,18 @@ public class EventInfo {
     @Exclude
     private Location location;
 
+    /**
+     * Latitude of the event location
+     * Stored in Firestore to persist location data
+     */
+    private Double eventLatitude;
+
+    /**
+     * Longitude of the event location
+     * Stored in Firestore to persist location data
+     */
+    private Double eventLongitude;
+
     private String address;
 
     /**
@@ -152,6 +164,12 @@ public class EventInfo {
 
     @Exclude
     public Location getLocation() {
+        // If Location object is null but coordinates exist, reconstruct it
+        if (location == null && eventLatitude != null && eventLongitude != null) {
+            location = new Location("");
+            location.setLatitude(eventLatitude);
+            location.setLongitude(eventLongitude);
+        }
         return location;
     }
 
@@ -173,7 +191,51 @@ public class EventInfo {
     @Exclude
     public void setLocation(Location location) {
         this.location = location;
+        
+        // Extract and store coordinates for Firestore persistence
+        if (location != null) {
+            this.eventLatitude = location.getLatitude();
+            this.eventLongitude = location.getLongitude();
+        } else {
+            this.eventLatitude = null;
+            this.eventLongitude = null;
+        }
+    }
 
+    /**
+     * Get the latitude of the event location
+     * @return Event latitude, or null if not set
+     */
+    public Double getEventLatitude() {
+        return eventLatitude;
+    }
+
+    /**
+     * Set the latitude of the event location
+     * INTERNAL USE ONLY - Firestore requires this setter
+     * @param eventLatitude
+     *      Latitude to set
+     */
+    public void setEventLatitude(Double eventLatitude) {
+        this.eventLatitude = eventLatitude;
+    }
+
+    /**
+     * Get the longitude of the event location
+     * @return Event longitude, or null if not set
+     */
+    public Double getEventLongitude() {
+        return eventLongitude;
+    }
+
+    /**
+     * Set the longitude of the event location
+     * INTERNAL USE ONLY - Firestore requires this setter
+     * @param eventLongitude
+     *      Longitude to set
+     */
+    public void setEventLongitude(Double eventLongitude) {
+        this.eventLongitude = eventLongitude;
     }
 
     public Timestamp getEventDate() {

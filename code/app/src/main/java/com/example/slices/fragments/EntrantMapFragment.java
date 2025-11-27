@@ -83,17 +83,25 @@ public class EntrantMapFragment extends Fragment implements OnMapReadyCallback {
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
                 .findFragmentById(R.id.map);
         if (mapFragment != null) {
+            android.util.Log.d("EntrantMapFragment", "Requesting map async...");
             mapFragment.getMapAsync(this);
+        } else {
+            android.util.Log.e("EntrantMapFragment", "Map fragment is null!");
+            Toast.makeText(getContext(), "Failed to initialize map", Toast.LENGTH_LONG).show();
         }
     }
 
     @Override
     public void onMapReady(@NonNull GoogleMap map) {
         this.googleMap = map;
+        
+        android.util.Log.d("EntrantMapFragment", "Map is ready!");
 
         // Configure map
         googleMap.getUiSettings().setZoomControlsEnabled(true);
         googleMap.getUiSettings().setMyLocationButtonEnabled(false);
+        
+        android.util.Log.d("EntrantMapFragment", "Map configured, loading event data...");
 
         // Load event data and display locations
         loadEventAndDisplayLocations();
@@ -128,11 +136,26 @@ public class EntrantMapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void displayEntrantLocations() {
-        if (currentEvent == null || googleMap == null) return;
+        if (currentEvent == null || googleMap == null) {
+            android.util.Log.e("EntrantMapFragment", "currentEvent or googleMap is null");
+            return;
+        }
+
+        android.util.Log.d("EntrantMapFragment", "Event ID: " + currentEvent.getId());
+        android.util.Log.d("EntrantMapFragment", "Event name: " + currentEvent.getEventInfo().getName());
+        android.util.Log.d("EntrantMapFragment", "Geolocation enabled: " + currentEvent.getEventInfo().getEntrantLoc());
 
         // Check if geolocation is enabled for this event
         if (!currentEvent.getEventInfo().getEntrantLoc()) {
+            android.util.Log.w("EntrantMapFragment", "Location tracking is not enabled for this event");
             showError("Location tracking is not enabled for this event");
+            return;
+        }
+
+        // Check if waitlist exists
+        if (currentEvent.getWaitlist() == null) {
+            android.util.Log.e("EntrantMapFragment", "Waitlist is null!");
+            showError("No waitlist data available");
             return;
         }
 
@@ -140,7 +163,11 @@ public class EntrantMapFragment extends Fragment implements OnMapReadyCallback {
         Map<String, Map<String, Double>> entrantLocations = 
             currentEvent.getWaitlist().getEntrantLocations();
 
+        android.util.Log.d("EntrantMapFragment", "Entrant locations map: " + 
+            (entrantLocations == null ? "null" : "size=" + entrantLocations.size()));
+
         if (entrantLocations == null || entrantLocations.isEmpty()) {
+            android.util.Log.w("EntrantMapFragment", "No location data available for entrants");
             showError("No location data available for entrants");
             return;
         }
@@ -149,9 +176,14 @@ public class EntrantMapFragment extends Fragment implements OnMapReadyCallback {
         List<LatLng> positions = new ArrayList<>();
         int markerCount = 0;
 
+        android.util.Log.d("EntrantMapFragment", "Processing " + entrantLocations.size() + " entrant location entries");
+
         for (Map.Entry<String, Map<String, Double>> entry : entrantLocations.entrySet()) {
             String entrantIdStr = entry.getKey();
             Map<String, Double> locationMap = entry.getValue();
+
+            android.util.Log.d("EntrantMapFragment", "Processing entrant ID: " + entrantIdStr);
+            android.util.Log.d("EntrantMapFragment", "Location map: " + locationMap);
 
             if (locationMap != null && 
                 locationMap.containsKey("latitude") && 
@@ -161,12 +193,14 @@ public class EntrantMapFragment extends Fragment implements OnMapReadyCallback {
                 double lng = locationMap.get("longitude");
                 LatLng position = new LatLng(lat, lng);
 
+                android.util.Log.d("EntrantMapFragment", "Adding marker at: " + lat + ", " + lng);
+
                 // Convert String ID back to Integer for lookup
                 int entrantId;
                 try {
                     entrantId = Integer.parseInt(entrantIdStr);
                 } catch (NumberFormatException e) {
-                    // Skip this entry if ID cannot be parsed
+                    android.util.Log.e("EntrantMapFragment", "Failed to parse entrant ID: " + entrantIdStr);
                     continue;
                 }
                 
@@ -181,8 +215,12 @@ public class EntrantMapFragment extends Fragment implements OnMapReadyCallback {
 
                 positions.add(position);
                 markerCount++;
+            } else {
+                android.util.Log.w("EntrantMapFragment", "Location map missing lat/lng for entrant: " + entrantIdStr);
             }
         }
+
+        android.util.Log.d("EntrantMapFragment", "Added " + markerCount + " markers to map");
 
         // Show count
         Toast.makeText(getContext(), 
@@ -191,7 +229,10 @@ public class EntrantMapFragment extends Fragment implements OnMapReadyCallback {
 
         // Zoom camera to show all markers
         if (!positions.isEmpty()) {
+            android.util.Log.d("EntrantMapFragment", "Zooming to show all markers");
             zoomToShowAllMarkers(positions);
+        } else {
+            android.util.Log.w("EntrantMapFragment", "No positions to zoom to, staying at default location");
         }
     }
 
@@ -229,12 +270,19 @@ public class EntrantMapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void showError(String message) {
+        android.util.Log.e("EntrantMapFragment", "Error: " + message);
+        
         if (getContext() != null) {
             Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
         }
-        // Optionally close the fragment or navigate back
-        if (getActivity() != null) {
-            getActivity().onBackPressed();
+        
+        // Set map to a default location so it's not blank
+        if (googleMap != null) {
+            LatLng defaultLocation = new LatLng(53.5461, -113.4938); // Edmonton, AB
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10));
+            android.util.Log.d("EntrantMapFragment", "Set map to default location due to error");
         }
+        
+        // Don't close the fragment - let user see the map and error message
     }
 }

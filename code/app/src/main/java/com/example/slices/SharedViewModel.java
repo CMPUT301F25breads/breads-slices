@@ -1,5 +1,7 @@
 package com.example.slices;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -103,6 +105,7 @@ public class SharedViewModel extends ViewModel {
         ArrayList<String> copy = new ArrayList<>(current);
         copy.add(eventId);
         waitlistedEventIds.setValue(copy);
+        Log.d("SharedViewModel", "Added waitlisted ID: " + eventId + " (total: " + copy.size() + ")");
     }
 
     // removes one event ID from the list if it exists
@@ -112,12 +115,25 @@ public class SharedViewModel extends ViewModel {
         }
         ArrayList<String> list = waitlistedEventIds.getValue();
         if (list == null || !list.contains(eventId)) {
+            Log.d("SharedViewModel", "Attempted to remove non-existent waitlisted ID: " + eventId);
             return;
         }
         ArrayList<String> copy = new ArrayList<>(list);
         if (copy.remove(eventId)) {
             waitlistedEventIds.setValue(copy);
+            Log.d("SharedViewModel", "Removed waitlisted ID: " + eventId + " (remaining: " + copy.size() + ")");
         }
+    }
+
+    /**
+     * Clears all waitlisted event IDs
+     * Used when refreshing the complete waitlist state from the database
+     */
+    public void clearWaitlistedIds() {
+        ArrayList<String> current = waitlistedEventIds.getValue();
+        int previousSize = (current != null) ? current.size() : 0;
+        waitlistedEventIds.setValue(new ArrayList<>());
+        Log.d("SharedViewModel", "Cleared all waitlisted IDs (was: " + previousSize + ")");
     }
 
 }
