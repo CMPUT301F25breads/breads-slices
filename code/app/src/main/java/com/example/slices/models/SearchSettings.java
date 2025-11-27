@@ -1,13 +1,16 @@
 package com.example.slices.models;
 
+import android.location.Location;
+
 import com.google.firebase.Timestamp;
 
 public class SearchSettings {
     private String name = null;
-    private String loc = null;
-    private int maxEntrants = -1;
+    private String address = null;
+    private Location loc;
     private Timestamp availStart = null;
     private Timestamp availEnd = null;
+    private int id;
 
     public SearchSettings(){}
 
@@ -28,6 +31,26 @@ public class SearchSettings {
         this.availEnd = availEnd;
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public Location getLoc() {
+        return loc;
+    }
+
+    public void setLoc(Location loc) {
+        this.loc = loc;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     private boolean enrolled = false;
 
     public String getName() {
@@ -42,23 +65,12 @@ public class SearchSettings {
         return enrolled;
     }
 
-    public void setEnrolled(boolean enrolled) {
-        this.enrolled = enrolled;
+    public void checkEnrolled() {
+        enrolled = !enrolled;
     }
 
-    public int getMaxEntrants() {
-        return maxEntrants;
-    }
 
-    public void setMaxEntrants(int maxEntrants) {
-        this.maxEntrants = maxEntrants;
-    }
-
-    public String getLoc() {
-        return loc;
-    }
-
-    public void setLoc(String loc) {
-        this.loc = loc;
+    public String getAddress() {
+        return address;
     }
 }

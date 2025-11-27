@@ -1,8 +1,13 @@
 package com.example.slices.models;
 
+import android.location.Location;
+
 import com.example.slices.interfaces.DBWriteCallback;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Exclude;
+import com.google.firebase.firestore.IgnoreExtraProperties;
 
+@IgnoreExtraProperties
 public class EventInfo {
     /**
      * Name of the event
@@ -14,8 +19,12 @@ public class EventInfo {
     private String description; // Probably will be it's own thing later
     /**
      * Location of the event
+     * Excluded from Firebase serialization as Location is not a simple POJO
      */
-    private String location; // Will be geolocation object later
+    @Exclude
+    private Location location;
+
+    private String address;
 
     /**
      * Date of the event
@@ -68,12 +77,12 @@ public class EventInfo {
 
     }
 
-    public EventInfo(String name, String description, String location, String guidelines,
+    public EventInfo(String name, String description, String address, String guidelines,
                      String imgUrl, Timestamp eventDate, Timestamp regStart, Timestamp regEnd,
                      int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
         this.name = name;
         this.description = description;
-        this.location = location;
+        this.location = null; // Not stored in Firebase, only used in memory for validation
         this.eventDate = eventDate;
         this.regStart = regStart;
         this.regEnd = regEnd;
@@ -86,6 +95,7 @@ public class EventInfo {
         this.entrantLoc = entrantLoc;
         this.entrantDist = entrantDist;
         this.organizerID = organizerID;
+        this.address = address;
 
     }
 
@@ -140,18 +150,28 @@ public class EventInfo {
 
 
 
-    public String getLocation() {
+    @Exclude
+    public Location getLocation() {
         return location;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     /**
      * INTERNAL USE ONLY - Firestore requires this setter
      * Do NOT call this method directly. Use the update counterpart instead.
+     * Excluded from Firebase serialization as Location is not a simple POJO
      * @param location
      *      Location to set
      */
-
-    public void setLocation(String location) {
+    @Exclude
+    public void setLocation(Location location) {
         this.location = location;
 
     }

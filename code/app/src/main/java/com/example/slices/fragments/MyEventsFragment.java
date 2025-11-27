@@ -66,6 +66,12 @@ public class MyEventsFragment extends Fragment {
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
                 sharedViewModel.setEvents(events);
                 sharedViewModel.setWaitlistedEvents(waitEvents);
+                
+                // Populate waitlistedEventIds from the loaded waitlist events
+                // This ensures the browse screen shows correct button states
+                for (Event event : waitEvents) {
+                    sharedViewModel.addWaitlistedId(String.valueOf(event.getId()));
+                }
 
                 EventAdapter confirmedAdapter = new EventAdapter(requireContext(), events, MyEventsFragment.this);
                 binding.confirmedList.setLayoutManager(new LinearLayoutManager(requireContext()));

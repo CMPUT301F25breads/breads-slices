@@ -1,6 +1,5 @@
 package com.example.slices.fragments;
 
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.InputType;
@@ -14,19 +13,20 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.NavController;
-import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.EntrantEventAdapter;
 import com.example.slices.controllers.EventController;
 import com.example.slices.models.Event;
+import com.example.slices.interfaces.EventCallback;
 
 import com.example.slices.databinding.BrowseFragmentBinding;
 import com.example.slices.interfaces.EventListCallback;
 import com.example.slices.models.SearchSettings;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.Timestamp;
 
 import java.text.ParseException;
@@ -60,8 +60,22 @@ public class BrowseFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
+        eventAdapter = new EntrantEventAdapter(requireContext(), BrowseFragment.this, eventList);
+        binding.browseList.setLayoutManager(new LinearLayoutManager(requireContext()));
         SearchSettings search = vm.getSearch();
+
+        // set scanner ready for QR code results
+        getParentFragmentManager().setFragmentResultListener("qr_scan_result",
+                this, (requestKey, bundle) -> {
+            int eventId = bundle.getInt("scanned_event_id", -1);
+
+            if (eventId != -1) {
+                openEventDetailsFromQR(eventId);
+            }
+        });
+
+        // Load user's waitlisted events to populate button states correctly
+        loadUserWaitlistedEvents();
 
         setupEvents(search);
 
@@ -69,8 +83,40 @@ public class BrowseFragment extends Fragment {
 
     }
 
+    /**
+     * openEventDetailsFromQR
+     *   called when the CameraFragment returns a scanned EventID from FireStore DB
+     *
+     *   This method receives the QR code's EventID and redirects to the event using the
+     *   EventDetailsFragment
+     * @param eventId
+     *   The event ID extracted from the QR code
+     */
+    private void openEventDetailsFromQR(int eventId) {
+        EventController.getEvent(eventId, new EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+                // store selected event in viewmodel
+                vm.setSelectedEvent(event);
+
+                // navigate to EventDetailsFragment
+                NavHostFragment.findNavController(BrowseFragment.this)
+                        .navigate(R.id.eventDetailsFragment);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(requireContext(),
+                        "Event not found, try again", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
     public void setupEvents(SearchSettings search) {
+        // Set ViewModel on adapter before any data operations to prevent null reference crashes
+        eventAdapter.setViewModel(vm);
+        binding.browseList.setAdapter(eventAdapter);
+
         EventController.queryEvents(search, new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
@@ -78,10 +124,6 @@ public class BrowseFragment extends Fragment {
                     eventList.clear();
                     eventList.addAll(events);
                     eventAdapter.notifyDataSetChanged();
-
-                    //eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
-                    eventAdapter.setViewModel(vm);
-                    binding.browseEventList.setAdapter(eventAdapter);
 
                 } catch (Exception e) {
                     Log.e("BrowseFragment", "Error setting adapter", e);
@@ -92,13 +134,8 @@ public class BrowseFragment extends Fragment {
             @Override
             public void onFailure(Exception e) {
                 Log.e("BrowseFragment", "Error fetching events", e);
-
                 Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
-
-                //eventAdapter = new EntrantEventAdapter(requireContext(), eventList);
                 eventAdapter.notifyDataSetChanged();
-                binding.browseEventList.setAdapter(eventAdapter);
-
             }
         });
     }
@@ -108,19 +145,6 @@ public class BrowseFragment extends Fragment {
      * @author Brad Erdely
      */
     public void setupListeners() {
-        binding.browseEventList.setOnItemClickListener((parent, v, position, id)-> {
-            vm.setSelectedEvent(eventList.get(position));
-
-            NavController navController = NavHostFragment.findNavController(this);
-
-            NavOptions options = new NavOptions.Builder()
-                    .setRestoreState(true)
-                    .setPopUpTo(R.id.BrowseFragment, true)
-                    .build();
-
-            navController.navigate(R.id.action_global_EventDetailsFragment, null, options);
-        });
-
         binding.searchButton.setOnClickListener(v -> {
             SearchSettings updated = vm.getSearch();
             if(updated == null)
@@ -165,8 +189,8 @@ public class BrowseFragment extends Fragment {
         if (current != null) {
             if (current.getName() != null)
                 nameInput.setText(current.getName());
-            if (current.getLoc() != null)
-                locationInput.setText(current.getLoc());
+            if (current.getAddress() != null)
+                locationInput.setText(current.getAddress());
 
             SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
             if (current.getAvailStart() != null)
@@ -176,7 +200,7 @@ public class BrowseFragment extends Fragment {
         }
 
 
-        new AlertDialog.Builder(requireContext())
+        new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
                 .setTitle("Search Filters")
                 .setView(dialogView)
                 .setPositiveButton("Search", (dialog, which) -> {
@@ -184,7 +208,6 @@ public class BrowseFragment extends Fragment {
                     String name = nameInput.getText().toString().trim();
                     String location = locationInput.getText().toString().trim();
 
-                    // Parse dates
                     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
                     Timestamp startTimestamp = null;
                     Timestamp endTimestamp = null;
@@ -196,8 +219,13 @@ public class BrowseFragment extends Fragment {
                         if (!startStr.isEmpty())
                             startTimestamp = new Timestamp(sdf.parse(startStr));
 
-                        if (!endStr.isEmpty())
-                            endTimestamp = new Timestamp(sdf.parse(endStr));
+                        if (!endStr.isEmpty()) {
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(sdf.parse(endStr));
+                            cal.add(Calendar.DAY_OF_MONTH, 1);
+
+                            endTimestamp = new Timestamp(cal.getTime());
+                        }
 
                     } catch (ParseException e) {
                         Toast.makeText(requireContext(), "Invalid date format", Toast.LENGTH_SHORT).show();
@@ -205,13 +233,12 @@ public class BrowseFragment extends Fragment {
 
                     SearchSettings newSearch = new SearchSettings();
                     newSearch.setName(name);
-                    newSearch.setLoc(location);
+                    newSearch.setAddress(location);
                     newSearch.setAvailStart(startTimestamp);
                     newSearch.setAvailEnd(endTimestamp);
 
                     vm.setSearch(newSearch);
-                    binding.searchEditText.setText(nameInput.getText());
-
+                    binding.searchEditText.setText(name);
 
                     setupEvents(newSearch);
                 })
@@ -237,8 +264,55 @@ public class BrowseFragment extends Fragment {
         datePicker.show();
     }
 
+    /**
+     * Opens the camera app when tapped
+     */
     private void navigateToCamera() {
+        NavHostFragment.findNavController(BrowseFragment.this).navigate(R.id.cameraFragment);
+    }
 
+    /**
+     * Loads the user's waitlisted events and populates the waitlistedEventIds in the ViewModel.
+     * This ensures that the browse screen shows correct button states (Join vs Leave).
+     */
+    private void loadUserWaitlistedEvents() {
+        // Only load if user is initialized
+        if (vm.getUser() == null || vm.getUser().getId() == 0) {
+            return;
+        }
+
+        // Check if already loaded to avoid redundant queries
+        if (vm.getWaitlistedEvents() != null && !vm.getWaitlistedEvents().isEmpty()) {
+            // Already loaded, just sync the IDs
+            for (Event event : vm.getWaitlistedEvents()) {
+                vm.addWaitlistedId(String.valueOf(event.getId()));
+            }
+            return;
+        }
+
+        // Load from database
+        EventController.getEventsForEntrant(vm.getUser(), new com.example.slices.interfaces.EntrantEventCallback() {
+            @Override
+            public void onSuccess(List<Event> events, List<Event> waitEvents) {
+                vm.setWaitlistedEvents(waitEvents);
+
+                // Populate waitlistedEventIds for button state tracking
+                for (Event event : waitEvents) {
+                    vm.addWaitlistedId(String.valueOf(event.getId()));
+                }
+
+                // Refresh the adapter to update button states
+                if (eventAdapter != null) {
+                    eventAdapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // Silently fail - user can still browse events
+                Log.e("BrowseFragment", "Failed to load user's waitlisted events", e);
+            }
+        });
     }
 
     @Override

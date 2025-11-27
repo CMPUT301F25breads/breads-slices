@@ -11,6 +11,9 @@ firebaseFirestore = "26.0.2"
 navigationUi = "2.9.5"
 navigationFragment = "2.9.5"
 firebaseAuth = "24.0.1"
+playServicesLocation = "21.3.0"
+cameraView = "1.5.1"
+cameraLifecycle = "1.5.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -24,6 +27,9 @@ firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
+camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraLifecycle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

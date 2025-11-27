@@ -23,8 +23,12 @@ import com.example.slices.models.Invitation;
 import com.example.slices.models.Notification;
 import com.google.android.material.button.MaterialButton;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 
 /**
@@ -79,23 +83,38 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         h.title.setText(n.getTitle());
         h.body.setText(n.getBody());
 
-        // Tries to fetch the event name and date from the database,
-        // if it fails it will set the text to "Event not found"
-        EventController.getEvent(n.getEventId(), new EventCallback() {
-            @Override
-            public void onSuccess(Event event) {
-                EventInfo eventInfo = event.getEventInfo();
-                h.eventName.setText(eventInfo.getName());
-                h.eventDate.setText(eventInfo.getEventDate().toDate().toString());
-            }
-            @Override
-            public void onFailure(Exception e) {
-                h.eventName.setText("Event not found");
-                h.eventDate.setText("Event not found");
-                Log.e("NotificationAdapter", "Error fetching event", e);
-                Toast.makeText(context, "Error: Couldn't load event", Toast.LENGTH_SHORT).show();
-            }
-        });
+        // Format and display the notification timestamp in local timezone
+        if (n.getTimestamp() != null) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault());
+            dateFormat.setTimeZone(TimeZone.getDefault()); // Uses device's local timezone
+            Date notificationDate = n.getTimestamp().toDate();
+            h.eventDate.setText(dateFormat.format(notificationDate));
+        } else {
+            h.eventDate.setText("Unknown time");
+        }
+
+        // Tries to fetch the event name from the database,
+        // if eventId is 0 or invalid, it will set the text to "General Notification"
+        if (n.getEventId() == 0) {
+            h.eventName.setText("General Notification");
+        } else {
+            EventController.getEvent(n.getEventId(), new EventCallback() {
+                @Override
+                public void onSuccess(Event event) {
+                    if (event != null && event.getEventInfo() != null) {
+                        EventInfo eventInfo = event.getEventInfo();
+                        h.eventName.setText(eventInfo.getName());
+                    } else {
+                        h.eventName.setText("Event not found");
+                    }
+                }
+                @Override
+                public void onFailure(Exception e) {
+                    h.eventName.setText("Event not found");
+                    Log.e("NotificationAdapter", "Error fetching event for ID: " + n.getEventId(), e);
+                }
+            });
+        }
 
         // Configure action buttons based on notification type
         switch (n.getType()) {

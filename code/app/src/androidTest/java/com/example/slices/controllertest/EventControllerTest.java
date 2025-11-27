@@ -1,10 +1,11 @@
-package com.example.slices;
+package com.example.slices.controllertest;
 
 import static org.junit.Assert.assertEquals;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 
 import com.example.slices.controllers.EntrantController;
 import com.example.slices.controllers.EventController;
@@ -36,6 +37,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class EventControllerTest {
@@ -47,6 +49,7 @@ public class EventControllerTest {
         EventController.setTesting(true);
         Logger.setTesting(true);
         NotificationManager.setTesting(true);
+
 
         //Clean it out
         CountDownLatch latch = new CountDownLatch(4);
@@ -105,10 +108,9 @@ public class EventControllerTest {
      *      Entrant name
      * @return
      *      Entrant
-     * @throws InterruptedException
-     *      If latch fails to complete
+
      */
-    private Entrant createEntrant(String name) throws InterruptedException {
+    private Entrant createEntrant(String name)  {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Entrant> ref = new AtomicReference<>();
         //Create a new entrant
@@ -132,10 +134,8 @@ public class EventControllerTest {
      * Create a valid event - requires valid times
      * @return
      *      Event
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private Event createValidEvent() throws InterruptedException {
+    private Event createValidEvent() {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Event> ref = new AtomicReference<>();
         //Get some valid times
@@ -165,12 +165,8 @@ public class EventControllerTest {
      * Create an event without checking times
      * @param info
      *      Event info to use for creating the event
-     * @return
-     *      Event
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
-    private Event createEventNoCheck(EventInfo info) throws InterruptedException {
+    private void createEventNoCheck(EventInfo info) {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Event> ref = new AtomicReference<>();
         //Create the event without checking times
@@ -186,9 +182,7 @@ public class EventControllerTest {
                 fail("Failed to create event (no check): " + e.getMessage());
             }
         });
-
         await(latch);
-        return ref.get();
     }
 
     /**
@@ -197,10 +191,9 @@ public class EventControllerTest {
      *      Entrant ID who's notifications to get
      * @return
      *      List of notifications
-     * @throws InterruptedException
-     *      If latch fails to complete
+
      */
-    private List<Notification> getNotifications(int entrantId) throws InterruptedException {
+    private List<Notification> getNotifications(int entrantId)  {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<List<Notification>> ref = new AtomicReference<>(new ArrayList<>());
         //Get all notifications for the entrant
@@ -225,35 +218,41 @@ public class EventControllerTest {
      *      Entrant ID
      * @param expected
      *      Expected number of notifications
-     * @throws InterruptedException
-     *      If latch fails to complete
      */
-    private void assertNotificationCount(int entrantId, int expected) throws InterruptedException {
+    private void assertNotificationCount(int entrantId, int expected) {
         assertEquals(expected, getNotifications(entrantId).size());
     }
 
     /**
-     * Tests the singleton instance of EventController
-     * Pass if the instance is not null
+     * Tests getting all past events
+     * Pass if the list is the same size as the collection
      * Fail otherwise
+     * @return
+     *      EventInfo for a past event
      */
-    @Test
-    public void testGetInstanceNotNull() {
-        EventController controller = EventController.getInstance();
-        assertNotNull(controller);
+    private static EventInfo getPastInfo() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_YEAR, -2);
+        Date pastEventDate = cal.getTime();
+        Timestamp pastEventTs = new Timestamp(pastEventDate);
+
+        cal.add(Calendar.HOUR, -4);
+        Timestamp pastRegStart = new Timestamp(cal.getTime());
+        cal.add(Calendar.HOUR, -2);
+        Timestamp pastRegEnd = new Timestamp(cal.getTime());
+
+        return new EventInfo("Past", "Desc", "Loc", "Guide", "Img",
+                pastEventTs, pastRegStart, pastRegEnd, 10, 5, false, "none", 0, 123);
     }
+
 
     /**
      * Tests the write and read of an event
      * Pass if the event can be read back
      * Fail otherwise
-     * @throws Exception
-     *      Thrown if the event cannot be read back
-     *      or if the write fails
-     *      or if the latch fails to complete
      */
     @Test
-    public void testWriteAndGetEvent() throws Exception {
+    public void testWriteAndGetEvent() {
         clearAll();
         Event event = createValidEvent();
         CountDownLatch latch = new CountDownLatch(1);
@@ -275,11 +274,9 @@ public class EventControllerTest {
      * Tests getting an event that does not exist
      * Pass if the exception is thrown
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetEventNotFound() throws InterruptedException {
+    public void testGetEventNotFound() {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         EventController.getEvent(9999, new EventCallback() {
@@ -300,12 +297,10 @@ public class EventControllerTest {
      * Tests updating an event
      * Pass if the event can be updated
      * Fail otherwise
-     * @throws Exception
-     *      Thrown if the event cannot be updated
-     *      or if the latch fails to complete
+
      */
     @Test
-    public void testUpdateEvent() throws Exception {
+    public void testUpdateEvent() {
         clearAll();
         Event event = createValidEvent();
         CountDownLatch latch = new CountDownLatch(1);
@@ -338,15 +333,14 @@ public class EventControllerTest {
      * Tests updating an eventInfo
      * Pass if the event can be updated
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testUpdateEventInfo() throws InterruptedException {
+    public void testUpdateEventInfo()  {
         clearAll();
         Event event = createValidEvent();
         EventInfo info = event.getEventInfo();
-        info.setLocation("New Location");
+        info.setName("HI");
+
         CountDownLatch latch = new CountDownLatch(1);
         EventController.updateEventInfo(event, info, new DBWriteCallback() {
             @Override
@@ -354,7 +348,7 @@ public class EventControllerTest {
                 EventController.getEvent(event.getId(), new EventCallback() {
                     @Override
                     public void onSuccess(Event result) {
-                        assertEquals("New Location", result.getEventInfo().getLocation());
+                        assertEquals("HI", result.getEventInfo().getName());
                         latch.countDown();
                     }
                     @Override
@@ -375,11 +369,9 @@ public class EventControllerTest {
      * Tests getting a new event ID from empty collection
      * Pass if the ID is 1
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetNewEventIdOnEmptyCollection() throws InterruptedException {
+    public void testGetNewEventIdOnEmptyCollection()  {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Integer> ref = new AtomicReference<>(0);
@@ -402,11 +394,9 @@ public class EventControllerTest {
      * Tests getting a new event ID from non-empty collection
      * Pass if the ID is greater than 1
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetNewEventIdAfterEventExists() throws InterruptedException {
+    public void testGetNewEventIdAfterEventExists() {
         clearAll();
         Event e1 = createValidEvent();
         CountDownLatch latch = new CountDownLatch(1);
@@ -429,11 +419,9 @@ public class EventControllerTest {
      * Tests getting all events from empty collection
      * Pass if the list is empty
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetAllEventsEmpty() throws InterruptedException {
+    public void testGetAllEventsEmpty() {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         EventController.getAllEvents(new EventListCallback() {
@@ -453,11 +441,9 @@ public class EventControllerTest {
      * Tests getting all events from non-empty collection
      * Pass if the list is the same size as the collection
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetAllEventsMultiple() throws InterruptedException {
+    public void testGetAllEventsMultiple() {
         clearAll();
         //Make 2 events
         createValidEvent();
@@ -480,11 +466,9 @@ public class EventControllerTest {
      * Tests adding and removing an entrant from an event
      * Pass if the entrant is removed
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testAddEntrantAndRemoveEntrant() throws Exception {
+    public void testAddEntrantAndRemoveEntrant()  {
         clearAll();
         Event event = createValidEvent();
         Entrant entrant = createEntrant("User");
@@ -519,11 +503,10 @@ public class EventControllerTest {
      * Tests getting all entrants for an event
      * Pass if the list is the same size as the collection
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
+
      */
     @Test
-    public void testGetEntrantsForEvent() throws Exception {
+    public void testGetEntrantsForEvent()  {
         clearAll();
         Event event = createValidEvent();
         Entrant e1 = createEntrant("A");
@@ -564,11 +547,10 @@ public class EventControllerTest {
      * Tests getting all entrants for an event that does not exist
      * Pass if the exception is thrown
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
+
      */
     @Test
-    public void testGetEntrantsForEventNotFound() throws InterruptedException {
+    public void testGetEntrantsForEventNotFound()  {
         clearAll();
         CountDownLatch latch = new CountDownLatch(1);
         EventController.getEntrantsForEvent(9999, new EntrantListCallback() {
@@ -588,11 +570,9 @@ public class EventControllerTest {
      * Tests getting all waitlist for an event
      * Pass if the list is the same size as the collection
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetWaitlistForEvent() throws InterruptedException {
+    public void testGetWaitlistForEvent() {
         clearAll();
 
         Event event = createValidEvent();
@@ -641,11 +621,9 @@ public class EventControllerTest {
      * Tests getting all events for an entrant that is not in an event
      * Pass if the list is empty
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetEventsForEntrantNone() throws Exception {
+    public void testGetEventsForEntrantNone() {
         clearAll();
         Entrant e = createEntrant("NoEvents");
         CountDownLatch latch = new CountDownLatch(1);
@@ -667,11 +645,9 @@ public class EventControllerTest {
     /**
      * Tests getting all events for an entrant that is in an event and waitlist
      * Pass if the list is not empty
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetEventsForEntrantInEventAndWaitlist() throws InterruptedException {
+    public void testGetEventsForEntrantInEventAndWaitlist(){
         clearAll();
         //Create entrant and events
         Entrant entrant = createEntrant("Mixed");
@@ -723,11 +699,9 @@ public class EventControllerTest {
      * Tests deleting an event with no entrants
      * Pass if the event is deleted
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testDeleteEventNoEntrants() throws Exception {
+    public void testDeleteEventNoEntrants() {
         clearAll();
         Event event = createValidEvent();
         CountDownLatch del = new CountDownLatch(1);
@@ -763,12 +737,9 @@ public class EventControllerTest {
      * Tests deleting an event with mixed entrants and notifications
      * Pass if the event is deleted
      * Fail otherwise
-     * @throws Exception
-     *      Thrown if the event cannot be deleted
-     *      or if the latch fails to complete
      */
     @Test
-    public void testDeleteEventWithMixedEntrantsAndNotifications() throws Exception {
+    public void testDeleteEventWithMixedEntrantsAndNotifications() {
         clearAll();
 
         Event event = createValidEvent();
@@ -809,11 +780,9 @@ public class EventControllerTest {
     /**
      * Tests deleting an event that does not exist
      * Pass if the exception is thrown
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testDeleteEventNotFound() throws InterruptedException {
+    public void testDeleteEventNotFound() {
         clearAll();
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -832,8 +801,13 @@ public class EventControllerTest {
         await(latch);
     }
 
+    /**
+     * Tests deleting an event with mixed entrants
+     * Pass if the event is deleted
+     * Fail otherwise
+     */
     @Test
-    public void testDeleteEventWithMixedEntrants() throws Exception {
+    public void testDeleteEventWithMixedEntrants()  {
         clearAll();
 
         Event event = createValidEvent();
@@ -873,11 +847,9 @@ public class EventControllerTest {
      * Tests creating an event with valid times
      * Pass if the event is created
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testCreateEventValidTimes() throws InterruptedException {
+    public void testCreateEventValidTimes() {
         clearAll();
         Event event = createValidEvent();
         assertNotNull(event);
@@ -888,11 +860,9 @@ public class EventControllerTest {
      * Tests creating an event with invalid times
      * Pass if the event is not created
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testCreateEventInvalidTimes() throws InterruptedException {
+    public void testCreateEventInvalidTimes() {
         clearAll();
         //Make regStart in the past to guarantee failure
         long nowMs = System.currentTimeMillis();
@@ -920,11 +890,9 @@ public class EventControllerTest {
      * Tests creating an event from an event info
      * Pass if the event is created
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testCreateEventFromEventInfo() throws InterruptedException {
+    public void testCreateEventFromEventInfo() {
         clearAll();
         List<Timestamp> times = EventController.getTestEventTimes();
         //Create event info
@@ -957,11 +925,9 @@ public class EventControllerTest {
      * Tests adding and removing an entrant from an event
      * Pass if the entrant is removed
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testAddAndRemoveEntrantFromEvent() throws InterruptedException {
+    public void testAddAndRemoveEntrantFromEvent() {
         clearAll();
         Event event = createValidEvent();
         Entrant e = createEntrant("AddRemove");
@@ -1012,11 +978,9 @@ public class EventControllerTest {
      * Tests adding and removing an entrant from a waitlist
      * Pass if the entrant is removed
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if the entrant cannot be added to the waitlist
      */
     @Test
-    public void testAddAndRemoveEntrantFromWaitlist() throws InterruptedException {
+    public void testAddAndRemoveEntrantFromWaitlist() {
         clearAll();
 
         Event event = createValidEvent();
@@ -1067,11 +1031,9 @@ public class EventControllerTest {
      * Tests adding and removing an entrant from an event
      * Pass if the entrant is removed
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if the entrant cannot be added to the event
      */
     @Test
-    public void testAddAndRemoveEntrantsFromEvent() throws InterruptedException {
+    public void testAddAndRemoveEntrantsFromEvent() {
         clearAll();
 
         Event event = createValidEvent();
@@ -1138,30 +1100,14 @@ public class EventControllerTest {
      * Tests getting all future events
      * Pass if the list is the same size as the collection
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testGetAllFutureEvents() throws InterruptedException {
+    public void testGetAllFutureEvents() {
         clearAll();
 
         //Create a future event
         Event futureEvent = createValidEvent();
-
-        //Create a past event
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_YEAR, -2);
-        Date pastEventDate = cal.getTime();
-        Timestamp pastEventTs = new Timestamp(pastEventDate);
-
-        cal.add(Calendar.HOUR, -4);
-        Timestamp pastRegStart = new Timestamp(cal.getTime());
-        cal.add(Calendar.HOUR, -2);
-        Timestamp pastRegEnd = new Timestamp(cal.getTime());
-
-        EventInfo pastInfo = new EventInfo("Past", "Desc", "Loc", "Guide", "Img",
-                pastEventTs, pastRegStart, pastRegEnd, 10, 5, false, "none", 0, 123);
-        createEventNoCheck(pastInfo);
+        createEventNoCheck(getPastInfo());
 
         CountDownLatch latch = new CountDownLatch(1);
         EventController.getAllFutureEvents(new EventListCallback() {
@@ -1180,15 +1126,16 @@ public class EventControllerTest {
         });
         await(latch);
     }
+
+
+
     /**
      *  Tests doing the lottery on an event that is completely full
      *  Pass if the lottery fails
      *  Fail otherwise
-     *  @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testDoLotteryFullEvent() throws InterruptedException {
+    public void testDoLotteryFullEvent()  {
         clearAll();
 
         Event event = createValidEvent();
@@ -1228,11 +1175,9 @@ public class EventControllerTest {
      *  Tests doing the lottery on an event with no entrants in waitlist
      *  Pass if the lottery fails
      *  Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testDoLotteryNoWaiting() throws InterruptedException {
+    public void testDoLotteryNoWaiting()  {
         clearAll();
         Event event = createValidEvent();
         //Make sure event has empty waitlist
@@ -1255,11 +1200,9 @@ public class EventControllerTest {
      *  Tests doing the lottery on an event with enough space for all entrants in waitlist
      *  Pass if the lottery succeeds
      *  Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testDoLotteryEnoughSpace() throws InterruptedException {
+    public void testDoLotteryEnoughSpace() {
         clearAll();
 
         Event event = createValidEvent();
@@ -1335,11 +1278,9 @@ public class EventControllerTest {
      * Tests doing a lottery on a partially full event
      * Pass if the lottery succeeds
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if latch fails to complete
      */
     @Test
-    public void testDoLotterySomeAddedPartFull() throws InterruptedException {
+    public void testDoLotterySomeAddedPartFull() {
         clearAll();
         Event event = createValidEvent();
 
@@ -1418,11 +1359,9 @@ public class EventControllerTest {
      * Tests that adding an entrant to an event removes them from the waitlist
      * Pass if the entrants are removed
      * Fail otherwise
-     * @throws InterruptedException
-     *      Thrown if the entrants cannot be added to the event
      */
     @Test
-    public void testAddEntrantsToEventAddsAndRemovesFromWaitlist() throws InterruptedException {
+    public void testAddEntrantsToEventAddsAndRemovesFromWaitlist() {
         clearAll();
 
         Event event = createValidEvent();
@@ -1503,8 +1442,13 @@ public class EventControllerTest {
         await(checkWL);
     }
 
+    /**
+     * Tests adding an entrant to an event that is in an event
+     * Pass if the entrant is not added
+     * Fail otherwise
+     */
     @Test
-    public void testAddToWaitlistWhenInEvent() throws InterruptedException {
+    public void testAddToWaitlistWhenInEvent() {
         clearAll();
         Event event = createValidEvent();
 
@@ -1537,6 +1481,374 @@ public class EventControllerTest {
         });
         await(addWL);
     }
+
+    /**
+     * Tests getting all events for an organizer
+     * Pass if the list is not empty
+     * Fail otherwise
+     */
+    @Test
+    public void testGetEventsForOrganizer() {
+        clearAll();
+        //Create an organizer
+        try {
+            Entrant organizer = createEntrant("Organizer");
+            //Now create an event for the organizer
+            Event event = createValidEvent();
+            event.getEventInfo().setOrganizerID(organizer.getId());
+            //Save event
+            EventController.writeEvent(event, new DBWriteCallback()
+            {
+                @Override
+                public void onSuccess() {
+                    //Now get events for organizer
+                    EventController.getEventsForOrganizer(organizer.getId(), new EventListCallback() {
+                        @Override
+                        public void onSuccess(List<Event> events) {
+                            assertEquals(1, events.size());
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            fail("Failed to get events for organizer");
+                        }
+                    });
+                }
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to save event");
+                }
+            });
+        }
+        catch (Exception e) {
+            fail("Failed to create organizer");
+        }
+
+        //Create an event for the organizer
+    }
+
+    /**
+     * Tests that the lottery sends invites to all entrants that win
+     * Pass if the invites are sent
+     * Fail otherwise
+     */
+    @Test
+    public void testLotterySendsInvites() {
+        clearAll();
+        Entrant organizer = null;
+        Entrant e1 = null;
+        Entrant e2 = null;
+        Entrant e3 = null;
+
+        //Create an organizer and 3 entrants
+        try {
+            organizer = createEntrant("Organizer");
+        }
+        catch (Exception e) {
+            fail("Failed to create organizer");
+        }
+        try {
+            e1 = createEntrant("E1");
+        }
+        catch (Exception e) {
+            fail("Failed to create entrant 1");
+        }
+        try {
+            e2 = createEntrant("E2");
+        }
+        catch (Exception e) {
+            fail("Failed to create entrant 2");
+        }
+        try {
+            e3 = createEntrant("E3");
+        }
+        catch (Exception e) {
+            fail("Failed to create entrant 3");
+        }
+
+        try {
+            //Now create an event for the organizer
+            Event event = createValidEvent();
+            event.getEventInfo().setOrganizerID(organizer.getId());
+            //Set event cap to 2
+            event.getEventInfo().setMaxEntrants(2);
+            //Save event
+            CountDownLatch save = new CountDownLatch(1);
+            EventController.writeEvent(event, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    save.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to save event");
+                }
+            });
+            await(save);
+
+            CountDownLatch add = new CountDownLatch(3);
+            EventController.addEntrantToWaitlist(event, e1, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            EventController.addEntrantToWaitlist(event, e2, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            EventController.addEntrantToWaitlist(event, e3, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            await(add);
+
+
+            //Now run lottery
+            CountDownLatch lottery = new CountDownLatch(1);
+            EventController.doLottery(event, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    lottery.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Lottery failed");
+                }
+            });
+            await(lottery);
+
+            AtomicInteger sent = new AtomicInteger(0);
+            CountDownLatch check = new CountDownLatch(3);
+            NotificationManager.getInvitationByRecipientId(e1.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            NotificationManager.getInvitationByRecipientId(e2.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            NotificationManager.getInvitationByRecipientId(e3.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            await(check);
+            assertEquals(2, sent.get());
+        }
+        catch (Exception e) {
+            fail("Something else went wrong " + e.getMessage());
+        }
+
+    }
+
+    /**
+     * Tests that the lottery sends notifications to all entrants that lose
+     * Pass if the notifications are sent
+     * Fail otherwise
+     */
+    @Test
+    public void testLotterySendsNotifications() {
+        clearAll();
+        Entrant organizer = null;
+        Entrant e1 = null;
+        Entrant e2 = null;
+        Entrant e3 = null;
+
+        //Create an organizer and 3 entrants
+        try {
+            organizer = createEntrant("Organizer");
+        } catch (Exception e) {
+            fail("Failed to create organizer");
+        }
+        try {
+            e1 = createEntrant("E1");
+        } catch (Exception e) {
+            fail("Failed to create entrant 1");
+        }
+        try {
+            e2 = createEntrant("E2");
+        } catch (Exception e) {
+            fail("Failed to create entrant 2");
+        }
+        try {
+            e3 = createEntrant("E3");
+        } catch (Exception e) {
+            fail("Failed to create entrant 3");
+        }
+        try {
+            //Now create an event for the organizer
+            Event event = createValidEvent();
+            event.getEventInfo().setOrganizerID(organizer.getId());
+            //Set event cap to 2
+            event.getEventInfo().setMaxEntrants(2);
+            //Save event
+            CountDownLatch save = new CountDownLatch(1);
+            EventController.writeEvent(event, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    save.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to save event");
+                }
+            });
+            await(save);
+            CountDownLatch add = new CountDownLatch(3);
+            EventController.addEntrantToWaitlist(event, e1, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            EventController.addEntrantToWaitlist(event, e2, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            EventController.addEntrantToWaitlist(event, e3, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    add.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Add failed");
+                }
+            });
+            await(add);
+            //Now run lottery
+            CountDownLatch lottery = new CountDownLatch(1);
+            EventController.doLottery(event, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    lottery.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Lottery failed");
+                }
+            });
+            await(lottery);
+            //Check notifications
+            AtomicInteger sent = new AtomicInteger(0);
+            CountDownLatch check = new CountDownLatch(3);
+            NotificationManager.getNotificationsByRecipientId(e1.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            NotificationManager.getNotificationsByRecipientId(e2.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            NotificationManager.getNotificationsByRecipientId(e3.getId(), new NotificationListCallback() {
+                @Override
+                public void onSuccess(List<Notification> notifications) {
+                    if (!notifications.isEmpty()) {
+                        sent.incrementAndGet();
+                    }
+                    check.countDown();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    fail("Failed to get notifications");
+                }
+            });
+            await(check);
+            assertEquals(1, sent.get());
+
+        } catch (Exception e) {
+            fail("Something else went wrong " + e.getMessage());
+        }
+    }
+
+
 }
 
 

@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -58,8 +59,9 @@ public class OrganizerCreateEventFragment extends Fragment {
 
     private EditText editEventName, editDescription, editGuidelines, editLocation;
     private SharedViewModel svm;
-    private EditText editDate, editTime, editRegStart, editRegEnd, editMaxWaiting, editMaxParticipants;
+    private EditText editDate, editTime, editRegStart, editRegEnd, editMaxWaiting, editMaxParticipants, editMaxDistance;
     private SwitchCompat switchEntrantLocation;
+    private LinearLayout layoutMaxDistance;
     private ImageView eventImage;
     private Uri imageUri;
     private Button buttonConfirm;
@@ -120,11 +122,23 @@ public class OrganizerCreateEventFragment extends Fragment {
         editRegEnd = view.findViewById(R.id.editRegEnd);
         editMaxWaiting = view.findViewById(R.id.editMaxWaiting);
         editMaxParticipants = view.findViewById(R.id.editMaxParticipants);
+        editMaxDistance = view.findViewById(R.id.editMaxDistance);
         switchEntrantLocation = view.findViewById(R.id.switchEntrantLocation);
+        layoutMaxDistance = view.findViewById(R.id.layoutMaxDistance);
         eventImage = view.findViewById(R.id.eventImage);
         uploadButton = view.findViewById(R.id.uploadButton);
         backButton = view.findViewById(R.id.backButton);
         buttonConfirm = view.findViewById(R.id.buttonConfirm);
+
+        // Handle switch visibility logic for Maximum Distance
+        switchEntrantLocation.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                layoutMaxDistance.setVisibility(View.VISIBLE);
+            } else {
+                layoutMaxDistance.setVisibility(View.GONE);
+                editMaxDistance.setText(""); // clear if turned off
+            }
+        });
 
         // TODO: Back button → navigate to organizer events (implement navigation)
 //        backButton.setOnClickListener(v -> NavHostFragment.findNavController(this)
@@ -202,7 +216,9 @@ public class OrganizerCreateEventFragment extends Fragment {
         String name = editEventName.getText().toString().trim();
         String desc = editDescription.getText().toString().trim();
         String guide = editGuidelines.getText().toString().trim();
-        String location = editLocation.getText().toString().trim();
+        //Change from Ryan
+        String address = editLocation.getText().toString().trim();
+        Location location = null;
         String dateStr = editDate.getText().toString().trim();           // mm/dd/yyyy
         String timeStr = editTime.getText().toString().trim();           // hh:mm AM/PM
         String regStartStr = editRegStart.getText().toString().trim();  // mm/dd/yyyy
@@ -211,11 +227,11 @@ public class OrganizerCreateEventFragment extends Fragment {
         String maxPartStr = editMaxParticipants.getText().toString().trim();
         boolean entrantLoc = switchEntrantLocation.isChecked();
 
-        android.util.Log.d("CreateEvent", "Name: " + name + ", Desc: " + desc + ", Date: " + dateStr + ", Time: " + timeStr + ", Location: " + location);
+        android.util.Log.d("CreateEvent", "Name: " + name + ", Desc: " + desc + ", Date: " + dateStr + ", Time: " + timeStr + ", Location: " + address);
 
         // Check required fields
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(desc) || TextUtils.isEmpty(dateStr) ||
-                TextUtils.isEmpty(timeStr) || TextUtils.isEmpty(location)) {
+                TextUtils.isEmpty(timeStr)) {
             Toast.makeText(getContext(), "Please fill in all required fields.", Toast.LENGTH_SHORT).show();
             android.util.Log.d("CreateEvent", "Validation failed - missing required fields");
             return;
@@ -267,14 +283,37 @@ public class OrganizerCreateEventFragment extends Fragment {
             android.util.Log.d("CreateEvent", "Reg Deadline: " + regEndTimestamp.toDate().toString());
             android.util.Log.d("CreateEvent", "Current Time: " + new Timestamp(Calendar.getInstance().getTime()).toDate().toString());
 
-            //How far away can the entrants be
-            String entrantDist = "10";
+            // Get entrant distance if location is required
+            // Store in meters in database, but UI shows kilometers
+            String entrantDist = "500000"; // Default: 500km in meters
+            if (entrantLoc) {
+                String maxDistKmStr = editMaxDistance.getText().toString().trim();
+                if (!TextUtils.isEmpty(maxDistKmStr)) {
+                    try {
+                        int distanceKm = Integer.parseInt(maxDistKmStr);
+                        // Validate range: 1km to 500km
+                        if (distanceKm < 1) {
+                            Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        if (distanceKm > 500) {
+                            Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        // Convert km to meters for storage
+                        entrantDist = String.valueOf(distanceKm * 1000);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+            }
 
             //Placeholder image
             String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
 
-            // Build an eventInfo
-            EventInfo eventInfo = new EventInfo(name, desc, guide, location, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
+            // Build an eventInfo (location not passed - not stored in Firebase)
+            EventInfo eventInfo = new EventInfo(name, desc, address, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
                     maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
 
 

@@ -1,5 +1,6 @@
 package com.example.slices.fragments;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,8 @@ import androidx.lifecycle.ViewModelProvider;
 import com.bumptech.glide.Glide;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.exceptions.DuplicateEntry;
+import com.example.slices.exceptions.WaitlistFull;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.R;
@@ -22,11 +25,12 @@ import com.example.slices.SharedViewModel;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.databinding.EventDetailsFragmentBinding;
 import com.example.slices.models.EventInfo;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 /** EventDetailsFragment
  * A fragment for displaying the details of a tapped-on event in the Browse window
  *
- * @Author Raj Prasad
+ * @author Raj Prasad
  */
 public class EventDetailsFragment extends Fragment {
     private EventDetailsFragmentBinding binding;
@@ -171,22 +175,35 @@ public class EventDetailsFragment extends Fragment {
                 isWaitlisted = true;
                 vm.addWaitlistedId(eventIdStr);
                 updateWaitlistButton(isWaitlisted);
-                EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        // success means do nothing else
-                    }
-
-                    @Override
-                    public void onFailure(Exception e1) {
-                        isWaitlisted = false;
-                        vm.removeWaitlistedId(eventIdStr);
-                        updateWaitlistButton(isWaitlisted);
-                        Toast.makeText(requireContext(),
-                                "Failed to join waitlist. Please try again.",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
+                
+                // Check if event requires location
+                if (e.getEventInfo().getEntrantLoc()) {
+                    // Get user's location before joining
+                    com.example.slices.controllers.LocationManager locationManager = 
+                        new com.example.slices.controllers.LocationManager();
+                    
+                    locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
+                        @Override
+                        public void onSuccess(android.location.Location location) {
+                            // Join waitlist with location
+                            joinWaitlistWithLocation(eventIdStr, location);
+                        }
+                        
+                        @Override
+                        public void onFailure(Exception e1) {
+                            // Revert on location failure
+                            isWaitlisted = false;
+                            vm.removeWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            Toast.makeText(requireContext(),
+                                    "Location permission required to join this event.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    // Join waitlist without location
+                    joinWaitlistWithLocation(eventIdStr, null);
+                }
             }
         });
         EventInfo eventInfo = e.getEventInfo();
@@ -200,12 +217,13 @@ public class EventDetailsFragment extends Fragment {
         String whenText;
         if (when != null) {
             java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(
-                    "h a  |  MMM dd yyyy", java.util.Locale.getDefault());
+                    "h:mm a  |  MMM dd, yyyy", java.util.Locale.getDefault());
             whenText = fmt.format(when);
         } else {
             whenText = "Date/time TBD"; // in case of any errors in date/time, failsafe!
         }
         binding.eventDatetime.setText(whenText);
+        binding.eventLocation.setText(e.getEventInfo().getAddress());
         Glide.with(this.getContext()).load(eventInfo.getImageUrl()).into(binding.eventImage);
 
         // counts style reflecting the "Waitlist | Participants" from the xml style
@@ -219,6 +237,81 @@ public class EventDetailsFragment extends Fragment {
         }
         binding.eventCounts.setText(String.format(java.util.Locale.getDefault(),
                 "%d Waitlisted  |  %d Participating", wlCount, participantCount));
-    }
+
+        binding.btnGuidelines.setOnClickListener(v -> onGuidelinesClicked());
+
+        }
+
+        private void onGuidelinesClicked() {
+            new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
+                    .setMessage(e.getEventInfo().getGuidelines())
+                    .setPositiveButton("OK", (dialogInterface, i) -> {
+                    })
+                    .show();
+        }
+        
+        /**
+         * Helper method to join waitlist with or without location
+         * @param eventIdStr Event ID as string
+         * @param location User's location (can be null if location not required)
+         */
+        private void joinWaitlistWithLocation(String eventIdStr, android.location.Location location) {
+            try {
+                if (location != null) {
+                    // Join with location
+                    EventController.addEntrantToWaitlist(e, vm.getUser(), location, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // success means do nothing else
+                        }
+
+                        @Override
+                        public void onFailure(Exception e1) {
+                            isWaitlisted = false;
+                            vm.removeWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            Toast.makeText(requireContext(),
+                                    "Failed to join waitlist. " + e1.getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    // Join without location
+                    EventController.addEntrantToWaitlist(e, vm.getUser(), new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // success means do nothing else
+                        }
+
+                        @Override
+                        public void onFailure(Exception e1) {
+                            isWaitlisted = false;
+                            vm.removeWaitlistedId(eventIdStr);
+                            updateWaitlistButton(isWaitlisted);
+                            Toast.makeText(requireContext(),
+                                    "Failed to join waitlist. Please try again.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+            catch (DuplicateEntry e1) {
+                isWaitlisted = false;
+                vm.removeWaitlistedId(eventIdStr);
+                updateWaitlistButton(isWaitlisted);
+                Toast.makeText(requireContext(),
+                        "You are already on the waitlist for this event.",
+                        Toast.LENGTH_SHORT).show();
+            }
+            catch (WaitlistFull e1) {
+                isWaitlisted = false;
+                vm.removeWaitlistedId(eventIdStr);
+                updateWaitlistButton(isWaitlisted);
+                Toast.makeText(requireContext(),
+                        "Waitlist is full for this event.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
 
 }
+

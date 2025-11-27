@@ -12,6 +12,7 @@ import androidx.navigation.ui.NavigationUI;
 
 
 import com.example.slices.controllers.EntrantController;
+import com.example.slices.controllers.Logger;
 import com.example.slices.databinding.ActivityMainBinding;
 import com.example.slices.exceptions.EntrantNotFound;
 import com.example.slices.interfaces.DBWriteCallback;
@@ -94,10 +95,13 @@ public class MainActivity extends AppCompatActivity {
      */
     public void initializeUser() {
         String deviceId = InstanceUtil.getDeviceId(this);
+        Logger.logSystem("User initialized with Device ID: " + deviceId, null);
+
 
         EntrantController.getEntrantByDeviceId(deviceId, new EntrantCallback() {
             @Override
             public void onSuccess(Entrant entrant) {
+                Logger.logSystem("User found with Device ID: " + deviceId, null);
                 sharedViewModel.setUser(entrant);
                 //Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getProfile().getName()), Toast.LENGTH_SHORT).show();
                 NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
@@ -112,28 +116,32 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onSuccess(int id) {
                             ent.setId(id);
-                        }
+                            EntrantController.writeEntrant(ent, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    Logger.logSystem("User created with Device ID: " + deviceId, null);
+                                    sharedViewModel.setUser(ent);
+                                    NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
+                                    navController.navigate(R.id.action_to_MenuFragment);
+                                }
 
+                                @Override
+                                public void onFailure(Exception e) {
+                                    Logger.logSystem("User failed to create with Device ID: " + deviceId, null);
+
+                                }
+                            });
+
+                        }
                         @Override
                         public void onFailure(Exception e) {
+                            Logger.logSystem("User failed to create with Device ID: " + deviceId, null);
+                            Toast.makeText(MainActivity.this, "Error getting new entrant ID", Toast.LENGTH_SHORT).show();
 
                         }
                     });
-
-                    EntrantController.writeEntrant(ent, new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {}
-
-                        @Override
-                        public void onFailure(Exception e) {}
-                    });
-                    sharedViewModel.setUser(ent);
-                    NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
-                    navController.navigate(R.id.action_to_MenuFragment);
-
                 }
             }
         });
     }
-
 }

@@ -76,6 +76,15 @@ public class NotifFragment extends Fragment {
                     @Override
                     public void onSuccess(List<Notification> notifications) {
                         recyclerNotifications.addAll(notifications);
+                        
+                        // Sort by timestamp in descending order (most recent first)
+                        recyclerNotifications.sort((n1, n2) -> {
+                            if (n1.getTimestamp() == null && n2.getTimestamp() == null) return 0;
+                            if (n1.getTimestamp() == null) return 1;
+                            if (n2.getTimestamp() == null) return -1;
+                            return n2.getTimestamp().compareTo(n1.getTimestamp());
+                        });
+                        
                         notificationAdapter.setNotifications(recyclerNotifications);
                     }
                     @Override

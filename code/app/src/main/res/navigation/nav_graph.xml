@@ -23,6 +23,11 @@
     </fragment>
 
     <fragment
+        android:id="@+id/cameraFragment"
+        android:name="com.example.slices.fragments.CameraFragment"
+        android:label="Camera" />
+
+    <fragment
         android:id="@+id/BrowseFragment"
         android:name="com.example.slices.fragments.BrowseFragment"
         android:label="Browse Events"
@@ -31,6 +36,9 @@
         <action
             android:id="@+id/action_BrowseFragment_to_eventDetailsFragment"
             app:destination="@id/eventDetailsFragment" />
+        <action
+            android:id="@+id/action_BrowseFragment_to_cameraFragment"
+            app:destination="@id/cameraFragment" />
     </fragment>
     <fragment
         android:id="@+id/NotifFragment"
@@ -125,7 +133,24 @@
         android:id="@+id/EventEntrantsFragment"
         android:name="com.example.slices.fragments.EventEntrantsFragment"
         android:label="Event Entrants"
-        tools:layout="@layout/event_entrants_fragment" />
+        tools:layout="@layout/event_entrants_fragment">
+        <action
+            android:id="@+id/action_EventEntrantsFragment_to_EntrantMapFragment"
+            app:destination="@id/EntrantMapFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/EntrantMapFragment"
+        android:name="com.example.slices.fragments.EntrantMapFragment"
+        android:label="Entrant Locations"
+        tools:layout="@layout/fragment_entrant_map">
+        <argument
+            android:name="event_id"
+            app:argType="integer" />
+        <argument
+            android:name="event_name"
+            app:argType="string" />
+    </fragment>
 
     <action
         android:id="@+id/action_to_adminHomeFragment"

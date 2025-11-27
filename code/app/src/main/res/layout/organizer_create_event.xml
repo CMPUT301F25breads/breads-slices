@@ -9,7 +9,8 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="80dp"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
         android:background="#FFFFFF">
 
         <LinearLayout
@@ -269,6 +270,33 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="0dp"/>
+            </LinearLayout>
+
+            <!-- Maximum distance (shown when location toggle is on) -->
+            <LinearLayout
+                android:id="@+id/layoutMaxDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="50dp"
+                    android:text="Maximum Distance (km)"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editMaxDistance"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:hint="500"
+                    android:inputType="number"
+                    android:background="@android:drawable/edit_text"
+                    android:padding="8dp" />
             </LinearLayout>
 
             <!-- Confirm button -->

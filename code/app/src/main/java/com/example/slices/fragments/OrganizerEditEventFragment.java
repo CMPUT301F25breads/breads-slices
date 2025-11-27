@@ -64,9 +64,11 @@ import java.util.Locale;
 
 public class OrganizerEditEventFragment extends Fragment {
 
+    private static final int PICK_IMAGE_REQUEST = 1001;
+
     private EditText editEventName, editDate, editTime, editRegStart, editRegEnd,
             editMaxWaiting, editMaxParticipants, editMaxDistance;
-    private TextView textDescription, textGuidelines, textLocation;
+    private TextView textDescription, textGuidelines, textLocation, textEventTitle;
     private ImageView eventImage, qrCodeImageView;
     private Button buttonShareQRCode;
     private SwitchCompat switchEntrantLocation;
@@ -76,6 +78,7 @@ public class OrganizerEditEventFragment extends Fragment {
     private String qrCodeData; // QR code data for the event
     private Bitmap qrCodeBitmap; // QR code bitmap for sharing
     private Event currentEvent; // The event being edited
+    private Uri selectedImageUri; // URI of the selected image
 
     /**
      * Default constructor.
@@ -126,6 +129,7 @@ public class OrganizerEditEventFragment extends Fragment {
         textDescription = view.findViewById(R.id.textDescription);
         textGuidelines = view.findViewById(R.id.textGuidelines);
         textLocation = view.findViewById(R.id.textLocation);
+        textEventTitle = view.findViewById(R.id.textEventTitle);
         eventImage = view.findViewById(R.id.eventImage);
         qrCodeImageView = view.findViewById(R.id.qrCodeImageView);
         buttonShareQRCode = view.findViewById(R.id.buttonShareQRCode);
@@ -146,8 +150,20 @@ public class OrganizerEditEventFragment extends Fragment {
                 layoutMaxDistance.setVisibility(View.GONE);
                 editMaxDistance.setText(""); // clear if turned off
             }
+            // Only save if user is interacting (not during initial load)
+            // buttonView.isPressed() returns true only when user actually clicks
+            if (buttonView.isPressed()) {
+                saveEntrantLocationSettings();
+            }
         });
         layoutMaxDistance.setVisibility(View.GONE);
+
+        // Add listener for max distance field
+        editMaxDistance.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                saveEntrantLocationSettings();
+            }
+        });
 
         // --- Load placeholder image with Glide ---
         Glide.with(this)
@@ -194,18 +210,23 @@ public class OrganizerEditEventFragment extends Fragment {
         });
 
         buttonViewWaitingList.setOnClickListener(v -> {
+            if (currentEvent == null || eventID == null) {
+                Toast.makeText(getContext(), "Event data not loaded yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
             Bundle bundle = new Bundle();
-            bundle.putString("eventName", editEventName.getText().toString()); // example data
+            bundle.putInt("event_id", currentEvent.getId());
+            bundle.putString("event_name", currentEvent.getEventInfo().getName());
+            bundle.putInt("sender_id", currentEvent.getEventInfo().getOrganizerID());
             navigateToEntrantsFragment(bundle);
         });
 
         // --- Share QR Code button ---
         buttonShareQRCode.setOnClickListener(v -> shareQRCode());
 
-        // --- Other buttons (functionality not implemented yet)---
-        buttonEditImage.setOnClickListener(v ->
-                Toast.makeText(getContext(), "Edit Image clicked", Toast.LENGTH_SHORT).show()
-        );
+        // --- Edit Image button - opens gallery ---
+        buttonEditImage.setOnClickListener(v -> openImagePicker());
 
         backButton.setOnClickListener(v -> requireActivity().onBackPressed());
 
@@ -250,14 +271,15 @@ public class OrganizerEditEventFragment extends Fragment {
 
                 // --- Populate UI ---
                 editEventName.setText(eventInfo.getName());
+                textEventTitle.setText(eventInfo.getName());
                 textDescription.setText(eventInfo.getDescription());
-                textGuidelines.setText("event guidelines");
-                textLocation.setText(eventInfo.getLocation());
+                textGuidelines.setText(eventInfo.getGuidelines());
+                textLocation.setText(eventInfo.getAddress());
                 editMaxParticipants.setText(String.valueOf(eventInfo.getMaxEntrants()));
 
                 // Display waiting list capacity (show empty if unlimited/default)
                 int waitlistCapacity = event.getWaitlist().getMaxCapacity();
-                if (waitlistCapacity == 32768) {
+                if (waitlistCapacity > 32768) {
                     editMaxWaiting.setText(""); // Unlimited
                 } else {
                     editMaxWaiting.setText(String.valueOf(waitlistCapacity));
@@ -272,13 +294,34 @@ public class OrganizerEditEventFragment extends Fragment {
                 SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
                 editTime.setText(timeFormat.format(eventInfo.getEventDate().toDate()));
 
-
-                // To be implemented later
-                //        switchEntrantLocation.setChecked(event.isLocationRequired());
-                //        if (event.isLocationRequired()) {
-                //            layoutMaxDistance.setVisibility(View.VISIBLE);
-                //            editMaxDistance.setText(String.valueOf(event.getMaxDistance()));
-                //        }
+                // Load entrant location settings
+                boolean requiresLocation = eventInfo.getEntrantLoc();
+                switchEntrantLocation.setChecked(requiresLocation);
+                if (requiresLocation) {
+                    layoutMaxDistance.setVisibility(View.VISIBLE);
+                    String distMetersStr = eventInfo.getEntrantDist();
+                    if (distMetersStr != null && !distMetersStr.isEmpty()) {
+                        try {
+                            // Convert meters to kilometers for display
+                            int distanceMeters = Integer.parseInt(distMetersStr);
+                            int distanceKm = distanceMeters / 1000;
+                            // Only show the value if it's greater than 0
+                            if (distanceKm > 0) {
+                                editMaxDistance.setText(String.valueOf(distanceKm));
+                            } else {
+                                editMaxDistance.setText("500"); // Default if 0
+                            }
+                        } catch (NumberFormatException e) {
+                            // If parsing fails, show default
+                            editMaxDistance.setText("500");
+                        }
+                    } else {
+                        // No distance set, show default
+                        editMaxDistance.setText("500");
+                    }
+                } else {
+                    layoutMaxDistance.setVisibility(View.GONE);
+                }
 
                 Glide.with(requireContext())
                         .load(eventInfo.getImageUrl())
@@ -395,12 +438,9 @@ public class OrganizerEditEventFragment extends Fragment {
             // I added logic for all fields but I dont know what the UI looks like
             // -Ryan
             // ------------------------------------------
-
             // Update the EventInfo object based on which field was edited
             if (title.equals("Edit Description")) {
                 currentEventInfo.setDescription(newValue);
-            } else if (title.equals("Edit Location")) {
-                currentEventInfo.setLocation(newValue);
             } else if (title.equals("Edit Guidelines")) {
                 currentEventInfo.setGuidelines(newValue);
             } else if (title.equals("Edit Image")) {
@@ -650,6 +690,7 @@ public class OrganizerEditEventFragment extends Fragment {
         EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
             @Override
             public void onSuccess() {
+                textEventTitle.setText(newName);
                 Toast.makeText(getContext(), "Event name saved!", Toast.LENGTH_SHORT).show();
             }
 
@@ -834,5 +875,130 @@ public class OrganizerEditEventFragment extends Fragment {
 
         // Show Android's share dialog
         startActivity(Intent.createChooser(shareIntent, "Share QR Code"));
+    }
+
+    /**
+     * Saves the entrant location settings (toggle and max distance) to the database
+     * Distance is stored in meters but displayed in kilometers
+     */
+    private void saveEntrantLocationSettings() {
+        if (currentEvent == null) return;
+
+        boolean requiresLocation = switchEntrantLocation.isChecked();
+        String maxDistKmStr = editMaxDistance.getText().toString().trim();
+
+        // Store in meters in database
+        String entrantDistMeters;
+        
+        if (requiresLocation) {
+            // Location is required - validate and convert the distance
+            if (maxDistKmStr.isEmpty()) {
+                // If field is empty but location is required, use default
+                entrantDistMeters = "500000"; // Default: 500km in meters
+            } else {
+                try {
+                    int distanceKm = Integer.parseInt(maxDistKmStr);
+                    // Validate range: 1km to 500km
+                    if (distanceKm < 1) {
+                        Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (distanceKm > 500) {
+                        Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    // Convert km to meters for storage
+                    entrantDistMeters = String.valueOf(distanceKm * 1000);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+        } else {
+            // Location not required - keep existing value or use default
+            EventInfo currentEventInfo = currentEvent.getEventInfo();
+            String existingDist = currentEventInfo.getEntrantDist();
+            entrantDistMeters = (existingDist != null && !existingDist.isEmpty()) ? existingDist : "500000";
+        }
+
+        EventInfo currentEventInfo = currentEvent.getEventInfo();
+        currentEventInfo.setEntrantLoc(requiresLocation);
+        currentEventInfo.setEntrantDist(entrantDistMeters);
+
+        EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(getContext(), "Location settings saved!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(getContext(), "Failed to save location settings: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Opens the device's image picker to select a new event poster
+     */
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+
+    /**
+     * Handles the result from the image picker
+     */
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == android.app.Activity.RESULT_OK && data != null) {
+            selectedImageUri = data.getData();
+            
+            if (selectedImageUri != null) {
+                // Display the selected image immediately
+                Glide.with(this)
+                        .load(selectedImageUri)
+                        .placeholder(R.drawable.ic_image)
+                        .into(eventImage);
+
+                // Save the image URL to the database
+                saveEventImage(selectedImageUri.toString());
+            }
+        }
+    }
+
+    /**
+     * Saves the new event image URL to the database
+     * @param imageUrl The URL/URI of the new image
+     */
+    private void saveEventImage(String imageUrl) {
+        if (currentEvent == null) return;
+
+        EventInfo currentEventInfo = currentEvent.getEventInfo();
+        currentEventInfo.setImageUrl(imageUrl);
+
+        EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Toast.makeText(getContext(), "Event poster updated!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Toast.makeText(getContext(), "Failed to update poster: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+                // Revert to old image on failure
+                if (currentEvent.getEventInfo().getImageUrl() != null) {
+                    Glide.with(requireContext())
+                            .load(currentEvent.getEventInfo().getImageUrl())
+                            .placeholder(R.drawable.ic_image)
+                            .into(eventImage);
+                }
+            }
+        });
     }
 }

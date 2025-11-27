@@ -17,7 +17,8 @@
             android:id="@+id/event_toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            tools:title="Event Title" />
+            tools:title="Event Title"
+            android:visibility="gone"/>
 
         <ImageView
             android:id="@+id/event_image"
@@ -41,21 +42,31 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            tools:text="This is a tournament where you play soccer blah blah blah blah
-blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah
- blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah" />
+            tools:text="Description" />
 
         <TextView
             android:id="@+id/event_datetime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            tools:text="5PM | Dec 12 2025" />
+            android:textSize="14sp"
+            tools:text="12:00 | Nov 26 2025" />
+        
+        <TextView
+            android:id="@+id/event_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            tools:text="TechSphere Convention Center Hall B, 124 Innovation Avenue Vancouver"/>
 
         <TextView
             android:id="@+id/event_counts"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             tools:text="500 Waitlisted | 30 Participating" />
 
         <LinearLayout

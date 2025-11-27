@@ -88,7 +88,7 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
         // Format event date/time
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy h:mm a", Locale.getDefault());
         String eventTime = sdf.format(eventInfo.getEventDate().toDate());
-        holder.eventDateTime.setText(eventTime + " | " + eventInfo.getLocation());
+        holder.eventDateTime.setText(eventTime + " | " + eventInfo.getAddress());
 
         // Load image with Glide
         Glide.with(context)

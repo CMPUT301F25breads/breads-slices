@@ -1,12 +1,6 @@
 package com.example.slices.models;
 
 
-import com.example.slices.controllers.EntrantController;
-import com.example.slices.testing.DebugLogger;
-import com.example.slices.interfaces.DBWriteCallback;
-import com.example.slices.interfaces.EntrantCallback;
-import com.example.slices.interfaces.EntrantIDCallback;
-import com.example.slices.interfaces.EntrantListCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,9 +23,7 @@ public class Entrant {
      */
     private String deviceId;
 
-
     private int parent = 0;
-
 
     /**
      * List of sub-entrants of the entrant
@@ -49,25 +41,30 @@ public class Entrant {
         this.profile = new Profile();
     }
 
-
     /**
      * Primary constructor for the Entrant class for creating a primary entrant
      * @param deviceId
      *      Device ID of the entrant
+     * @param id
+     *      ID of the entrant
      */
     public Entrant(String deviceId, int id) {
+        this.profile = new Profile();
         this.deviceId = deviceId;
-        this.subEntrants = new ArrayList<Integer>();
-        this.organizedEvents = new ArrayList<Integer>();
+        this.subEntrants = new ArrayList<>();
         this.id = id;
     }
 
+    /**
+     * Constructor for creating an entrant using only a device ID
+     * @param deviceId
+     *      Device ID of the entrant
+     */
     public Entrant(String deviceId) {
+        this.profile = new Profile();
         this.deviceId = deviceId;
         this.subEntrants = new ArrayList<>();
-        this.organizedEvents = new ArrayList<>();
     }
-
 
     /**
      * Constructor for the Entrant class for creating a primary entrant
@@ -80,16 +77,11 @@ public class Entrant {
      * @param id
      *      ID of the entrant
      */
-
     public Entrant(String name, String email, String phoneNumber, int id) {
-        this.subEntrants = new ArrayList<Integer>();
-        this.organizedEvents = new ArrayList<Integer>();
+        this.subEntrants = new ArrayList<>();
         this.id = id;
         this.profile = new Profile(name, email, phoneNumber, true, id);
     }
-
-
-
 
     /**
      * Test constructor for the Entrant class for creating a secondary entrant
@@ -111,10 +103,9 @@ public class Entrant {
         this.profile = new Profile(name, email, phoneNumber, true, id);
         this.id = id;
         this.parent = parent.getId();
-        this.subEntrants = new ArrayList<Integer>();
+        this.subEntrants = new ArrayList<>();
         parent.addSubEntrant(this);
     }
-
 
     /**
      * Getter for the device ID of the entrant
@@ -125,45 +116,32 @@ public class Entrant {
         return deviceId;
     }
 
-
     /**
      * Getter for the ID of the entrant
-     *
-     * @return ID of the entrant
+     * @return
+     *      ID of the entrant
      */
     public int getId() {
         return id;
     }
+
     /**
-     * Getter for the list of sub entrant ids of the entrant
+     * Getter for the list of sub entrant IDs of the entrant
      * @return
-     *      List of sub entrant ids of the entrant
+     *      List of sub entrant IDs
      */
     public List<Integer> getSubEntrants() {
         return subEntrants;
     }
 
-
     /**
      * Getter for the parent of the entrant
      * @return
-     *      Parent of the entrant
+     *      Parent ID of the entrant
      */
     public int getParent() {
         return parent;
     }
-
-    /**
-     * Getter for the list of organized events of the entrant
-     * @return
-     *      List of organized events of the entrant
-     */
-
-    public List<Integer> getOrganizedEvents() {
-        return organizedEvents;
-    }
-
-
 
     /**
      * Setter for the ID of the entrant
@@ -176,8 +154,6 @@ public class Entrant {
             this.profile = new Profile();
         }
         this.profile.setId(id);
-
-
     }
 
     public void setAdmin(boolean a) {
@@ -189,34 +165,29 @@ public class Entrant {
     }
 
     /**
-     * Adds a sub entrant to the list of sub entrants of the entrant
-     * INCOMPLETE!!
+     * Adds a sub-entrant to the list of sub-entrants of the entrant
      * @param child
-     *      Sub entrant to add
-     *
+     *      Sub-entrant to add
      */
     public void addSubEntrant(Entrant child) {
         subEntrants.add(child.getId());
     }
 
     /**
-     * Adds an organized event to the list of organized events of the entrant
-     * @param eventId
-     *      Event ID to add
+     * Removes a sub-entrant from the list of sub-entrants
+     * @param child
+     *      Sub-entrant to remove
      */
-    public void addOrganizedEvent(int eventId) {
-        organizedEvents.add(eventId);
+    public void removeSubEntrant(Entrant child) {
+        subEntrants.remove(child.getId());
     }
-
-
-
 
     /**
      * Checks if two entrants are equal
      * @param o
      *      Object to compare to
      * @return
-     *      True if the objects are equal, false otherwise
+     *      True if equal, false otherwise
      */
     @Override
     public boolean equals(Object o) {
@@ -225,6 +196,7 @@ public class Entrant {
         Entrant entrant = (Entrant) o;
         return id == entrant.id; // or whatever uniquely identifies an Entrant
     }
+
     /**
      * Generates a hash code for the entrant
      * @return
@@ -240,34 +212,25 @@ public class Entrant {
      * @param testDeviceId
      *      Device ID to set
      */
-
     public void setDeviceId(String testDeviceId) {
         this.deviceId = testDeviceId;
-
-
     }
 
     /**
-     * Sets the list of organized events of the entrant
-     * @param organizedEvents
-     *      List of organized events to set
+     * Getter for the profile of the entrant
+     * @return
+     *      Profile of the entrant
      */
-    public void setOrganizedEvents(List<Integer> organizedEvents) {
-        this.organizedEvents = organizedEvents;
-    }
-
-
-
     public Profile getProfile() {
         return profile;
     }
 
+    /**
+     * Setter for the profile of the entrant
+     * @param profile
+     *      Profile to set
+     */
     public void setProfile(Profile profile) {
         this.profile = profile;
     }
-    public void entrantModified(DBWriteCallback callback) {
-        EntrantController.updateEntrant(this, callback);
-    }
-
-
 }

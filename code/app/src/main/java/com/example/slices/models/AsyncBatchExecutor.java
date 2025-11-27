@@ -24,11 +24,7 @@ public class AsyncBatchExecutor {
      * @param finalCallback
      *      Callback invoked once the batch completes
      */
-    public static void runBatch(
-            List<Consumer<DBWriteCallback>> operations,
-            DBWriteCallback finalCallback
-    ) {
-
+    public static void runBatch(List<Consumer<DBWriteCallback>> operations, DBWriteCallback finalCallback) {
         if (operations == null || operations.isEmpty()) {
             if (finalCallback != null) finalCallback.onSuccess();
             return;
@@ -71,4 +67,5 @@ public class AsyncBatchExecutor {
             }
         }).start();
     }
+
 }
