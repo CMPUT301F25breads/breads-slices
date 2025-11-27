@@ -39,6 +39,7 @@ public class Entrant {
     private List<Integer> subEntrants;
 
     private List<Integer> organizedEvents;
+    private boolean admin = false;
 
 
     /**
@@ -179,6 +180,13 @@ public class Entrant {
 
     }
 
+    public void setAdmin(boolean a) {
+        this.admin = a;
+    }
+
+    public boolean getAdmin() {
+        return this.admin;
+    }
 
     /**
      * Adds a sub entrant to the list of sub entrants of the entrant
