@@ -30,6 +30,10 @@ public class Entrant {
      */
     private List<Integer> subEntrants;
 
+    private List<Integer> organizedEvents;
+    private boolean admin = false;
+
+
     /**
      * Default constructor for the Entrant class, need for serialization
      */
@@ -150,6 +154,14 @@ public class Entrant {
             this.profile = new Profile();
         }
         this.profile.setId(id);
+    }
+
+    public void setAdmin(boolean a) {
+        this.admin = a;
+    }
+
+    public boolean getAdmin() {
+        return this.admin;
     }
 
     /**

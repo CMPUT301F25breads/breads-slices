@@ -81,6 +81,10 @@ public class  MenuFragment extends Fragment {
         binding.phoneNumberTextfield.setText(phoneNumber);
         binding.sendNotificationsSwitch.setChecked(notifications);
 
+        if (user.getAdmin() == true) {
+            binding.adminModeButton.setVisibility(View.VISIBLE);
+        }
+
         // Sets the app mode button to the current app mode
         if (((MainActivity) requireActivity()).getAppMode().equals("User")) {
             binding.appModeButtonGroup.check(binding.userModeButton.getId());
