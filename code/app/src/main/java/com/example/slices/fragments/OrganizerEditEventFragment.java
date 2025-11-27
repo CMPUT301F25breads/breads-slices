@@ -880,6 +880,7 @@ public class OrganizerEditEventFragment extends Fragment {
     /**
      * Saves the entrant location settings (toggle and max distance) to the database
      * Distance is stored in meters but displayed in kilometers
+     * When enabling geolocation, captures the event location coordinates
      */
     private void saveEntrantLocationSettings() {
         if (currentEvent == null) return;
@@ -914,6 +915,55 @@ public class OrganizerEditEventFragment extends Fragment {
                     return;
                 }
             }
+            
+            // Check if event already has coordinates
+            EventInfo currentEventInfo = currentEvent.getEventInfo();
+            if (currentEventInfo.getEventLatitude() == null || currentEventInfo.getEventLongitude() == null) {
+                // Event doesn't have coordinates yet - need to capture location
+                android.util.Log.d("OrganizerEditEvent", "Geolocation enabled - capturing event location");
+                
+                // Check if we have location permission
+                if (com.example.slices.controllers.LocationManager.hasLocationPermission(requireContext())) {
+                    com.example.slices.controllers.LocationManager locationManager = 
+                        new com.example.slices.controllers.LocationManager();
+                    
+                    locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
+                        @Override
+                        public void onSuccess(android.location.Location eventLocation) {
+                            android.util.Log.d("OrganizerEditEvent", "Got location for event: lat=" + 
+                                             eventLocation.getLatitude() + ", lon=" + eventLocation.getLongitude());
+                            
+                            // Set the location on EventInfo
+                            currentEventInfo.setLocation(eventLocation);
+                            currentEventInfo.setEntrantLoc(requiresLocation);
+                            currentEventInfo.setEntrantDist(entrantDistMeters);
+                            
+                            // Save to database
+                            saveEventInfoToDatabase(currentEventInfo);
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            android.util.Log.w("OrganizerEditEvent", "Failed to get location", e);
+                            Toast.makeText(getContext(), 
+                                "Warning: Unable to get event location. Distance validation won't work until location is set.", 
+                                Toast.LENGTH_LONG).show();
+                            
+                            // Still save the settings, just without coordinates
+                            currentEventInfo.setEntrantLoc(requiresLocation);
+                            currentEventInfo.setEntrantDist(entrantDistMeters);
+                            saveEventInfoToDatabase(currentEventInfo);
+                        }
+                    });
+                    return; // Exit early - callback will handle saving
+                } else {
+                    // No location permission
+                    android.util.Log.w("OrganizerEditEvent", "No location permission for geolocation event");
+                    Toast.makeText(getContext(), 
+                        "Warning: Grant location permission for distance validation to work.", 
+                        Toast.LENGTH_LONG).show();
+                }
+            }
         } else {
             // Location not required - keep existing value or use default
             EventInfo currentEventInfo = currentEvent.getEventInfo();
@@ -921,11 +971,19 @@ public class OrganizerEditEventFragment extends Fragment {
             entrantDistMeters = (existingDist != null && !existingDist.isEmpty()) ? existingDist : "500000";
         }
 
+        // Save settings (either location not required, or already has coordinates, or no permission)
         EventInfo currentEventInfo = currentEvent.getEventInfo();
         currentEventInfo.setEntrantLoc(requiresLocation);
         currentEventInfo.setEntrantDist(entrantDistMeters);
-
-        EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
+        saveEventInfoToDatabase(currentEventInfo);
+    }
+    
+    /**
+     * Helper method to save EventInfo to database
+     * Extracted to avoid code duplication
+     */
+    private void saveEventInfoToDatabase(EventInfo eventInfo) {
+        EventController.updateEventInfo(currentEvent, eventInfo, new DBWriteCallback() {
             @Override
             public void onSuccess() {
                 Toast.makeText(getContext(), "Location settings saved!", Toast.LENGTH_SHORT).show();
