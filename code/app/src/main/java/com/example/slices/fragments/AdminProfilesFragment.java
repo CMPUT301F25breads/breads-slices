@@ -25,6 +25,10 @@ import com.example.slices.controllers.ProfileController;
 import com.example.slices.interfaces.ProfileListCallback;
 import com.example.slices.models.Profile;
 
+/**
+ * Fragment that displays a list of user profiles
+ * @author Sasieni
+ */
 public class AdminProfilesFragment extends Fragment {
 
     private ProfileAdapter profileAdapter;
@@ -40,7 +44,7 @@ public class AdminProfilesFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Toolbar
+        // Toolbar as back button
         Toolbar toolbar = view.findViewById(R.id.title_profiles);
         ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
 
@@ -80,25 +84,30 @@ public class AdminProfilesFragment extends Fragment {
             public void onSuccess(java.util.List<Profile> result) {
                 if (result.isEmpty()) {
                     System.out.println("No profiles exist in Firestore.");
-                    Toast.makeText(requireContext(), "TEST: No profiles found", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "No profiles found", Toast.LENGTH_SHORT).show();
                 } else {
                     System.out.println("Profiles FOUND → Count = " + result.size());
-                    Toast.makeText(requireContext(), "TEST: Found " + result.size() + " profiles", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Found " + result.size() + " profiles", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Exception e) {
-                System.out.println("TEST FAILED: " + e.getMessage());
+                System.out.println("Did not load profiles " + e.getMessage());
             }
         });
     }
 
+    /**
+     * Loads all profiles from firabase
+     * @author Sasieni
+     */
     private void loadProfiles() {
         ProfileController.getAllProfiles(new ProfileListCallback() {
             @Override
             public void onSuccess(java.util.List<Profile> result) {
                 profileAdapter.updateList(result);
+
             }
 
             @Override
