@@ -5,7 +5,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,8 +20,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.ImagesAdapter;
-import com.example.slices.controllers.EventController;
-import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -35,7 +32,6 @@ public class AdminImagesFragment extends Fragment {
     private RecyclerView recyclerView;
     private ImagesAdapter adapter;
 
-    private SharedViewModel vm;
 
     @Nullable
     @Override
@@ -50,7 +46,6 @@ public class AdminImagesFragment extends Fragment {
                               @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        vm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
         // Toolbar
         Toolbar toolbar = view.findViewById(R.id.admin_img_toolbar);
@@ -115,29 +110,5 @@ public class AdminImagesFragment extends Fragment {
                 .addOnFailureListener(e ->
                         Log.e("AdminImages", "Failed to load events", e)
                 );
-    }
-
-    private void openEventDetails(int eventId) {
-        EventController.getEvent(eventId, new EventCallback() {
-            @Override
-            public void onSuccess(Event event) {
-                vm.setSelectedEvent(event);
-
-                Bundle bundle = new Bundle();
-                bundle.putString("eventID", String.valueOf(eventId));
-                bundle.putBoolean("adminMode", true);
-
-                NavController navController = Navigation.findNavController(
-                        requireActivity(), R.id.nav_host_fragment_content_main);
-
-                navController.navigate(R.id.eventDetailsFragment, bundle);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                Toast.makeText(requireContext(),
-                        "Event not found", Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 }

@@ -21,7 +21,6 @@ import java.util.List;
 
 public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.VH> {
 
-    // Callback to trigger navigation to event details
     public interface OnDetailsClick {
         void onClick(Event event);
     }
@@ -34,8 +33,6 @@ public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.VH> {
         this.context = context;
         this.detailsCallback = callback;
     }
-
-    // Called by fragment to update list
     public void setEvents(List<Event> list) {
         events.clear();
         events.addAll(list);
@@ -54,20 +51,18 @@ public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int position) {
         Event e = events.get(position);
 
-        // TITLE
         h.title.setText(e.getEventInfo().getName());
 
-        // IMAGE
         Glide.with(context)
                 .load(e.getEventInfo().getImageUrl())
                 .placeholder(R.drawable.card_background)
                 .centerCrop()
                 .into(h.img);
 
-        // DETAILS button → navigate to event details
+        //
         h.details.setOnClickListener(v -> detailsCallback.onClick(e));
 
-        // REMOVE button (optional)
+        //
         h.remove.setOnClickListener(v ->
                 Toast.makeText(context,
                         "Remove image not implemented yet",
