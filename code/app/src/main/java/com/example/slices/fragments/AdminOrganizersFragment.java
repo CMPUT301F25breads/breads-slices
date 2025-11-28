@@ -27,6 +27,10 @@ import com.example.slices.models.Profile;
 
 import java.util.List;
 
+/**
+ * Fragment that displays all organizer profiles
+ * @author Sasieni
+ */
 public class AdminOrganizersFragment extends Fragment {
 
     private ProfileAdapter organizerAdapter;
@@ -83,6 +87,9 @@ public class AdminOrganizersFragment extends Fragment {
         loadOrganizers();
     }
 
+    /**
+     * loads organizers from firebase
+     */
     private void loadOrganizers() {
         ProfileController.getAllOrganizers(new ProfileListCallback() {
             @Override

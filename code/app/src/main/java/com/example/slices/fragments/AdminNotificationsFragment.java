@@ -28,6 +28,10 @@ import com.google.firebase.firestore.Query;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment that displays notifications sent
+ * @author Sasieni
+ */
 public class AdminNotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;

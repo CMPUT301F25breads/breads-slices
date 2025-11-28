@@ -2,6 +2,10 @@ package com.example.slices.models;
 
 import com.google.firebase.Timestamp;
 
+/**
+ * Class representing a general notification for admin use
+ * @author Sasieni
+ */
 public class AdminNotification {
 
     private String title;
