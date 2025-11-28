@@ -51,7 +51,7 @@
             android:layout_marginTop="12dp"
             android:textSize="14sp"
             tools:text="12:00 | Nov 26 2025" />
-        
+
         <TextView
             android:id="@+id/event_location"
             android:layout_width="match_parent"
@@ -77,28 +77,28 @@
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_guidelines"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Guidelines" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_back"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:text="Return"
-                android:visibility="invisible"/>
+                android:text="Back to Home" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_join_waitlist"
-                android:layout_width="wrap_content"
+                android:id="@+id/btn_details"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="69dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:text="Join Waitlist"
-                app:backgroundTint="@color/button_purple" />
+                android:text="Placeholder"
+                android:visibility="invisible" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_delete"
+                android:layout_width="137dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="Delete Image"
+                app:backgroundTint="@color/red" />
         </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

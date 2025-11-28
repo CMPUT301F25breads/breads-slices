@@ -136,6 +136,12 @@
         tools:layout="@layout/admin_notifications" />
 
     <fragment
+        android:id="@+id/adminImagesFragment"
+        android:name="com.example.slices.fragments.AdminImagesFragment"
+        android:label="Admin Notifications"
+        tools:layout="@layout/admin_images" />
+
+    <fragment
         android:id="@+id/EventEntrantsFragment"
         android:name="com.example.slices.fragments.EventEntrantsFragment"
         android:label="Event Entrants"
@@ -161,6 +167,10 @@
     <action
         android:id="@+id/action_to_adminHomeFragment"
         app:destination="@id/adminHomeFragment" />
+
+    <action
+        android:id="@+id/action_to_adminImagesFragment"
+        app:destination="@id/adminImagesFragment" />
 
     <action
         android:id="@+id/action_to_adminNotificationsFragment"
