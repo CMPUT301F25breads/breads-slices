@@ -48,7 +48,7 @@ public class AdminHome extends Fragment {
         btnBrowseProfiles.setOnClickListener(v -> navigateToFragment(view, R.id.adminProfilesFragment));
         btnBrowseImages.setOnClickListener(v -> showPlaceholder("Images feature coming soon!"));
         btnBrowseOrganizers.setOnClickListener(v -> navigateToFragment(view, R.id.adminOrganizersFragment));
-        btnLogs.setOnClickListener(v -> showPlaceholder("Logs feature coming soon!"));
+        btnLogs.setOnClickListener(v -> navigateToFragment(view, R.id.adminNotificationsFragment));
     }
 
     /**
