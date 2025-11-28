@@ -26,6 +26,8 @@ public class Profile {
 
     //private (Something) location
 
+    private boolean isOrganizer;
+
 
     /**
      * Default constructor for the Profile class, need for serialization
@@ -79,6 +81,7 @@ public class Profile {
         this.phoneNumber = phoneNumber;
         this.sendNotifications = true;
         this.id = id;
+        this.isOrganizer = false;
     }
 
     /**
@@ -125,6 +128,9 @@ public class Profile {
     public int getId() {
         return id;
     }
+
+    public boolean isOrganizer() {
+        return isOrganizer; }
 
 
     /**
@@ -174,6 +180,10 @@ public class Profile {
      */
     public void setId(int id) {
         this.id = id;
+    }
+
+    public void setOrganizer(boolean organizer) {
+        this.isOrganizer = organizer;
     }
 
     /*
