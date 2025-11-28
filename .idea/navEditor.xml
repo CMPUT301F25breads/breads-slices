@@ -252,6 +252,11 @@
                       <LayoutPositions />
                     </value>
                   </entry>
+                  <entry key="action_to_adminNotificationsFragment">
+                    <value>
+                      <LayoutPositions />
+                    </value>
+                  </entry>
                   <entry key="action_to_adminOrganizersFragment">
                     <value>
                       <LayoutPositions />
@@ -297,6 +302,18 @@
                     </value>
                   </entry>
                   <entry key="adminNFragment">
+                    <value>
+                      <LayoutPositions>
+                        <option name="myPosition">
+                          <Point>
+                            <option name="x" value="12" />
+                            <option name="y" value="12" />
+                          </Point>
+                        </option>
+                      </LayoutPositions>
+                    </value>
+                  </entry>
+                  <entry key="adminNotificationsFragment">
                     <value>
                       <LayoutPositions>
                         <option name="myPosition">

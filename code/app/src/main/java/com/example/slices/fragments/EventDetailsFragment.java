@@ -264,6 +264,10 @@ public class EventDetailsFragment extends Fragment {
         if(e == null || vm.getUser() == null)
             return;
 
+        boolean isAdmin = getArguments() != null &&
+                getArguments().getBoolean("adminMode", false);
+
+
         final String entrantId = String.valueOf(vm.getUser().getId());
         int eventId = e.getId(); // reserved for future join/leave event call usage
 
@@ -375,6 +379,23 @@ public class EventDetailsFragment extends Fragment {
         }
         binding.eventCounts.setText(String.format(java.util.Locale.getDefault(),
                 "%d Waitlisted  |  %d Participating", wlCount, participantCount));
+
+        if (isAdmin) {
+
+            // Hide user buttons
+            binding.btnGuidelines.setVisibility(View.GONE);
+            binding.btnJoinWaitlist.setVisibility(View.GONE);
+
+            // Show middle button (btnDetails in your XML)
+            binding.btnBack.setVisibility(View.VISIBLE);
+
+            // Admin back behaviour
+            binding.btnBack.setOnClickListener(v ->
+                    requireActivity().onBackPressed()
+            );
+
+            return;
+        }
 
         binding.btnGuidelines.setOnClickListener(v -> onGuidelinesClicked());
 
