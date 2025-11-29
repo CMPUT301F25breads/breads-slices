@@ -854,7 +854,7 @@ public class EventController {
         //Run a check for the locations
         if (!checkLocs(event, loc)) {
             Logger.logError("Location not in event id=" + event.getId(), null);
-            callback.onFailure(new Exception("Location not in event"));
+            callback.onFailure(new Exception("This event isn't available in your area"));
             return;
         }
         
