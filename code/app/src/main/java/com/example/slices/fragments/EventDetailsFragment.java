@@ -432,7 +432,18 @@ public class EventDetailsFragment extends Fragment {
         }
         binding.eventDatetime.setText(whenText);
         binding.eventLocation.setText(e.getEventInfo().getAddress());
-        Glide.with(this.getContext()).load(eventInfo.getImage().getUrl()).into(binding.eventImage);
+
+        // Load image
+        if(eventInfo.getImage().getUrl() != null)
+            Glide.with(this.getContext())
+                    .load(eventInfo.getImage().getUrl())
+                    .placeholder(R.drawable.ic_image)
+                    .into(binding.eventImage);
+        else
+            Glide.with(this.getContext())
+                    .load(R.drawable.black)
+                    .placeholder(R.drawable.ic_image)
+                    .into(binding.eventImage);
 
         // counts style reflecting the "Waitlist | Participants" from the xml style
         int wlCount = 0; //waitlist count

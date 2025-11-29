@@ -90,11 +90,17 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
         String eventTime = sdf.format(eventInfo.getEventDate().toDate());
         holder.eventDateTime.setText(eventTime + " | " + eventInfo.getAddress());
 
-        // Load image with Glide
-        Glide.with(context)
-                .load(eventInfo.getImage().getUrl())
-                .placeholder(R.drawable.ic_image)
-                .into(holder.imgEvent);
+        // Load image
+        if(eventInfo.getImage().getUrl() != null)
+            Glide.with(context)
+                    .load(eventInfo.getImage().getUrl())
+                    .placeholder(R.drawable.ic_image)
+                    .into(holder.imgEvent);
+        else
+            Glide.with(context)
+                    .load(R.drawable.black)
+                    .placeholder(R.drawable.ic_image)
+                    .into(holder.imgEvent);
 
         // Simple click listener to navigate to OrganizerEditEventFragment
         holder.itemView.setOnClickListener(v -> {

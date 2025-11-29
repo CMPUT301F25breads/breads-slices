@@ -326,10 +326,17 @@ public class OrganizerEditEventFragment extends Fragment {
                     layoutMaxDistance.setVisibility(View.GONE);
                 }
 
-                Glide.with(requireContext())
-                        .load(eventInfo.getImage().getUrl())
-                        .placeholder(R.drawable.ic_image)
-                        .into(eventImage);
+                if(eventInfo.getImage().getUrl() != null)
+                    Glide.with(requireContext())
+                            .load(eventInfo.getImage().getUrl())
+                            .placeholder(R.drawable.ic_image)
+                            .into(eventImage);
+                else
+                    Glide.with(requireContext())
+                            .load(R.drawable.black)
+                            .placeholder(R.drawable.ic_image)
+                            .into(eventImage);
+
             }
 
             @Override
