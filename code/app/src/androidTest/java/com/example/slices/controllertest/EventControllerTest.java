@@ -23,6 +23,7 @@ import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
 import com.example.slices.models.Notification;
 import com.google.firebase.Timestamp;
 
@@ -144,8 +145,8 @@ public class EventControllerTest {
         Timestamp regEnd = times.get(1);
         Timestamp eventDate = times.get(2);
         //Create the event
-        EventController.createEvent("Name", "Desc", "Loc", "Guidelines", "ImgUrl",
-                eventDate, regStart, regEnd, 10, 5, false, "none", 123,
+        EventController.createEvent("Name", "Desc", "Add", null, "Guidelines", "ImgUrl",
+                eventDate, regStart, regEnd, 10, 5, false, "none", 123, new Image(),
                 new EventCallback() {
                     @Override
                     public void onSuccess(Event event) {
@@ -241,8 +242,9 @@ public class EventControllerTest {
         cal.add(Calendar.HOUR, -2);
         Timestamp pastRegEnd = new Timestamp(cal.getTime());
 
-        return new EventInfo("Past", "Desc", "Loc", "Guide", "Img",
-                pastEventTs, pastRegStart, pastRegEnd, 10, 5, false, "none", 0, 123);
+        // Had to add entrant distance, organizer id and image
+        return new EventInfo("Past", "Desc", "add", "Guide", "a",
+                pastEventTs, pastRegStart, pastRegEnd, 10, 5, false, "dist", 0, 123, new Image());
     }
 
 
@@ -872,8 +874,8 @@ public class EventControllerTest {
 
         CountDownLatch latch = new CountDownLatch(1);
 
-        EventController.createEvent("Bad", "Desc", "Loc", "Guide", "Img", event, regStart, regEnd,
-                10, 5, false, "none", 123, new EventCallback() {
+        EventController.createEvent("Bad", "Desc", "Add", null, "Guide", "Img", event, regStart, regEnd,
+                10, 5, false, "none", 123, new Image(), new EventCallback() {
                     @Override
                     public void onSuccess(Event e) {
                         fail("Should not create event with invalid times");
@@ -898,7 +900,7 @@ public class EventControllerTest {
         //Create event info
         EventInfo info = new EventInfo("Info Event", "Desc", "Loc",
                 "Guide", "Img", times.get(2), times.get(0), times.get(1),
-                20, 10, true, "dist", 0, 123);
+                20, 10, true, "dist", 0, 123, new Image());
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Event> ref = new AtomicReference<>();
         //Create event from event info

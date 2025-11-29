@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,12 +29,15 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.ImageController;
 import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
+import com.example.slices.interfaces.ImageUploadCallback;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -68,6 +72,8 @@ public class OrganizerCreateEventFragment extends Fragment {
     private Uri imageUri;
     private Button buttonConfirm;
     private ImageButton uploadButton, backButton;
+    private Image image;
+    //private String entrantDist;
 
     /**
      * Stores event data while waiting for location permission response
@@ -89,6 +95,21 @@ public class OrganizerCreateEventFragment extends Fragment {
                     try {
                         Bitmap bitmap = MediaStore.Images.Media.getBitmap(requireContext().getContentResolver(), imageUri);
                         eventImage.setImageBitmap(bitmap);
+                        ImageController.uploadImage(imageUri, String.valueOf(svm.getUser().getId()),
+                                new ImageUploadCallback() {
+
+                                    @Override
+                                    public void onSuccess(Image newImage) {
+                                        Log.d("IMG", "URL = ");
+                                        image = newImage;
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        Log.e("IMG", "Upload failed", e);
+                                    }
+                                }
+                        );
                     } catch (IOException e) {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Failed to load image", Toast.LENGTH_SHORT).show();
@@ -323,54 +344,76 @@ public class OrganizerCreateEventFragment extends Fragment {
             // Organizer ID (if we want event to be associated to organizer)
             int organizerID = svm.getUser().getId();
 
-            // Get entrant distance if location is required
-            // Store in meters in database, but UI shows kilometers
-            String entrantDist = "500000"; // Default: 500km in meters
-            if (entrantLoc) {
-                String maxDistKmStr = editMaxDistance.getText().toString().trim();
-                if (!TextUtils.isEmpty(maxDistKmStr)) {
-                    try {
-                        int distanceKm = Integer.parseInt(maxDistKmStr);
-                        // Validate range: 1km to 500km
-                        if (distanceKm < 1) {
-                            Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        if (distanceKm > 500) {
-                            Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        // Convert km to meters for storage
-                        entrantDist = String.valueOf(distanceKm * 1000);
-                    } catch (NumberFormatException e) {
-                        Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
-                        return;
+
+
+            if(image != null) {
+                buildEvent(name, desc, address, guide, image.getUrl(), eventTimestamp, regStartTimestamp, regEndTimestamp,
+                        maxParticipants, maxWaiting, entrantLoc, 0, organizerID, image);
+            }
+            else {
+                ImageController.uploadPlaceholder(String.valueOf(organizerID), requireContext(), new ImageUploadCallback() {
+                    @Override
+                    public void onSuccess(Image placeholder) {
+                        buildEvent(name, desc, address, guide, placeholder.getUrl(), eventTimestamp, regStartTimestamp, regEndTimestamp,
+                                maxParticipants, maxWaiting, entrantLoc, 0, organizerID, placeholder);
                     }
-                }
+
+                    @Override
+                    public void onFailure(Exception e) {
+
+                    }
+                });
             }
-
-            //Placeholder image
-            String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
-
-            // Build an eventInfo
-            EventInfo eventInfo = new EventInfo(name, desc, address, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
-                    maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
-
-            // Check if geolocation is required
-            if (entrantLoc) {
-                // For geolocation events: request permission and get location
-                requestLocationPermissionForEvent(eventInfo);
-            } else {
-                // For non-geolocation events: create immediately
-                createEventWithInfo(eventInfo);
-            }
-
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_LONG).show();
             // Clear any pending event info on error
             pendingEventInfo = null;
         }
+    }
+
+    private void buildEvent(String name, String desc, String address, String guide,
+                            String imgUrl, Timestamp eventTimestamp, Timestamp regStartTimestamp, Timestamp regEndTimestamp,
+                            int maxParticipants, int maxWaiting, boolean entrantLoc, int id, int organizerID, Image image) {
+
+        // Get entrant distance if location is required
+        // Store in meters in database, but UI shows kilometers
+        String entrantDist = "500000"; // Default: 500km in meters
+        if (entrantLoc) {
+            String maxDistKmStr = editMaxDistance.getText().toString().trim();
+            if (!TextUtils.isEmpty(maxDistKmStr)) {
+                try {
+                    int distanceKm = Integer.parseInt(maxDistKmStr);
+                    // Validate range: 1km to 500km
+                    if (distanceKm < 1) {
+                        Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (distanceKm > 500) {
+                        Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    // Convert km to meters for storage
+                    entrantDist = String.valueOf(distanceKm * 1000);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+        }
+
+        EventInfo eventInfo = new EventInfo(name, desc, address, guide, null, eventTimestamp, regStartTimestamp, regEndTimestamp,
+                maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID, image);
+
+        // Check if geolocation is required
+        if (entrantLoc) {
+            // For geolocation events: request permission and get location
+            requestLocationPermissionForEvent(eventInfo);
+        } else {
+            // For non-geolocation events: create immediately
+            createEventWithInfo(eventInfo);
+        }
+
     }
 
     /**

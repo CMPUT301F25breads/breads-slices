@@ -78,6 +78,7 @@ public class EventInfo {
     private String entrantDist;
 
     private int organizerID;
+    private Image image;
 
 
 
@@ -91,7 +92,7 @@ public class EventInfo {
 
     public EventInfo(String name, String description, String address, String guidelines,
                      String imgUrl, Timestamp eventDate, Timestamp regStart, Timestamp regEnd,
-                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
+                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID, Image image) {
         this.name = name;
         this.description = description;
         this.location = null; // Not stored in Firebase, only used in memory for validation
@@ -108,9 +109,17 @@ public class EventInfo {
         this.entrantDist = entrantDist;
         this.organizerID = organizerID;
         this.address = address;
+        this.image = image;
 
     }
 
+    public Image getImage() {
+        return image;
+    }
+
+    public void setImage(Image image) {
+        this.image = image;
+    }
 
     public String getName() {
         return name;

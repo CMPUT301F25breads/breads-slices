@@ -92,7 +92,7 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
 
         // Load image with Glide
         Glide.with(context)
-                .load(eventInfo.getImageUrl())
+                .load(eventInfo.getImage().getUrl())
                 .placeholder(R.drawable.ic_image)
                 .into(holder.imgEvent);
 

@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.camera.view)
     implementation(libs.camera.lifecycle)
+    implementation(libs.firebase.storage)
     testImplementation(libs.junit)
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("org.mockito:mockito-core:5.7.0")
