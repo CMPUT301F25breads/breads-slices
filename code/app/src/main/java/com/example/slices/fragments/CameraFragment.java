@@ -20,6 +20,9 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
+import androidx.navigation.fragment.NavHostFragment;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -229,7 +232,19 @@ public class CameraFragment extends Fragment{
                 "qr_scan_result",
                 result
         );
+
+
     // returns to previous screen
-    requireActivity().getOnBackPressedDispatcher().onBackPressed();
+    //requireActivity().getOnBackPressedDispatcher().onBackPressed();
+        goToBrowse();
+    }
+    private void goToBrowse() {
+        NavController navController = NavHostFragment.findNavController(this);
+        NavOptions options = new NavOptions.Builder()
+                .setRestoreState(true)
+                .setPopUpTo(R.id.nav_graph, false)
+                .build();
+
+        navController.navigate(R.id.BrowseFragment, null, options);
     }
 }
