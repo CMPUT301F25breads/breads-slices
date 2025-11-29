@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical">
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -62,7 +63,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="10dp"
-        android:layout_marginTop="30dp"
         android:fontFamily="sans-serif"
         android:text="Browse Events"
         android:textColor="@color/black"
@@ -71,12 +71,9 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/browse_list"
-        android:paddingTop="4dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:divider="@color/dark_grey"
-        android:dividerHeight="1dp"
-        android:paddingVertical="4dp"
+        tools:listitem="@layout/browse_events_card"
         android:listSelector="?android:attr/selectableItemBackground"
         android:focusable="false"
         android:clickable="true" />

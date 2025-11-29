@@ -3,20 +3,22 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
-    android:padding="16dp"
     android:background="#FFFFFF"
     android:id="@+id/org_events_frag">
 
     <!-- Title -->
     <TextView
-        android:id="@+id/organizerEventsTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="My Events"
-        android:textSize="26sp"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="30dp"
+        android:textColor="@color/black"
+        android:textSize="50sp"
         android:textStyle="bold"
-        android:paddingBottom="8dp"/>
+        android:fontFamily="sans-serif"/>
 
     <!-- Scroll View for the sections -->
     <ScrollView
@@ -27,51 +29,58 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingHorizontal="10dp">
 
             <!-- Upcoming Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Upcoming"
-                android:textSize="20sp"
+                android:textSize="30sp"
                 android:textStyle="bold"
-                android:paddingTop="12dp" />
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="8dp"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvUpcoming"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingBottom="16dp" />
+                android:paddingBottom="16dp"
+                tools:listitem="@layout/organizer_event_card"/>
 
             <!-- In Progress Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="In Progress"
-                android:textSize="20sp"
+                android:textSize="30sp"
                 android:textStyle="bold"
-                android:paddingTop="12dp" />
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="8dp"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvInProgress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingBottom="16dp" />
+                android:paddingBottom="16dp"
+                tools:listitem="@layout/organizer_event_card"/>
 
             <!-- Past Events Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Past Events"
-                android:textSize="20sp"
+                android:textSize="30sp"
                 android:textStyle="bold"
-                android:paddingTop="12dp" />
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="8dp"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvPast"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                tools:listitem="@layout/organizer_event_card"/>
 
         </LinearLayout>
     </ScrollView>
