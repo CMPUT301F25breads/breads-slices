@@ -46,7 +46,7 @@ public class AdminHome extends Fragment {
         // Set click listeners
         btnBrowseEvents.setOnClickListener(v -> navigateToFragment(view, R.id.adminEventsFragment));
         btnBrowseProfiles.setOnClickListener(v -> navigateToFragment(view, R.id.adminProfilesFragment));
-        btnBrowseImages.setOnClickListener(v -> showPlaceholder("Images feature coming soon!"));
+        btnBrowseImages.setOnClickListener(v -> navigateToFragment(view, R.id.adminImagesFragment));
         btnBrowseOrganizers.setOnClickListener(v -> navigateToFragment(view, R.id.adminOrganizersFragment));
         btnLogs.setOnClickListener(v -> navigateToFragment(view, R.id.adminNotificationsFragment));
     }
@@ -64,10 +64,4 @@ public class AdminHome extends Fragment {
         }
     }
 
-    /**
-     * Displays a short Toast message for unfinished stuff.
-     */
-    private void showPlaceholder(String message) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-    }
 }

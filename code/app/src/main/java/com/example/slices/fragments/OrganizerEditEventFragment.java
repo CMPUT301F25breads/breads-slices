@@ -987,13 +987,19 @@ public class OrganizerEditEventFragment extends Fragment {
         EventController.updateEventInfo(currentEvent, eventInfo, new DBWriteCallback() {
             @Override
             public void onSuccess() {
-                Toast.makeText(getContext(), "Location settings saved!", Toast.LENGTH_SHORT).show();
+                // Only show toast if fragment is still attached
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Location settings saved!", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onFailure(Exception e) {
-                Toast.makeText(getContext(), "Failed to save location settings: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                // Only show toast if fragment is still attached
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Failed to save location settings: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -1074,5 +1080,52 @@ public class OrganizerEditEventFragment extends Fragment {
                 }
             }
         });
+    }
+
+    /**
+     * Called when the fragment is paused (user navigates away).
+     * Saves any pending changes to ensure data isn't lost.
+     */
+    @Override
+    public void onPause() {
+        super.onPause();
+        
+        // Save any pending changes before the fragment is paused
+        if (currentEvent != null) {
+            // Save location settings if the distance field has content
+            if (switchEntrantLocation.isChecked() && !editMaxDistance.getText().toString().trim().isEmpty()) {
+                saveEntrantLocationSettings();
+            }
+            
+            // Save other fields that might have changed
+            String currentName = editEventName.getText().toString().trim();
+            if (!currentName.isEmpty() && !currentName.equals(currentEvent.getEventInfo().getName())) {
+                saveEventName();
+            }
+            
+            String maxParticipantsStr = editMaxParticipants.getText().toString().trim();
+            if (!maxParticipantsStr.isEmpty()) {
+                try {
+                    int maxParticipants = Integer.parseInt(maxParticipantsStr);
+                    if (maxParticipants != currentEvent.getEventInfo().getMaxEntrants()) {
+                        saveMaxParticipants();
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore invalid input
+                }
+            }
+            
+            String maxWaitingStr = editMaxWaiting.getText().toString().trim();
+            if (!maxWaitingStr.isEmpty()) {
+                try {
+                    int maxWaiting = Integer.parseInt(maxWaitingStr);
+                    if (maxWaiting != currentEvent.getWaitlist().getMaxCapacity()) {
+                        saveMaxWaitingCapacity();
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore invalid input
+                }
+            }
+        }
     }
 }
