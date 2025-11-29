@@ -321,7 +321,19 @@ public class EventInfo {
 
 
     public String getImageUrl() {
-        return imageUrl;
+
+        if (image != null &&
+                image.getUrl() != null &&
+                !image.getUrl().isEmpty()) {
+            return image.getUrl();
+        }
+
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            return imageUrl;
+        }
+
+        // 3. DEFAULT fallback
+        return "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
     }
 
     /**
