@@ -97,7 +97,7 @@ public class AdminProfilesFragment extends Fragment {
     }
 
     /**
-     * Loads all profiles from firabase
+     * Loads all profiles from firebase
      * @author Sasieni
      */
     private void loadProfiles() {
