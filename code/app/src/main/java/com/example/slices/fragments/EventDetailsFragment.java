@@ -41,6 +41,7 @@ public class EventDetailsFragment extends Fragment {
     private ActivityResultLauncher<String[]> locationPermissionLauncher;
 
     private boolean isWaitlisted = false;
+    private boolean isParticipating = false;
     private Event e;
 
     /**
@@ -49,11 +50,17 @@ public class EventDetailsFragment extends Fragment {
      * @param isOn
      *     true if the current user is waitlisted for the event, false if not on waitlist for event
      */
-    /* TODO: Make the button updates less ugly in EntrantEventAdapter (shouldn't have
-        all that code inside an adapter) - Raj
-    */
     private void updateWaitlistButton(boolean isOn) {
-        if (isOn) {
+        if (isParticipating) {
+            binding.btnJoinWaitlist.setText("Leave Event");
+            binding.btnJoinWaitlist.setBackgroundTintList(
+                    ContextCompat.getColorStateList(requireContext(), R.color.red)
+            );
+            binding.btnJoinWaitlist.setTextColor(
+                    ContextCompat.getColor(requireContext(), R.color.white)
+            );
+        }
+        else if (isOn) {
             binding.btnJoinWaitlist.setText("Leave Waitlist");
             binding.btnJoinWaitlist.setBackgroundTintList(
                     ContextCompat.getColorStateList(requireContext(), R.color.red)
@@ -276,13 +283,54 @@ public class EventDetailsFragment extends Fragment {
 
         // initial waitlist state based on event data
         isWaitlisted = vm.isWaitlisted(String.valueOf(eventId));
+        isParticipating = vm.isParticipating(String.valueOf(eventId));
 
         // update initial button appearance based on waitlist status
         updateWaitlistButton(isWaitlisted);
 
-        // Waitlist button toggling
+        // waitlist/participating button toggling
         binding.btnJoinWaitlist.setOnClickListener(v -> {
             final String eventIdStr = String.valueOf(eventId);
+
+            // check if the user is participating in the current event using boolean
+            if (isParticipating) {
+                binding.btnJoinWaitlist.setEnabled(false);
+                binding.btnJoinWaitlist.setText("Leaving...");
+
+                EventController.removeEntrantFromEvent(e, vm.getUser(), new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        vm.removeParticipatingId(eventIdStr);
+                        isParticipating = false;
+                        isWaitlisted = false;     // ensures consistency w/ waitlist status
+
+                        if (isAdded()) {
+                            updateWaitlistButton(false);
+                            binding.btnJoinWaitlist.setEnabled(true);
+                        }
+
+                        // refresh event obj
+                        EventController.getEvent(eventId, new EventCallback() {
+                            @Override
+                            public void onSuccess(Event refreshed) {
+                                e = refreshed; }
+                            @Override
+                            public void onFailure(Exception ex) { }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception ex) {
+                        if (isAdded()) {
+                            updateWaitlistButton(true);
+                            binding.btnJoinWaitlist.setEnabled(true);
+                        }
+                        Toast.makeText(requireContext(),
+                                "Failed to leave event", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                return;
+            }
 
             // checks to see if waitlisted and communicating with DB for join/leave functions
             if (isWaitlisted) {
@@ -309,12 +357,14 @@ public class EventDetailsFragment extends Fragment {
                             @Override
                             public void onSuccess(Event refreshedEvent) {
                                 e = refreshedEvent;
-                                android.util.Log.d("EventDetailsFragment", "Event refreshed after leaving waitlist");
+                                android.util.Log.d("EventDetailsFragment",
+                                        "Event refreshed after leaving waitlist");
                             }
 
                             @Override
                             public void onFailure(Exception ex) {
-                                android.util.Log.e("EventDetailsFragment", "Failed to refresh event after leaving waitlist");
+                                android.util.Log.e("EventDetailsFragment",
+                                        "Failed to refresh event after leaving waitlist");
                             }
                         });
                     }
@@ -331,12 +381,17 @@ public class EventDetailsFragment extends Fragment {
                         
                         // Provide specific error message based on failure type
                         String errorMessage;
-                        if (e1.getMessage() != null && e1.getMessage().contains("Entrant not in event")) {
+                        if (e1.getMessage() != null && e1.getMessage()
+                                .contains("Entrant not in event")) {
                             errorMessage = "You are not on this waitlist";
-                            android.util.Log.i("EventDetailsFragment", "User attempted to leave waitlist they're not on: event " + eventIdStr);
+                            android.util.Log.i("EventDetailsFragment",
+                                    "User attempted to leave waitlist they're not on: event "
+                                            + eventIdStr);
                         } else {
                             errorMessage = "Network error. Please try again.";
-                            android.util.Log.e("EventDetailsFragment", "Failed to leave waitlist for event " + eventIdStr + ": " + e1.getMessage());
+                            android.util.Log.e("EventDetailsFragment",
+                                    "Failed to leave waitlist for event "
+                                            + eventIdStr + ": " + e1.getMessage());
                         }
                         
                         Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show();
@@ -527,13 +582,43 @@ public class EventDetailsFragment extends Fragment {
                 }
             }
             catch (DuplicateEntry e1) {
-                if (!isAdded() || vm == null) return;
-                isWaitlisted = false;
-                vm.removeWaitlistedId(eventIdStr);
+                if (!isAdded() || vm == null || e == null) return;
+
+                // two bool conditions to check if what state the user is in
+                boolean alreadyParticipating = vm.isParticipating(eventIdStr);
+                final boolean alreadyWaitlisted = e.getWaitlist() != null &&
+                        e.getWaitlist().getEntrantIds() != null &&
+                        e.getWaitlist().getEntrantIds().contains(vm.getUser().getId());
+
+
+                isParticipating = alreadyParticipating;
+                isWaitlisted = !alreadyParticipating && alreadyWaitlisted;
+
+                if (alreadyParticipating) {
+                    vm.addParticipatingId(eventIdStr);
+                    vm.removeWaitlistedId(eventIdStr);
+                } else if (alreadyWaitlisted) {
+                    vm.addWaitlistedId(eventIdStr);
+                } else {
+                    vm.removeParticipatingId(eventIdStr);
+                    vm.removeWaitlistedId(eventIdStr);
+                    isParticipating = false;
+                    isWaitlisted = false;
+                }
+
+                // update the UI
                 updateWaitlistButton(isWaitlisted);
-                Toast.makeText(requireContext(),
-                        "You are already on the waitlist for this event.",
-                        Toast.LENGTH_SHORT).show();
+                binding.btnJoinWaitlist.setEnabled(true);
+
+                if (alreadyParticipating) {
+                    Toast.makeText(requireContext(),
+                            "You are already participating in this event.",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(),
+                            "You are already on the waitlist for this event.",
+                            Toast.LENGTH_SHORT).show();
+                }
             }
             catch (WaitlistFull e1) {
                 if (!isAdded() || vm == null) return;
