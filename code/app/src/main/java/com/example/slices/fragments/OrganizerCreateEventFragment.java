@@ -280,6 +280,8 @@ public class OrganizerCreateEventFragment extends Fragment {
      * and writes it to the database.
      */
     private void createEvent() {
+        // Disable button to prevent double-clicks
+        buttonConfirm.setEnabled(false);
         Toast.makeText(getContext(), "Creating event...", Toast.LENGTH_SHORT).show();
 
         String name = editEventName.getText().toString().trim();
@@ -300,6 +302,7 @@ public class OrganizerCreateEventFragment extends Fragment {
         if (TextUtils.isEmpty(name) || TextUtils.isEmpty(desc) || TextUtils.isEmpty(dateStr) ||
                 TextUtils.isEmpty(timeStr)) {
             Toast.makeText(getContext(), "Please fill in all required fields.", Toast.LENGTH_SHORT).show();
+            buttonConfirm.setEnabled(true);
             return;
         }
 
@@ -369,6 +372,8 @@ public class OrganizerCreateEventFragment extends Fragment {
             Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_LONG).show();
             // Clear any pending event info on error
             pendingEventInfo = null;
+            // Re-enable button so user can try again
+            buttonConfirm.setEnabled(true);
         }
     }
 
@@ -387,16 +392,19 @@ public class OrganizerCreateEventFragment extends Fragment {
                     // Validate range: 1km to 500km
                     if (distanceKm < 1) {
                         Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
+                        buttonConfirm.setEnabled(true);
                         return;
                     }
                     if (distanceKm > 500) {
                         Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
+                        buttonConfirm.setEnabled(true);
                         return;
                     }
                     // Convert km to meters for storage
                     entrantDist = String.valueOf(distanceKm * 1000);
                 } catch (NumberFormatException e) {
                     Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
+                    buttonConfirm.setEnabled(true);
                     return;
                 }
             }

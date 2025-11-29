@@ -170,8 +170,13 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
             SimpleDateFormat formatter = new SimpleDateFormat("ha | MMM. dd, yyyy", Locale.CANADA);
             details.setText(formatter.format(date) + " | " + eventInfo.getAddress());
 
-            // Load image from URL
-            Glide.with(context).load(eventInfo.getImage().getUrl()).into(image);
+            // Load image from URL with null check
+            if (eventInfo.getImage() != null && eventInfo.getImage().getUrl() != null) {
+                Glide.with(context).load(eventInfo.getImage().getUrl()).into(image);
+            } else {
+                // Use placeholder image if event has no image
+                image.setImageResource(R.drawable.ic_image);
+            }
 
             // Item click navigates to EventDetailsFragment
             itemView.setOnClickListener(v -> {
