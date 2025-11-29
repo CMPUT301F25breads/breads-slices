@@ -136,4 +136,72 @@ public class SharedViewModel extends ViewModel {
         Log.d("SharedViewModel", "Cleared all waitlisted IDs (was: " + previousSize + ")");
     }
 
+
+    // ---- participant handling/removal ------ -Raj
+    // Crafted to track the events the entrant is fully participating in
+    private final MutableLiveData<ArrayList<String>> participatingEventIds =
+            new MutableLiveData<>(new ArrayList<>());
+
+    // Returns read-only list of events the user is participating in
+    public LiveData<ArrayList<String>> getParticipatingEventIds() {
+        return participatingEventIds;
+    }
+
+    // check user is participating or not in an event
+    public boolean isParticipating(String eventId) {
+        ArrayList<String> list = participatingEventIds.getValue();
+        return list != null && list.contains(eventId);
+    }
+
+    // add a participating eventId if not already there
+    public void addParticipatingId(String eventId) {
+        if (eventId == null) {
+            return;
+        }
+
+        ArrayList<String> current = participatingEventIds.getValue();
+        if (current == null) current = new ArrayList<>();
+
+        if (current.contains(eventId)) {
+            return;
+        }
+
+        ArrayList<String> copy = new ArrayList<>(current);
+        copy.add(eventId);
+        participatingEventIds.setValue(copy);
+        Log.d("SharedViewModel", "Added participating ID: " +
+                eventId + " (total: " + copy.size() + ")");
+    }
+
+    // remove a participating eventId
+    public void removeParticipatingId(String eventId) {
+        if (eventId == null) {
+            return;
+        }
+
+        ArrayList<String> list = participatingEventIds.getValue();
+        if (list == null || !list.contains(eventId)) {
+            Log.d("SharedViewModel",
+                    "Attempted to remove non-existent participating ID: " + eventId);
+            return;
+        }
+
+        ArrayList<String> copy = new ArrayList<>(list);
+        if (copy.remove(eventId)) {
+            participatingEventIds.setValue(copy);
+            Log.d("SharedViewModel",
+                    "Removed participating ID: " +
+                            eventId + " (remaining: " + copy.size() + ")");
+        }
+    }
+
+    // clear EVERYTHING from participating IDs -> might be useful
+    public void clearParticipatingIds() {
+        ArrayList<String> current = participatingEventIds.getValue();
+        int prev = (current != null) ? current.size() : 0;
+
+        participatingEventIds.setValue(new ArrayList<>());
+        Log.d("SharedViewModel", "Cleared all participating IDs (was: " + prev + ")");
+    }
+
 }
