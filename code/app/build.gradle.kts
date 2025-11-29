@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.firebase.firestore)
     implementation(libs.navigation.ui)
     implementation(libs.navigation.fragment)

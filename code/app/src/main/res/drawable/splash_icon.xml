@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- White background to keep full logo visible without masking -->
+    <item android:drawable="@color/white" />
+
+    <!-- Centered app icon at a fixed size (bitmap to avoid adaptive masking) -->
+    <item
+        android:drawable="@drawable/splash_logo"
+        android:gravity="center"
+        android:width="140dp"
+        android:height="140dp" />
+</layer-list>

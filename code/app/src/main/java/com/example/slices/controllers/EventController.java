@@ -1207,6 +1207,110 @@ public class EventController {
         });
     }
 
+    /**
+     * Performs a replacement lottery draw for an event.
+     * This method draws from the waitlist to fill available spots, excluding:
+     * - Users who have already been invited (invitedIds)
+     * - Users who have declined invitations (cancelledIds)
+     * 
+     * @param event The event to draw replacement lottery for
+     * @param callback Callback invoked when the operation completes
+     */
+    public static void doReplacementLottery(Event event, DBWriteCallback callback) {
+        // Calculate available spots
+        int spots = event.getEventInfo().getMaxEntrants() - event.getEntrants().size();
+        if (spots <= 0) {
+            Logger.logError("Replacement lottery failed: no spots available event id=" + event.getId(), null);
+            callback.onFailure(new Exception("No spots available"));
+            return;
+        }
+
+        getWaitlistForEvent(event.getId(), new EntrantListCallback() {
+            @Override
+            public void onSuccess(List<Entrant> entrants) {
+                if (entrants.isEmpty()) {
+                    Logger.logError("Replacement lottery failed: no entrants in waitlist event id=" + event.getId(), null);
+                    callback.onFailure(new Exception("No entrants in waitlist"));
+                    return;
+                }
+
+                // Get exclusion lists
+                List<Integer> cancelledIds = event.getCancelledIds();
+                List<Integer> invitedIds = event.getInvitedIds();
+                
+                if (cancelledIds == null) {
+                    cancelledIds = new ArrayList<>();
+                }
+                if (invitedIds == null) {
+                    invitedIds = new ArrayList<>();
+                }
+
+                // Filter out excluded entrants
+                List<Entrant> eligiblePool = new ArrayList<>();
+                for (Entrant entrant : entrants) {
+                    int entrantId = entrant.getId();
+                    if (!cancelledIds.contains(entrantId) && !invitedIds.contains(entrantId)) {
+                        eligiblePool.add(entrant);
+                    }
+                }
+
+                if (eligiblePool.isEmpty()) {
+                    Logger.logError("Replacement lottery failed: no eligible entrants after exclusions event id=" + event.getId(), null);
+                    callback.onFailure(new Exception("No eligible entrants in waitlist"));
+                    return;
+                }
+
+                // If eligible pool is smaller than or equal to available spots, invite everyone
+                if (eligiblePool.size() <= spots) {
+                    notifyWinners(eligiblePool, event, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Logger.logLotteryRun(event.getId(), null);
+                            callback.onSuccess();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Logger.logError("Replacement lottery notifyWinners failed event id=" + event.getId(), null);
+                            callback.onFailure(e);
+                        }
+                    });
+                    return;
+                }
+
+                // Randomly select winners from eligible pool
+                List<Entrant> pool = new ArrayList<>(eligiblePool);
+                List<Entrant> winners = new ArrayList<>();
+
+                for (int i = 0; i < spots; i++) {
+                    int randomIndex = (int)(Math.random() * pool.size());
+                    winners.add(pool.remove(randomIndex));
+                }
+
+                // Send invitations to winners (no need to notify losers in replacement lottery)
+                notifyWinners(winners, event, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Logger.logLotteryRun(event.getId(), null);
+                        callback.onSuccess();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        Logger.logError("Replacement lottery notify winners failed event id=" + event.getId(), null);
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Logger.logError("Replacement lottery failed fetching waitlist event id=" + event.getId(), null);
+                callback.onFailure(e);
+            }
+        });
+    }
+
     private static void notifyWinners(List<Entrant> winners, Event event, DBWriteCallback callback) {
         String title = "Congratulations!";
         String body = "You have won the lottery for " + event.getEventInfo().getName() + "!";
