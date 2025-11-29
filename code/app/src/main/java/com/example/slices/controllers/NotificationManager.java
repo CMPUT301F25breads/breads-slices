@@ -105,6 +105,12 @@ public class NotificationManager {
         sendNotification(title, body, recipientId, senderId, 0, callback);
     }
 
+    public static void sendNotification(String title, String body,
+                                        int recipientId, int senderId, NotificationType notificationType,
+                                        DBWriteCallback callback) {
+        sendNotification(title, body, recipientId, senderId, 0, notificationType, callback);
+    }
+
     /**
      * Sends a standard notification to a recipient with an associated event.
      * Creates a Notification object, writes it to the database, and logs it.
@@ -125,6 +131,37 @@ public class NotificationManager {
 
         Notification notification = new Notification(title, body, id, recipientId, senderId);
         notification.setType(NotificationType.NOTIFICATION);
+        notification.setEventId(eventId);
+
+        ref.set(notification)
+                .addOnSuccessListener(aVoid ->
+                        Logger.logNotification(title + " " + body, recipientId, senderId, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                Logger.logSystem("Notification sent successfully to recipientId=" + recipientId, null);
+                                callback.onSuccess();
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                Logger.logError("Failed to log notification for recipientId=" + recipientId, null);
+                                callback.onFailure(e);
+                            }
+                        }))
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to send notification to recipientId=" + recipientId + " senderId=" + senderId, null);
+                    callback.onFailure(e);
+                });
+    }
+
+    public static void sendNotification(String title, String body,
+                                        int recipientId, int senderId, int eventId, NotificationType notificationType,
+                                        DBWriteCallback callback) {
+
+        DocumentReference ref = notificationRef.document();
+        String id = ref.getId();
+
+        Notification notification = new Notification(title, body, id, recipientId, senderId);
+        notification.setType(notificationType);
         notification.setEventId(eventId);
 
         ref.set(notification)
@@ -174,6 +211,45 @@ public class NotificationManager {
         AtomicBoolean failed = new AtomicBoolean(false);
         for (int recipient : recipients) {
             sendNotification(title, body, recipient, senderId, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    if (failed.get()) {
+                        return;
+                    }
+                    if (completed.incrementAndGet() == recipients.size()) {
+                        if (!failed.get()) {
+                            Logger.logSystem("Bulk notification send completed for " + recipients.size() + " recipients", null);
+                            callback.onSuccess();
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    if (failed.compareAndSet(false, true)) {
+                        Logger.logError("Bulk notification send failed: " + e.getMessage(), null);
+                        callback.onFailure(e);
+                    }
+                }
+            });
+
+        }
+    }
+
+    public static void sendBulkNotification(String title, String body, List<Integer> recipients,
+                                            int senderId, NotificationType notificationType, DBWriteCallback callback) {
+        if (recipients.isEmpty()) {
+            Logger.logSystem("sendBulkNotification called with empty recipients list", null);
+            callback.onSuccess();
+            return;
+        }
+
+        Logger.logSystem("Starting bulk notification send to " + recipients.size() + " recipients", null);
+
+        AtomicInteger completed = new AtomicInteger(0);
+        AtomicBoolean failed = new AtomicBoolean(false);
+        for (int recipient : recipients) {
+            sendNotification(title, body, recipient, senderId, notificationType, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     if (failed.get()) {

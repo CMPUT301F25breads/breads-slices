@@ -19,6 +19,7 @@ import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
 import com.example.slices.models.Image;
+import com.example.slices.models.NotificationType;
 import com.example.slices.models.SearchSettings;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -1158,7 +1159,7 @@ public class EventController {
                 }
 
                 if (entrants.size() <= spots) {
-                    addEntrantsToEvent(event, entrants, new DBWriteCallback() {
+                    notifyWinners(entrants, event, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             Logger.logLotteryRun(event.getId(), null);
@@ -1167,7 +1168,7 @@ public class EventController {
 
                         @Override
                         public void onFailure(Exception e) {
-                            Logger.logError("Lottery addEntrantsToEvent failure event id=" + event.getId(), null);
+                            Logger.logError("Lottery notifyWinners failed event id=" + event.getId(), null);
                             callback.onFailure(e);
                         }
                     });
@@ -1182,35 +1183,27 @@ public class EventController {
                     winners.add(pool.remove(randomIndex));
                 }
 
-                addEntrantsToEvent(event, winners, new DBWriteCallback() {
+
+                notifyWinners(winners, event, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
-                        notifyWinners(winners, event, new DBWriteCallback() {
+                        notifyLosers(pool, event, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
-                                notifyLosers(pool, event, new DBWriteCallback() {
-                                    @Override
-                                    public void onSuccess() {
-                                        Logger.logLotteryRun(event.getId(), null);
-                                        callback.onSuccess();
-                                    }
-
-                                    @Override
-                                    public void onFailure(Exception e) {
-                                        Logger.logError("Lottery notify losers failed event id=" + event.getId(), null);
-                                        callback.onFailure(e);
-                                    }
-                                });
+                                Logger.logLotteryRun(event.getId(), null);
+                                callback.onSuccess();
                             }
+
                             @Override
                             public void onFailure(Exception e) {
-                                Logger.logError("Lottery notify winners failed event id=" + event.getId(), null);
+                                Logger.logError("Lottery notify losers failed event id=" + event.getId(), null);
                                 callback.onFailure(e);
-                            }});
+                            }
+                        });
                     }
                     @Override
                     public void onFailure(Exception e) {
-                        Logger.logError("Lottery failed adding entrants event id=" + event.getId(), null);
+                        Logger.logError("Lottery notify winners failed event id=" + event.getId(), null);
                         callback.onFailure(e);
                     }
                 });
@@ -1243,7 +1236,7 @@ public class EventController {
         for (Entrant e : losers) {
             recipients.add(e.getId());
         }
-        NotificationManager.sendBulkNotification(title, body, recipients, sender, callback);
+        NotificationManager.sendBulkNotification(title, body, recipients, sender, NotificationType.NOT_SELECTED, callback);
     }
 
     public static void addEntrantsToEvent(Event event, List<Entrant> entrants, DBWriteCallback callback) {
