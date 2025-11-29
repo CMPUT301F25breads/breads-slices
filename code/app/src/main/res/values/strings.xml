@@ -2,6 +2,9 @@
     <string name="app_name">Slices</string>
     <string name="view_label">View:</string>
     <string name="waiting_list">Waiting List</string>
+    <string name="invited_list">Invited</string>
+    <string name="participants_list">Participants</string>
+    <string name="cancelled_list">Cancelled</string>
     <string name="no_entrants">No entrants</string>
     <string name="no_entrants_message">No entrants have joined this event yet.</string>
     <string name="error_label">Error</string>

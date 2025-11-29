@@ -4,20 +4,28 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.example.slices.R;
+import com.example.slices.controllers.EntrantController;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
+import com.example.slices.models.Invitation;
+import com.example.slices.models.Notification;
 import com.example.slices.controllers.NotificationDialog;
+import com.example.slices.controllers.NotificationManager;
 import com.example.slices.controllers.NotificationService;
 import com.example.slices.databinding.EventEntrantsFragmentBinding;
+import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EventCallback;
+import com.example.slices.interfaces.NotificationListCallback;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Fragment for displaying the list of entrants for a specific event
@@ -34,6 +42,7 @@ public class EventEntrantsFragment extends Fragment {
     private String eventName;
     private int senderId;
     private Event currentEvent;
+    private ListType currentListType = ListType.WAITLIST;
 
     /**
      * Create a new instance of EventEntrantsFragment with event data
@@ -114,12 +123,61 @@ public class EventEntrantsFragment extends Fragment {
             // Set up RecyclerView with LinearLayoutManager
             binding.recyclerViewEntrants.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(requireContext()));
             
+            // Set up dropdown for list type selection
+            setupDropdown();
+            
             // Show loading state initially
             binding.recyclerViewEntrants.setVisibility(View.GONE);
             binding.layoutEmptyState.setVisibility(View.GONE);
             binding.layoutErrorState.setVisibility(View.GONE);
             binding.progressBar.setVisibility(View.VISIBLE);
         }
+    }
+
+    // Set up the dropdown menu for list type selection
+    private void setupDropdown() {
+        if (binding == null) return;
+
+        // Create dropdown items
+        String[] listTypes = new String[]{
+                getString(R.string.waiting_list),
+                getString(R.string.invited_list),
+                getString(R.string.participants_list),
+                getString(R.string.cancelled_list)
+        };
+
+        // Create adapter for dropdown
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                listTypes
+        );
+
+        // Set adapter to dropdown
+        binding.dropdownListType.setAdapter(adapter);
+
+        // Set default selection
+        binding.dropdownListType.setText(getString(R.string.waiting_list), false);
+
+        // Handle dropdown selection
+        binding.dropdownListType.setOnItemClickListener((parent, view, position, id) -> {
+            switch (position) {
+                case 0:
+                    currentListType = ListType.WAITLIST;
+                    break;
+                case 1:
+                    currentListType = ListType.INVITED;
+                    break;
+                case 2:
+                    currentListType = ListType.PARTICIPANTS;
+                    break;
+                case 3:
+                    currentListType = ListType.CANCELLED;
+                    break;
+            }
+            // Reload data for the selected list type
+            displayEntrantsForCurrentType();
+        });
     }
 
     /**
@@ -216,7 +274,7 @@ public class EventEntrantsFragment extends Fragment {
                         currentEvent = event;
                         updateNotificationButtonStates();
                         updateMapButtonVisibility();
-                        displayEntrants();
+                        displayEntrantsForCurrentType();
                     });
                 }
             }
@@ -252,8 +310,28 @@ public class EventEntrantsFragment extends Fragment {
         }
     }
     
-    // Display entrants in the RecyclerView
-    private void displayEntrants() {
+    // Display entrants based on current list type
+    private void displayEntrantsForCurrentType() {
+        if (binding == null || currentEvent == null) return;
+
+        switch (currentListType) {
+            case WAITLIST:
+                displayWaitlistEntrants();
+                break;
+            case INVITED:
+                displayInvitedEntrants();
+                break;
+            case PARTICIPANTS:
+                displayParticipants();
+                break;
+            case CANCELLED:
+                displayCancelledEntrants();
+                break;
+        }
+    }
+
+    // Display waitlist entrants
+    private void displayWaitlistEntrants() {
         if (binding == null || currentEvent == null) return;
         
         // Get waitlist entrants
@@ -271,6 +349,175 @@ public class EventEntrantsFragment extends Fragment {
             // Create and set adapter
             com.example.slices.adapters.EntrantAdapter adapter = 
                 new com.example.slices.adapters.EntrantAdapter(requireContext(), waitlistEntrants);
+            binding.recyclerViewEntrants.setAdapter(adapter);
+            
+            // Show RecyclerView, hide other states
+            binding.recyclerViewEntrants.setVisibility(View.VISIBLE);
+            binding.layoutEmptyState.setVisibility(View.GONE);
+            binding.layoutErrorState.setVisibility(View.GONE);
+            binding.progressBar.setVisibility(View.GONE);
+        }
+    }
+
+    // Display invited entrants (pending invitations)
+    private void displayInvitedEntrants() {
+        if (binding == null || currentEvent == null) return;
+
+        // Show loading state
+        binding.progressBar.setVisibility(View.VISIBLE);
+        binding.recyclerViewEntrants.setVisibility(View.GONE);
+        binding.layoutEmptyState.setVisibility(View.GONE);
+        binding.layoutErrorState.setVisibility(View.GONE);
+
+        // Query invitations for this event
+        NotificationManager.getInvitationByEventId(eventId, new NotificationListCallback() {
+            @Override
+            public void onSuccess(List<Notification> notifications) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Filter for pending invitations (not accepted, not declined)
+                        List<Integer> invitedEntrantIds = new ArrayList<>();
+                        for (Notification notification : notifications) {
+                            if (notification instanceof Invitation) {
+                                Invitation invitation = (Invitation) notification;
+                                if (!invitation.isAccepted() && !invitation.isDeclined()) {
+                                    invitedEntrantIds.add(invitation.getRecipientId());
+                                }
+                            }
+                        }
+
+                        // Update count display
+                        binding.tvEntrantCount.setText(invitedEntrantIds.size() + " invited entrants");
+
+                        if (invitedEntrantIds.isEmpty()) {
+                            showEmptyState();
+                        } else {
+                            // Fetch entrant details for each invited user
+                            fetchEntrantsByIds(invitedEntrantIds);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        showErrorState("Failed to load invited entrants: " + e.getMessage());
+                    });
+                }
+            }
+        });
+    }
+
+    // Display confirmed participants
+    private void displayParticipants() {
+        if (binding == null || currentEvent == null) return;
+        
+        // Get confirmed participants
+        List<Entrant> participants = new ArrayList<>();
+        if (currentEvent.getEntrants() != null) {
+            participants = currentEvent.getEntrants();
+        }
+        
+        // Update entrant count display
+        binding.tvEntrantCount.setText(participants.size() + " confirmed participants");
+        
+        if (participants.isEmpty()) {
+            showEmptyState();
+        } else {
+            // Create and set adapter
+            com.example.slices.adapters.EntrantAdapter adapter = 
+                new com.example.slices.adapters.EntrantAdapter(requireContext(), participants);
+            binding.recyclerViewEntrants.setAdapter(adapter);
+            
+            // Show RecyclerView, hide other states
+            binding.recyclerViewEntrants.setVisibility(View.VISIBLE);
+            binding.layoutEmptyState.setVisibility(View.GONE);
+            binding.layoutErrorState.setVisibility(View.GONE);
+            binding.progressBar.setVisibility(View.GONE);
+        }
+    }
+
+    // Display cancelled entrants (declined invitations)
+    private void displayCancelledEntrants() {
+        if (binding == null || currentEvent == null) return;
+
+        // Get cancelled entrant IDs
+        List<Integer> cancelledIds = currentEvent.getCancelledIds();
+        if (cancelledIds == null) {
+            cancelledIds = new ArrayList<>();
+        }
+
+        // Update count display
+        binding.tvEntrantCount.setText(cancelledIds.size() + " cancelled entrants");
+
+        if (cancelledIds.isEmpty()) {
+            showEmptyState();
+        } else {
+            // Show loading state while fetching entrant details
+            binding.progressBar.setVisibility(View.VISIBLE);
+            binding.recyclerViewEntrants.setVisibility(View.GONE);
+            binding.layoutEmptyState.setVisibility(View.GONE);
+            binding.layoutErrorState.setVisibility(View.GONE);
+
+            // Fetch entrant details for each cancelled user
+            fetchEntrantsByIds(cancelledIds);
+        }
+    }
+
+    // Helper method to fetch entrants by their IDs
+    private void fetchEntrantsByIds(List<Integer> entrantIds) {
+        if (entrantIds == null || entrantIds.isEmpty()) {
+            showEmptyState();
+            return;
+        }
+
+        List<Entrant> entrants = new ArrayList<>();
+        AtomicInteger fetchedCount = new AtomicInteger(0);
+        AtomicInteger totalCount = new AtomicInteger(entrantIds.size());
+
+        for (Integer entrantId : entrantIds) {
+            EntrantController.getEntrant(entrantId, new EntrantCallback() {
+                @Override
+                public void onSuccess(Entrant entrant) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            entrants.add(entrant);
+                            
+                            // Check if all entrants have been fetched
+                            if (fetchedCount.incrementAndGet() == totalCount.get()) {
+                                displayEntrantList(entrants);
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            // Still increment count even on failure
+                            if (fetchedCount.incrementAndGet() == totalCount.get()) {
+                                displayEntrantList(entrants);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    }
+
+    // Helper method to display a list of entrants
+    private void displayEntrantList(List<Entrant> entrants) {
+        if (binding == null) return;
+
+        if (entrants.isEmpty()) {
+            showEmptyState();
+        } else {
+            // Create and set adapter
+            com.example.slices.adapters.EntrantAdapter adapter = 
+                new com.example.slices.adapters.EntrantAdapter(requireContext(), entrants);
             binding.recyclerViewEntrants.setAdapter(adapter);
             
             // Show RecyclerView, hide other states
@@ -380,6 +627,14 @@ public class EventEntrantsFragment extends Fragment {
     private enum NotificationType {
         WAITLIST,
         PARTICIPANTS
+    }
+
+    // Enum for list types
+    private enum ListType {
+        WAITLIST,
+        INVITED,
+        PARTICIPANTS,
+        CANCELLED
     }
 
     @Override

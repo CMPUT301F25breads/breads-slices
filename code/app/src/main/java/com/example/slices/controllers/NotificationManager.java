@@ -872,17 +872,42 @@ public class NotificationManager {
                             public void onSuccess() {
                                 Logger.logWaitlistModified("Removed from waitlist", event.getId(), entrant.getId(), null);
 
-                                // 4. Update invitation in DB
-                                updateInvitation(invitation, new DBWriteCallback() {
+                                // 4. Add user to cancelledIds list
+                                List<Integer> cancelledIds = event.getCancelledIds();
+                                if (cancelledIds == null) {
+                                    cancelledIds = new ArrayList<>();
+                                    event.setCancelledIds(cancelledIds);
+                                }
+                                if (!cancelledIds.contains(entrant.getId())) {
+                                    cancelledIds.add(entrant.getId());
+                                    Logger.logSystem("Added entrant to cancelledIds: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+                                }
+
+                                // 5. Persist updated event to Firestore
+                                EventController.updateEvent(event, new DBWriteCallback() {
                                     @Override
                                     public void onSuccess() {
-                                        Logger.logSystem("Invitation decline pipeline completed successfully", null);
-                                        callback.onSuccess();
+                                        Logger.logSystem("Event updated with cancelled user: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+
+                                        // 6. Update invitation in DB
+                                        updateInvitation(invitation, new DBWriteCallback() {
+                                            @Override
+                                            public void onSuccess() {
+                                                Logger.logSystem("Invitation decline pipeline completed successfully", null);
+                                                callback.onSuccess();
+                                            }
+
+                                            @Override
+                                            public void onFailure(Exception e) {
+                                                Logger.logError("Invitation decline pipeline failed", null);
+                                                callback.onFailure(e);
+                                            }
+                                        });
                                     }
 
                                     @Override
                                     public void onFailure(Exception e) {
-                                        Logger.logError("Invitation decline pipeline failed", null);
+                                        Logger.logError("Failed to update event with cancelled user during invitation decline pipeline", null);
                                         callback.onFailure(e);
                                     }
                                 });
