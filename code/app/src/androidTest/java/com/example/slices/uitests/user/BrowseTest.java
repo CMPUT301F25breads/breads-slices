@@ -9,6 +9,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 
 import static org.hamcrest.Matchers.allOf;
 
+import androidx.test.espresso.contrib.RecyclerViewActions;
 import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -20,6 +21,7 @@ import com.example.slices.R;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
@@ -35,6 +37,19 @@ public class BrowseTest {
                 .perform(click());
 
         onView(withId(R.id.browse_list)).check(matches(isDisplayed()));
+    }
+
+    @Test
+    public void testJoinLeaveWaitlistButtonToggles() {
+        onView(withId(R.id.browse_list))
+                .perform(RecyclerViewActions.actionOnItemAtPosition(0, click()));
+
+        onView(withId(R.id.btn_join_waitlist)).check(matches(isDisplayed()));
+        onView(withId(R.id.btn_join_waitlist)).check(matches(ViewMatchers.withText("Join Waitlist")));
+        onView(withId(R.id.btn_join_waitlist)).perform(click());
+        onView(withId(R.id.btn_join_waitlist)).check(matches(ViewMatchers.withText("Leave Waitlist")));
+        onView(withId(R.id.btn_join_waitlist)).perform(click());
+        onView(withId(R.id.btn_join_waitlist)).check(matches(ViewMatchers.withText("Join Waitlist")));
     }
 
 }
