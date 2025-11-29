@@ -18,6 +18,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.ListResult;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
@@ -33,9 +34,14 @@ public class ImageController {
 
     @SuppressLint("StaticFieldLeak")
     private static final FirebaseStorage storage = FirebaseStorage.getInstance();
-    private static final StorageReference imagesRef = storage.getReference().child("event_images/");
+    private static StorageReference imagesRef = storage.getReference().child("event_images/");
 
     private ImageController() {}
+
+    public static void setTesting(boolean testing) {
+        if (testing)
+            imagesRef = storage.getReference().child("event_images_test/");
+    }
 
     /**
      * Uploads an image to the firebase storage asynchronously
@@ -52,7 +58,7 @@ public class ImageController {
             return;
         }
 
-        String path = userId + Timestamp.now().toDate().getTime();
+        String path = userId + "_" + Timestamp.now().toDate().getTime();
 
         StorageReference imageRef = imagesRef.child(path);
 
@@ -70,34 +76,6 @@ public class ImageController {
                     }
                 });
     }
-
-    /**
-     * Uploads an placeholder to the firebase storage asynchronously
-     * @param userId
-     *      userId of the organizer who uploaded the image (to be used to generate a unique key)
-     * @param callback
-     *      Callback to call once the operation is complete
-     */
-//    public static void uploadPlaceholder(String userId, Context context, ImageUploadCallback callback) {
-//        String path = userId + Timestamp.now().toDate().getTime();
-//
-//        StorageReference imageRef = imagesRef.child(path);
-//
-//        imageRef.putStream(context.getResources().openRawResource(R.raw.black))
-//                .addOnSuccessListener(taskSnapshot ->
-//                        imageRef.getDownloadUrl().addOnSuccessListener(uri ->
-//                                callback.onSuccess(new Image(path, uri.toString()))
-//                        )
-//                )
-//                .addOnFailureListener(new OnFailureListener() {
-//                    @Override
-//                    public void onFailure(@NonNull Exception e) {
-//                        Log.d("Image Controller", "Failed to upload image", null);
-//                        callback.onFailure(new DBOpFailed("Failed to upload image"));
-//                    }
-//                });
-//
-//    }
 
     /**
      * Gets a list of all images from the storage
@@ -203,8 +181,7 @@ public class ImageController {
      */
     public static void modifyImage(String path, Uri imageUri, String userId, ImageUploadCallback callback) {
         if(path != null) {
-            storage.getReference()
-                    .child("event_images/" + path)
+            imagesRef.child(path)
                     .delete()
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
@@ -244,5 +221,40 @@ public class ImageController {
                 }
             });
         }
+    }
+
+    public static void clearImages(Runnable onComplete) {
+        imagesRef.listAll()
+                .addOnSuccessListener(new OnSuccessListener<ListResult>() {
+                    @Override
+                    public void onSuccess(ListResult listResult) {
+                        List<StorageReference> items = listResult.getItems();
+
+                        if (items.isEmpty())
+                            onComplete.run();
+
+                        List<Task<Void>> deletionTasks = new ArrayList<>();
+                        for(StorageReference item : items) {
+                            deletionTasks.add(item.delete());
+                        }
+
+                        Tasks.whenAll(deletionTasks)
+                                .addOnSuccessListener(unused -> {
+                                    Log.d("Image Controller", "Successfully cleared all images", null);
+                                    onComplete.run();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.d("Image Controller", "Failed to clear all images", e);
+                                    onComplete.run();
+                                });
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d("Image Controller", "Failed to list all images for deletion", e);
+                        onComplete.run();
+                    }
+                });
     }
 }
