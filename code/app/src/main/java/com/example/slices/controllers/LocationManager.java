@@ -42,6 +42,7 @@ public class LocationManager {
     public void getUserLocation(Context context, LocationCallback callback) {
         if (userLocation != null) {
             callback.onSuccess(userLocation);
+            return;
         }
         // Check if permissions are granted before attempting to get location
         if (!hasLocationPermission(context)) {
