@@ -72,6 +72,8 @@ public class MyEventsFragment extends Fragment {
                 for (Event event : waitEvents) {
                     sharedViewModel.addWaitlistedId(String.valueOf(event.getId()));
                 }
+                for(Event event : events)
+                    sharedViewModel.addParticipatingId(String.valueOf(event.getId()));
 
                 EventAdapter confirmedAdapter = new EventAdapter(requireContext(), events, MyEventsFragment.this);
                 binding.confirmedList.setLayoutManager(new LinearLayoutManager(requireContext()));
