@@ -25,6 +25,7 @@ import com.google.android.material.button.MaterialButton;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -161,8 +162,18 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 h.acceptButton.setVisibility(View.VISIBLE);
                 h.declineButton.setVisibility(View.VISIBLE);
                 h.acceptButton.setOnClickListener(v -> {
-                    items.remove(n);
-                    notifyDataSetChanged();
+                    n.setRead(true);
+                    NotificationManager.updateNotification(n, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            items.remove(n);
+                            notifyDataSetChanged();
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(context, "Error: Couldn't dismiss notification", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 });
                 // Ryan changed this
                 h.declineButton.setOnClickListener(v -> {
@@ -182,7 +193,23 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 });
                 break;
             case NOTIFICATION:
-                h.acceptButton.setVisibility(View.GONE);
+                h.acceptButton.setText("Dismiss");
+                h.acceptButton.setVisibility(View.VISIBLE);
+                h.acceptButton.setOnClickListener(v -> {
+                    n.setRead(true);
+                    NotificationManager.updateNotification(n, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            items.remove(n);
+                            notifyDataSetChanged();
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(context, "Error: Couldn't dismiss notification", Toast.LENGTH_SHORT).show();
+                            }
+                    });
+
+                });
                 h.declineButton.setVisibility(View.GONE);
                 break;
         }
