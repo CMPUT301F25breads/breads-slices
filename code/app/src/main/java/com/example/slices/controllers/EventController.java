@@ -34,18 +34,28 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Consumer;
 
-public class EventController {
+/**
+ * Controller class for the event model
+ * @author Ryan Haubrich
+ * @version 1.0
+ */
 
+public class EventController {
+    /**
+     * Reference to the database
+     */
     @SuppressLint("StaticFieldLeak")
     private static final FirebaseFirestore db = FirebaseFirestore.getInstance();
-
+    /**
+     * Reference to the events collection in the database
+     */
     private static CollectionReference eventRef = db.collection("events");
 
-    private static EventController instance;
-
+    /**
+     * Private constructor to prevent instantiation
+     */
     private EventController() {
 
     }
@@ -845,6 +855,17 @@ public class EventController {
         }
     }
 
+    /**
+     * Adds an entrant to a waitlist
+     * @param event
+     *      Event to add entrant to
+     * @param entrant
+     *      Entrant to add
+     * @param loc
+     *      Location of the entrant
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void addEntrantToWaitlist(Event event, Entrant entrant, Location loc, DBWriteCallback callback ) {
         //Run a check for the locations
         if (!checkLocs(event, loc)) {
@@ -882,7 +903,15 @@ public class EventController {
         }
     }
 
-
+    /**
+     * Checks if the entrant is in range of the event
+     * @param event
+     *      Event to check
+     * @param entrantLoc
+     *      Location of the entrant
+     * @return
+     *      True if the entrant is in range, false otherwise
+     */
     private static boolean checkLocs(Event event, Location entrantLoc) {
         EventInfo info = event.getEventInfo();
         
@@ -950,6 +979,15 @@ public class EventController {
         }
     }
 
+    /**
+     * Removes entrants from an event
+     * @param event
+     *      Event to remove entrants from
+     * @param entrants
+     *      Entrants to remove
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void removeEntrantsFromEvent(Event event, List<Entrant> entrants, DBWriteCallback callback) {
         boolean failFlag = true;
         for (Entrant entrant : entrants) {
@@ -1118,6 +1156,13 @@ public class EventController {
         });
     }
 
+    /**
+     * Verifies the deletion of an event from the database
+     * @param id
+     *      ID of the event to delete
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     private static void verifyDeleteEvent(String id, DBWriteCallback callback) {
         eventRef.document(id).get()
                 .addOnSuccessListener(snapshot -> {
@@ -1130,6 +1175,13 @@ public class EventController {
                 });
     }
 
+    /**
+     * Runs the lottery for an event
+     * @param event
+     *      Event to run the lottery for
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void doLottery(Event event, DBWriteCallback callback) {
 
         int spots = event.getEventInfo().getMaxEntrants() - event.getEntrants().size();
@@ -1322,6 +1374,15 @@ public class EventController {
         NotificationManager.sendBulkInvitation(title, body, recipients, sender, event.getId(), callback);
     }
 
+    /**
+     * Helper method that notifies the losers of the lottery
+     * @param losers
+     *      List of losers
+     * @param event
+     *      Event that the losers were not enrolled in
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     private static void notifyLosers(List<Entrant> losers, Event event, DBWriteCallback callback) {
         String title = "Sorry!";
         String body = "You have lost the lottery for " + event.getEventInfo().getName() + "!";
@@ -1333,6 +1394,15 @@ public class EventController {
         NotificationManager.sendBulkNotification(title, body, recipients, sender, NotificationType.NOT_SELECTED, callback);
     }
 
+    /**
+     * Adds a list of entrants to an event
+     * @param event
+     *      Event to add entrants to
+     * @param entrants
+     *      List of entrants to add
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void addEntrantsToEvent(Event event, List<Entrant> entrants, DBWriteCallback callback) {
         List<Consumer<DBWriteCallback>> ops = new ArrayList<>();
         for (Entrant e : entrants) {
@@ -1343,6 +1413,11 @@ public class EventController {
         AsyncBatchExecutor.runBatch(ops, callback);
     }
 
+    /**
+     * Method to get all images from the database
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void getAllImages(StringListCallback callback) {
         eventRef.get()
                 .addOnSuccessListener(query -> {
@@ -1354,6 +1429,13 @@ public class EventController {
                 .addOnFailureListener(callback::onFailure);
     }
 
+    /**
+     * Method to remove an image from the database
+     * @param e
+     *      Event to remove image from
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void removeImage(Event e, DBWriteCallback callback) {
         e.getEventInfo().setImageUrl(null);
         eventRef.document(String.valueOf(e.getId()))

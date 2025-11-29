@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Uses DBConnector for database operations.
  *
  * @author Ryan
- * @version 0.1
+ * @version 1.5
  */
 public class NotificationManager {
 

@@ -42,16 +42,6 @@ public class Profile {
         this.id = id;
     }
 
-    /*
-    public Profile(String name, String email, String phoneNumber, boolean sendNotifications, int id, (Something) location) {
-        this.name = name;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.sendNotifications = sendNotifications;
-        this.id = id;
-        this.location = location;
-    }
-    */
 
     /**
      * Constructor for the Profile class that only sets the ID

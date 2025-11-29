@@ -36,16 +36,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+/**
+ * Controller class for the entrant model
+ * @version 1.0
+ */
 public class EntrantController {
-    private static EntrantController instance;
-
-
+    /**
+     * Reference to the database
+     */
     @SuppressLint("StaticFieldLeak")
     private static final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+    /**
+     * Reference to the entrants collection in the database
+     */
     private static CollectionReference entrantRef = firestore.collection("entrants");
 
+    /**
+     * Private constructor to prevent instantiation
+     */
     private EntrantController() {}
 
+    /**
+     * Sets the testing flag
+     * @param testing
+     *      True if testing, false otherwise
+     */
     public static void setTesting(boolean testing) {
         if (testing) {
             entrantRef = firestore.collection("test_entrants");
@@ -91,47 +106,6 @@ public class EntrantController {
 
     }
 
-    /**
-     * Function to get a list of entrants based on a list of IDs
-     * @param ids
-     *      List of IDs to search for
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
-    public static void getEntrants(List<Integer> ids, EntrantListCallback callback) {
-        if (ids == null || ids.isEmpty()) {
-            Logger.logSystem("getEntrants called with empty ID list", null);
-            callback.onSuccess(new ArrayList<>());
-            return;
-        }
-        List<Entrant> results = Collections.synchronizedList(new ArrayList<>());
-        AtomicInteger completed = new AtomicInteger(0);
-        AtomicBoolean failed = new AtomicBoolean(false);
-        int total = ids.size();
-
-        for (int id : ids) {
-            getEntrant(id, new EntrantCallback() {
-                @Override
-                public void onSuccess(Entrant entrant) {
-                    if (failed.get()) {
-                        return;
-                    }
-                    results.add(entrant);
-                    if (completed.incrementAndGet() == total) {
-                        Logger.logSystem("Fetched " + total + " entrants by ID list", null);
-                        callback.onSuccess(results);
-                    }
-                }
-                @Override
-                public void onFailure(Exception e) {
-                    if (failed.compareAndSet(false, true)) {
-                        Logger.logError("Failed to fetch entrant during batch getEntrants", null);
-                        callback.onFailure(e);
-                    }
-                }
-            });
-        }
-    }
 
     /**
      * Gets an entrant from the database asynchronously
@@ -223,36 +197,12 @@ public class EntrantController {
     }
 
     /**
-     * Writes an entrant to the database asynchronously
-     * @param entrant
-     *      Entrant to write to the database
-     * @param callback
-     *      Callback to call when the operation is complete
-     */
-    public static void writeEntrantDeviceId(Entrant entrant, DBWriteCallback callback) {
-        entrantRef.document(String.valueOf(entrant.getId()))
-                .set(entrant)
-                .addOnSuccessListener(aVoid -> {
-                    Logger.logEntrantUpdate(entrant.getId(), -1, null);
-                    callback.onSuccess();
-                })
-                .addOnFailureListener(e -> {
-                    Logger.logError("Failed to write entrant deviceId for id=" + entrant.getId(), null);
-                    callback.onFailure(new DBOpFailed("Failed to write entrant"));
-                });
-    }
-
-
-
-
-    /**
      * Updates an entrant in the database asynchronously
      * @param entrant
      *      Entrant to update in the database
      * @param callback
      *      Callback to call when the operation is complete
      */
-
     public static void updateEntrant(Entrant entrant, DBWriteCallback callback) {
         entrantRef.document(String.valueOf(entrant.getId()))
                 .set(entrant)
