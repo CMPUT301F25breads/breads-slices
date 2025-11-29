@@ -21,7 +21,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +39,7 @@ public class ImageController {
             return;
         }
 
-        String path = userId + Timestamp.now();
+        String path = userId + Timestamp.now().toDate().getTime();
 
         StorageReference imageRef = imagesRef.child(path);
 
@@ -60,7 +59,7 @@ public class ImageController {
     }
 
     public static void uploadPlaceholder(String userId, Context context, ImageUploadCallback callback) {
-        String path = userId + Timestamp.now();
+        String path = userId + Timestamp.now().toDate().getTime();
 
         StorageReference imageRef = imagesRef.child(path);
 
@@ -133,8 +132,7 @@ public class ImageController {
                 });
     }
 
-    public static void deleteImage(Image image, DBWriteCallback callback) {
-        String path = image.getPath();
+    public static void deleteImage(String path, DBWriteCallback callback) {
         imagesRef.child(path)
                 .delete()
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -153,23 +151,31 @@ public class ImageController {
                 });
     }
 
-    public static void modifyImage(String path, Uri imageUri, DBWriteCallback callback) {
+    public static void modifyImage(String path, Uri imageUri, String userId, ImageUploadCallback callback) {
         storage.getReference()
                 .child("event_images/" + path)
-                .putFile(imageUri)
-                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                .delete()
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        Log.d("ImageController", "Image at " + path + " successfully updated");
+                    public void onSuccess(Void unused) {
+                        uploadImage(imageUri, userId, new ImageUploadCallback() {
+                            @Override
+                            public void onSuccess(Image image) {
+                                callback.onSuccess(image);
+                            }
 
+                            @Override
+                            public void onFailure(Exception e) {
+                                callback.onFailure(new DBOpFailed("Failed to get download data for new image"));
+
+                            }
+                        });
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.e("ImageController", "Failed to update image at: " + path, e);
-                        callback.onFailure(new DBOpFailed("Failed to update image at: " + path));
-
+                        callback.onFailure(new DBOpFailed("Failed to delete old image"));
                     }
                 });
     }

@@ -37,10 +37,12 @@ import com.example.slices.R;
 import com.example.slices.controllers.EventController;
 import com.example.slices.controllers.ImageController;
 import com.example.slices.controllers.QRCodeManager;
+import com.example.slices.interfaces.ImageUploadCallback;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
 import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
@@ -1024,11 +1026,21 @@ public class OrganizerEditEventFragment extends Fragment {
             selectedImageUri = data.getData();
             
             if (selectedImageUri != null) {
+
+                // Display the selected image immediately
+                Glide.with(this)
+                        .load(selectedImageUri)
+                        .placeholder(R.drawable.ic_image)
+                        .into(eventImage);
+
                 // Modify existing file at the path
-                ImageController.modifyImage(currentEvent.getEventInfo().getImage().getPath(), selectedImageUri, new DBWriteCallback() {
+                ImageController.modifyImage(currentEvent.getEventInfo().getImage().getPath(), selectedImageUri, String.valueOf(currentEvent.getEventInfo().getOrganizerID()),
+                        new ImageUploadCallback() {
                     @Override
-                    public void onSuccess() {
+                    public void onSuccess(Image image) {
                         Toast.makeText(getContext(), "New image saved!", Toast.LENGTH_SHORT).show();
+                        // Save the image URL to the database
+                        saveEventImage(image);
                     }
 
                     @Override
@@ -1039,27 +1051,23 @@ public class OrganizerEditEventFragment extends Fragment {
                 });
 
 
-                // Display the selected image immediately
-                Glide.with(this)
-                        .load(selectedImageUri)
-                        .placeholder(R.drawable.ic_image)
-                        .into(eventImage);
+
 
                 // Save the image URL to the database
-                //saveEventImage(selectedImageUri.toString());
+               // saveEventImage(selectedImageUri.toString());
             }
         }
     }
 
     /**
      * Saves the new event image URL to the database
-     * @param imageUrl The URL/URI of the new image
+     * @param image The URL/URI of the new image
      */
-    private void saveEventImage(String imageUrl) {
+    private void saveEventImage(Image image) {
         if (currentEvent == null) return;
 
         EventInfo currentEventInfo = currentEvent.getEventInfo();
-        currentEventInfo.setImageUrl(imageUrl);
+        currentEventInfo.setImage(image);
 
         EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
             @Override
