@@ -84,10 +84,8 @@ public class AdminProfilesFragment extends Fragment {
             public void onSuccess(java.util.List<Profile> result) {
                 if (result.isEmpty()) {
                     System.out.println("No profiles exist in Firestore.");
-                    Toast.makeText(requireContext(), "No profiles found", Toast.LENGTH_SHORT).show();
                 } else {
                     System.out.println("Profiles FOUND → Count = " + result.size());
-                    Toast.makeText(requireContext(), "Found " + result.size() + " profiles", Toast.LENGTH_SHORT).show();
                 }
             }
 

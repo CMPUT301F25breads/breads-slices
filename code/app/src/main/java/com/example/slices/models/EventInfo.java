@@ -332,7 +332,6 @@ public class EventInfo {
             return imageUrl;
         }
 
-        // 3. DEFAULT fallback
         return "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
     }
 

@@ -4,9 +4,9 @@
         android:icon="@drawable/ic_home"
         android:title="Home" />
     <item
-        android:id="@+id/adminSearchFragment"
-        android:icon="@drawable/ic_search"
-        android:title="Search" />
+        android:id="@+id/adminEventsFragment"
+        android:icon="@drawable/ic_events"
+        android:title="Events" />
     <item
         android:id="@+id/adminProfilesFragment"
         android:icon="@drawable/ic_person"
