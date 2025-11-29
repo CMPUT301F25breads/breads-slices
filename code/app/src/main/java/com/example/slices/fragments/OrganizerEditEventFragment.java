@@ -336,16 +336,10 @@ public class OrganizerEditEventFragment extends Fragment {
                     layoutMaxDistance.setVisibility(View.GONE);
                 }
 
-                if(eventInfo.getImage().getUrl() != null)
-                    Glide.with(requireContext())
-                            .load(eventInfo.getImage().getUrl())
-                            .placeholder(R.drawable.ic_image)
-                            .into(eventImage);
-                else
-                    Glide.with(requireContext())
-                            .load(R.drawable.black)
-                            .placeholder(R.drawable.ic_image)
-                            .into(eventImage);
+                Glide.with(requireContext())
+                        .load(eventInfo.getImageUrl())
+                        .placeholder(R.drawable.ic_image)
+                        .into(eventImage);
 
                 // Update lottery button state based on registration deadline
                 updateLotteryButtonState();

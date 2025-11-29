@@ -171,16 +171,10 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
             details.setText(formatter.format(date) + " | " + eventInfo.getAddress());
 
             // Load image
-            if(eventInfo.getImage().getUrl() != null)
-                Glide.with(context)
-                        .load(eventInfo.getImage().getUrl())
-                        .placeholder(R.drawable.ic_image)
-                        .into(image);
-            else
-                Glide.with(context)
-                        .load(R.drawable.black)
-                        .placeholder(R.drawable.ic_image)
-                        .into(image);
+            Glide.with(context)
+                    .load(eventInfo.getImageUrl())
+                    .placeholder(R.drawable.ic_image)
+                    .into(image);
 
             // Item click navigates to EventDetailsFragment
             itemView.setOnClickListener(v -> {

@@ -66,7 +66,7 @@ public class EventInfo {
      */
 
     private String guidelines;
-    private String imageUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
+    private String imageUrl = "https://firebasestorage.googleapis.com/v0/b/slices-11b97.firebasestorage.app/o/placeholder%2Fplaceholder.png?alt=media&token=3450a6b9-5872-46f3-97e1-c56e2777e2fa";
 
     /**
      * Max amount of people allowed on waiting list
@@ -332,7 +332,7 @@ public class EventInfo {
             return imageUrl;
         }
 
-        return "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
+        return "https://firebasestorage.googleapis.com/v0/b/slices-11b97.firebasestorage.app/o/placeholder%2Fplaceholder.png?alt=media&token=3450a6b9-5872-46f3-97e1-c56e2777e2fa";
     }
 
     /**

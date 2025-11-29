@@ -434,16 +434,10 @@ public class EventDetailsFragment extends Fragment {
         binding.eventLocation.setText(e.getEventInfo().getAddress());
 
         // Load image
-        if(eventInfo.getImage().getUrl() != null)
-            Glide.with(this.getContext())
-                    .load(eventInfo.getImage().getUrl())
-                    .placeholder(R.drawable.ic_image)
-                    .into(binding.eventImage);
-        else
-            Glide.with(this.getContext())
-                    .load(R.drawable.black)
-                    .placeholder(R.drawable.ic_image)
-                    .into(binding.eventImage);
+        Glide.with(this.getContext())
+                .load(eventInfo.getImageUrl())
+                .placeholder(R.drawable.ic_image)
+                .into(binding.eventImage);
 
         // counts style reflecting the "Waitlist | Participants" from the xml style
         int wlCount = 0; //waitlist count
