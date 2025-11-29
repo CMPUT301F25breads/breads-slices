@@ -75,8 +75,12 @@ public class NotifFragment extends Fragment {
                     // This is inside since we want invitations to come before notifications
                     @Override
                     public void onSuccess(List<Notification> notifications) {
-                        recyclerNotifications.addAll(notifications);
-                        
+                        for (Notification notification : notifications) {
+                            if (!notification.getRead()) {
+                                recyclerNotifications.add(notification);
+                            }
+                        }
+
                         // Sort by timestamp in descending order (most recent first)
                         recyclerNotifications.sort((n1, n2) -> {
                             if (n1.getTimestamp() == null && n2.getTimestamp() == null) return 0;
