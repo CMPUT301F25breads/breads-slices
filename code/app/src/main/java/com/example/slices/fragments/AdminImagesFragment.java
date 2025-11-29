@@ -10,15 +10,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
+import androidx.fragment.app.Fragment;;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.slices.R;
-import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.ImagesAdapter;
 import com.example.slices.models.Event;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -94,8 +92,9 @@ public class AdminImagesFragment extends Fragment {
 
                             if (e != null &&
                                     e.getEventInfo() != null &&
-                                    e.getEventInfo().getImageUrl() != null &&
-                                    !e.getEventInfo().getImageUrl().isEmpty()) {
+                                    e.getEventInfo().getImage() != null &&
+                                    e.getEventInfo().getImage().getUrl() != null &&
+                                    !e.getEventInfo().getImage().getUrl().isEmpty()) {
 
                                 eventList.add(e);
                             }
