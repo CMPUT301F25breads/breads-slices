@@ -40,16 +40,6 @@ public class Profile {
         this.id = id;
     }
 
-    /*
-    public Profile(String name, String email, String phoneNumber, boolean sendNotifications, int id, (Something) location) {
-        this.name = name;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.sendNotifications = sendNotifications;
-        this.id = id;
-        this.location = location;
-    }
-    */
 
     /**
      * Constructor for the Profile class that only sets the ID
@@ -175,31 +165,6 @@ public class Profile {
     public void setId(int id) {
         this.id = id;
     }
-
-    /*
-    /**
-     * INTERNAL USE ONLY - Firestore requires this setter
-     * @param location
-     *      Location to set
-     */
-    /*
-    public void setLocation(Location location) {
-        this.location = location;
-    }
-    */
-    /*
-    /**
-     * Getter for the location of the entrant
-     * @return
-     *      Location of the entrant
-     */
-    /*
-    public Location getLocation() {
-        return location;
-    }
-     */
-
-
 
 
 
