@@ -22,6 +22,7 @@ import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.EntrantController;
 import com.example.slices.databinding.MenuFragmentBinding;
 import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EntrantCallback;
 import com.example.slices.interfaces.EntrantIDCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.InstanceUtil;
@@ -81,7 +82,7 @@ public class  MenuFragment extends Fragment {
         binding.phoneNumberTextfield.setText(phoneNumber);
         binding.sendNotificationsSwitch.setChecked(notifications);
 
-        if (user.getAdmin() == true) {
+        if (user.getAdmin()) {
             binding.adminModeButton.setVisibility(View.VISIBLE);
         }
 
@@ -147,23 +148,16 @@ public class  MenuFragment extends Fragment {
             return;
         }
 
-        //Creates a new Entrant object with the new information and the current user's ID
-        Entrant newUser = new Entrant(newName, newEmail, newPhone, currentUser.getId());
-        newUser.setDeviceId(InstanceUtil.getDeviceId((MainActivity) requireActivity()));
-        Profile profile = newUser.getProfile();
-        profile.setSendNotifications(newNotifications);
-        newUser.setProfile(profile);
-
+        //Creates a new Profile object with the new information and the current user's ID
+        Profile newProfile = new Profile(newName, newEmail, newPhone, newNotifications, currentUser.getId());
 
         setProfileEditingEnabled(false);
         binding.profileSaveButton.setEnabled(false);
         binding.profileCancelButton.setEnabled(false);
 
-
-
-        EntrantController.updateEntrantAndEvents(newUser, new DBWriteCallback() {
+        EntrantController.updateProfile(vm.getUser(), newProfile, new DBWriteCallback() {
             @Override public void onSuccess() {
-                vm.setUser(newUser);
+                vm.getUser().setProfile(newProfile);
                 name = newName;
                 email = newEmail;
                 phoneNumber = newPhone;
@@ -249,6 +243,9 @@ public class  MenuFragment extends Fragment {
                         EntrantController.writeEntrant(ent, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
+                                if (binding.adminModeButton.getVisibility() == View.VISIBLE) {
+                                    binding.adminModeButton.setVisibility(View.GONE);
+                                }
                                 Toast.makeText(requireContext(), "Profile Deleted", Toast.LENGTH_SHORT).show();
                             }
                             @Override
