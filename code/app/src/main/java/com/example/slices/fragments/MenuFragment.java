@@ -180,19 +180,18 @@ public class  MenuFragment extends Fragment {
             }
         });
     }
-    
+
     private void onAdminSignInClicked() {
+        ((MainActivity) requireActivity()).switchToAdmin();
+
         NavController navController = NavHostFragment.findNavController(this);
 
-        // Options to avoid breaking the bottom nav bar stack
         NavOptions options = new NavOptions.Builder()
                 .setRestoreState(true)
                 .setPopUpTo(R.id.nav_graph, false)
                 .build();
 
-        navController.navigate(R.id.adminSignInFragment, null, options);
-//        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
-//        navController.navigate(R.id.adminSignInFragment);
+        navController.navigate(R.id.adminHomeFragment, null, options);
     }
 
     private void onAdminClicked() {

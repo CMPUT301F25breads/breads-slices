@@ -252,6 +252,11 @@
                       <LayoutPositions />
                     </value>
                   </entry>
+                  <entry key="action_to_adminImagesFragment">
+                    <value>
+                      <LayoutPositions />
+                    </value>
+                  </entry>
                   <entry key="action_to_adminNotificationsFragment">
                     <value>
                       <LayoutPositions />
@@ -301,7 +306,7 @@
                       </LayoutPositions>
                     </value>
                   </entry>
-                  <entry key="adminNFragment">
+                  <entry key="adminImagesFragment">
                     <value>
                       <LayoutPositions>
                         <option name="myPosition">

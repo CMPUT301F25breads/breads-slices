@@ -44,13 +44,19 @@ import java.util.TimeZone;
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.VH> {
     private final Context context;
     private final List<Notification> items = new ArrayList<>();
+    private final boolean isAdmin;
 
 
     /**
      * Creates a new NotificationAdapter.
      * @param context context used for inflating views and UI operations
      */
-    public NotificationAdapter(Context context) { this.context = context; }
+    public NotificationAdapter(Context context) { this(context, false); }
+
+    public NotificationAdapter(Context context, boolean isAdmin) {
+        this.context = context;
+        this.isAdmin = isAdmin;
+    }
 
     /**
      * Replaces the adapter's notifications with the provided list and refreshes the UI.
@@ -79,6 +85,11 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
         Notification n = items.get(position);
+
+        if (isAdmin) {
+            h.acceptButton.setVisibility(View.GONE);
+            h.declineButton.setVisibility(View.GONE);
+        }
 
         //Sets the text of the notification card
         h.title.setText(n.getTitle());
@@ -116,6 +127,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 }
             });
         }
+        if (isAdmin) return;
 
         // Configure action buttons based on notification type
         switch (n.getType()) {

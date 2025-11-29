@@ -63,7 +63,7 @@ public class AdminNotificationsFragment extends Fragment {
         // RecyclerView setup
         recyclerView = view.findViewById(R.id.adminnotification_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        adapter = new NotificationAdapter(requireContext());
+        adapter = new NotificationAdapter(requireContext(), true);
         recyclerView.setAdapter(adapter);
 
         // Load notifications
