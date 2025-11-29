@@ -354,18 +354,8 @@ public class OrganizerCreateEventFragment extends Fragment {
                         maxParticipants, maxWaiting, entrantLoc, 0, organizerID, image);
             }
             else {
-                ImageController.uploadPlaceholder(String.valueOf(organizerID), requireContext(), new ImageUploadCallback() {
-                    @Override
-                    public void onSuccess(Image placeholder) {
-                        buildEvent(name, desc, address, guide, placeholder.getUrl(), eventTimestamp, regStartTimestamp, regEndTimestamp,
-                                maxParticipants, maxWaiting, entrantLoc, 0, organizerID, placeholder);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-
-                    }
-                });
+                buildEvent(name, desc, address, guide, null, eventTimestamp, regStartTimestamp, regEndTimestamp,
+                        maxParticipants, maxWaiting, entrantLoc, 0, organizerID, new Image());
             }
         } catch (Exception e) {
             e.printStackTrace();

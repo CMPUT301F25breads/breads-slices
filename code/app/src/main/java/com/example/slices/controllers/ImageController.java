@@ -1,13 +1,11 @@
 package com.example.slices.controllers;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import com.example.slices.R;
 import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.ImageListCallback;
@@ -80,26 +78,26 @@ public class ImageController {
      * @param callback
      *      Callback to call once the operation is complete
      */
-    public static void uploadPlaceholder(String userId, Context context, ImageUploadCallback callback) {
-        String path = userId + Timestamp.now().toDate().getTime();
-
-        StorageReference imageRef = imagesRef.child(path);
-
-        imageRef.putStream(context.getResources().openRawResource(R.raw.black))
-                .addOnSuccessListener(taskSnapshot ->
-                        imageRef.getDownloadUrl().addOnSuccessListener(uri ->
-                                callback.onSuccess(new Image(path, uri.toString()))
-                        )
-                )
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d("Image Controller", "Failed to upload image", null);
-                        callback.onFailure(new DBOpFailed("Failed to upload image"));
-                    }
-                });
-
-    }
+//    public static void uploadPlaceholder(String userId, Context context, ImageUploadCallback callback) {
+//        String path = userId + Timestamp.now().toDate().getTime();
+//
+//        StorageReference imageRef = imagesRef.child(path);
+//
+//        imageRef.putStream(context.getResources().openRawResource(R.raw.black))
+//                .addOnSuccessListener(taskSnapshot ->
+//                        imageRef.getDownloadUrl().addOnSuccessListener(uri ->
+//                                callback.onSuccess(new Image(path, uri.toString()))
+//                        )
+//                )
+//                .addOnFailureListener(new OnFailureListener() {
+//                    @Override
+//                    public void onFailure(@NonNull Exception e) {
+//                        Log.d("Image Controller", "Failed to upload image", null);
+//                        callback.onFailure(new DBOpFailed("Failed to upload image"));
+//                    }
+//                });
+//
+//    }
 
     /**
      * Gets a list of all images from the storage
@@ -204,31 +202,47 @@ public class ImageController {
      *      Callback to when the operation is complete
      */
     public static void modifyImage(String path, Uri imageUri, String userId, ImageUploadCallback callback) {
-        storage.getReference()
-                .child("event_images/" + path)
-                .delete()
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void unused) {
-                        uploadImage(imageUri, userId, new ImageUploadCallback() {
-                            @Override
-                            public void onSuccess(Image image) {
-                                callback.onSuccess(image);
-                            }
+        if(path != null) {
+            storage.getReference()
+                    .child("event_images/" + path)
+                    .delete()
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void unused) {
+                            uploadImage(imageUri, userId, new ImageUploadCallback() {
+                                @Override
+                                public void onSuccess(Image image) {
+                                    callback.onSuccess(image);
+                                }
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                callback.onFailure(new DBOpFailed("Failed to get download data for new image"));
+                                @Override
+                                public void onFailure(Exception e) {
+                                    callback.onFailure(new DBOpFailed("Failed to get download data for new image"));
 
-                            }
-                        });
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        callback.onFailure(new DBOpFailed("Failed to delete old image"));
-                    }
-                });
+                                }
+                            });
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            callback.onFailure(new DBOpFailed("Failed to delete old image"));
+                        }
+                    });
+        }
+        else {
+            uploadImage(imageUri, userId, new ImageUploadCallback() {
+                @Override
+                public void onSuccess(Image image) {
+                    callback.onSuccess(image);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    callback.onFailure(new DBOpFailed("Failed to get download data for new image"));
+
+                }
+            });
+        }
     }
 }
