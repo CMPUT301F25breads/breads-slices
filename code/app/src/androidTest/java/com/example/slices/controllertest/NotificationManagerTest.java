@@ -17,6 +17,7 @@ import com.example.slices.interfaces.NotificationCallback;
 import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
+import com.example.slices.models.Image;
 import com.example.slices.models.Invitation;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationType;
@@ -146,8 +147,8 @@ public class NotificationManagerTest {
         Timestamp regEnd = times.get(1);
         Timestamp eventDate = times.get(2);
 
-        EventController.createEvent("Event", "Desc", "Loc", "Guide", "Img",
-                eventDate, regStart, regEnd, 10, 5, false, "none", 123,
+        EventController.createEvent("Event", "Desc", "Add", null, "Guide", "Img",
+                eventDate, regStart, regEnd, 10, 5, false, "none", 123, new Image(),
                 new EventCallback() {
                     @Override
                     public void onSuccess(Event event) {

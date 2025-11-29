@@ -44,8 +44,6 @@ public class Event implements Comparable<Event> {
     private ArrayList<Location> entrantLocs;
 
 
-
-
     /**
      * No argument Event constructor
      */
@@ -55,9 +53,9 @@ public class Event implements Comparable<Event> {
 
     public Event(String name, String description, String address, String guidelines, String imgUrl,
                  Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
-                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID)  {
+                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID, Image image)  {
         this.eventInfo = new EventInfo(name, description, address,  guidelines, imgUrl,
-                eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
+                eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID, image);
         this.id = id;
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist(maxWaiting);

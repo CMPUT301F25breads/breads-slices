@@ -17,8 +17,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.ImageController;
 import com.example.slices.exceptions.DuplicateEntry;
 import com.example.slices.exceptions.WaitlistFull;
+import com.example.slices.interfaces.ImageUrlCallback;
 import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.interfaces.DBWriteCallback;
@@ -169,7 +171,7 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
             details.setText(formatter.format(date) + " | " + eventInfo.getAddress());
 
             // Load image from URL
-            Glide.with(context).load(eventInfo.getImageUrl()).into(image);
+            Glide.with(context).load(eventInfo.getImage().getUrl()).into(image);
 
             // Item click navigates to EventDetailsFragment
             itemView.setOnClickListener(v -> {

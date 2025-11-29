@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
 import com.google.firebase.Timestamp;
 
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class EventInfoTest {
         Timestamp regEnd    = ts(now + 5_000);
 
         EventInfo info = new EventInfo("My Event", "Desc", "Loc", "Guide", "Img", eventDate,
-                regStart, regEnd, 50, 10, true, "dist", 99, 123);
+                regStart, regEnd, 50, 10, true, "dist", 99, 123, new Image());
 
         assertEquals("My Event", info.getName());
         assertEquals("Desc", info.getDescription());
@@ -92,22 +93,24 @@ public class EventInfoTest {
                 ts(1), ts(2), ts(3),
                 10, 5,
                 false, "none",
-                1, 2
+                1, 2, new Image()
         );
 
         assertEquals(0, info.getCurrentEntrants());
     }
 
+
+    // Removed as there is no more default download url
     /**
      * Tests that imageUrl defaults correctly in default constructor
      * Pass if default is used
      * Fail otherwise
      */
-    @Test
-    public void testDefaultImageUrl() {
-        EventInfo info = new EventInfo();
-        assertEquals("https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg", info.getImageUrl());
-    }
+//    @Test
+//    public void testDefaultImageUrl() {
+//        EventInfo info = new EventInfo();
+//        assertEquals("https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg", info.getImage().getUrl());
+//    }
 
     /**
      * Tests that maxWaiting defaults to Integer.MAX_VALUE
@@ -124,7 +127,7 @@ public class EventInfoTest {
     @Test
     public void testEntrantLocAndDist() {
         EventInfo info = new EventInfo("Name", "Desc", "Loc", "Guide", "Img",
-                ts(10), ts(1), ts(5), 20, 5, true, "radius", 77, 333);
+                ts(10), ts(1), ts(5), 20, 5, true, "radius", 77, 333, new Image());
         assertTrue(info.getEntrantLoc());
         assertEquals("radius", info.getEntrantDist());
     }

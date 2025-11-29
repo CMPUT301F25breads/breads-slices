@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,12 +28,15 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.example.slices.R;
 import com.example.slices.SharedViewModel;
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.ImageController;
 import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
+import com.example.slices.interfaces.ImageUploadCallback;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -66,6 +70,8 @@ public class OrganizerCreateEventFragment extends Fragment {
     private Uri imageUri;
     private Button buttonConfirm;
     private ImageButton uploadButton, backButton;
+    private Image image;
+    private String entrantDist;
 
     /**
      * Launcher for picking an image from the gallery.
@@ -77,6 +83,21 @@ public class OrganizerCreateEventFragment extends Fragment {
                     try {
                         Bitmap bitmap = MediaStore.Images.Media.getBitmap(requireContext().getContentResolver(), imageUri);
                         eventImage.setImageBitmap(bitmap);
+                        ImageController.uploadImage(imageUri, String.valueOf(svm.getUser().getId()),
+                                new ImageUploadCallback() {
+
+                                    @Override
+                                    public void onSuccess(Image newImage) {
+                                        Log.d("IMG", "URL = ");
+                                        image = newImage;
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        Log.e("IMG", "Upload failed", e);
+                                    }
+                                }
+                        );
                     } catch (IOException e) {
                         e.printStackTrace();
                         Toast.makeText(getContext(), "Failed to load image", Toast.LENGTH_SHORT).show();
@@ -283,84 +304,177 @@ public class OrganizerCreateEventFragment extends Fragment {
             android.util.Log.d("CreateEvent", "Reg Deadline: " + regEndTimestamp.toDate().toString());
             android.util.Log.d("CreateEvent", "Current Time: " + new Timestamp(Calendar.getInstance().getTime()).toDate().toString());
 
+            if(image != null) {
+                buildEvent(name, desc, address, guide, image.getUrl(), eventTimestamp, regStartTimestamp, regEndTimestamp,
+                        maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID, image);
+            }
+            else {
+                ImageController.uploadPlaceholder(String.valueOf(organizerID), requireContext(), new ImageUploadCallback() {
+                    @Override
+                    public void onSuccess(Image placeholder) {
+                        buildEvent(name, desc, address, guide, placeholder.getUrl(), eventTimestamp, regStartTimestamp, regEndTimestamp,
+                                maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID, placeholder);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+
+                    }
+                });
+            }
             // Get entrant distance if location is required
             // Store in meters in database, but UI shows kilometers
-            String entrantDist = "500000"; // Default: 500km in meters
-            if (entrantLoc) {
-                String maxDistKmStr = editMaxDistance.getText().toString().trim();
-                if (!TextUtils.isEmpty(maxDistKmStr)) {
-                    try {
-                        int distanceKm = Integer.parseInt(maxDistKmStr);
-                        // Validate range: 1km to 500km
-                        if (distanceKm < 1) {
-                            Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        if (distanceKm > 500) {
-                            Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        // Convert km to meters for storage
-                        entrantDist = String.valueOf(distanceKm * 1000);
-                    } catch (NumberFormatException e) {
-                        Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                }
-            }
-
-            //Placeholder image
-            String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
-
-            // Build an eventInfo
-            EventInfo eventInfo = new EventInfo(name, desc, address, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
-                    maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID);
-
-            // If geolocation is required, get organizer's location to use as event location
-            if (entrantLoc) {
-                android.util.Log.d("CreateEvent", "Geolocation required - getting location for event");
-                
-                com.example.slices.controllers.LocationManager locationManager = 
-                    new com.example.slices.controllers.LocationManager();
-                
-                // Check if we have location permission
-                if (com.example.slices.controllers.LocationManager.hasLocationPermission(requireContext())) {
-                    locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
-                        @Override
-                        public void onSuccess(Location eventLocation) {
-                            android.util.Log.d("CreateEvent", "Got location for event: lat=" + 
-                                             eventLocation.getLatitude() + ", lon=" + eventLocation.getLongitude());
-                            
-                            // Set the location on EventInfo - this will extract and store coordinates
-                            eventInfo.setLocation(eventLocation);
-                            
-                            // Now create the event with coordinates
-                            createEventWithInfo(eventInfo);
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            android.util.Log.w("CreateEvent", "Failed to get location, creating without coordinates", e);
-                            Toast.makeText(getContext(), "Warning: Location unavailable. Distance validation won't work.", Toast.LENGTH_LONG).show();
-                            // Still create the event, just without coordinates
-                            createEventWithInfo(eventInfo);
-                        }
-                    });
-                } else {
-                    // No location permission - create without coordinates
-                    android.util.Log.w("CreateEvent", "No location permission for geolocation event");
-                    Toast.makeText(getContext(), "Warning: Grant location permission for distance validation to work.", Toast.LENGTH_LONG).show();
-                    createEventWithInfo(eventInfo);
-                }
-            } else {
-                // No geolocation required - create event normally
-                createEventWithInfo(eventInfo);
-            }
+//            entrantDist = "500000"; // Default: 500km in meters
+//            if (entrantLoc) {
+//                String maxDistKmStr = editMaxDistance.getText().toString().trim();
+//                if (!TextUtils.isEmpty(maxDistKmStr)) {
+//                    try {
+//                        int distanceKm = Integer.parseInt(maxDistKmStr);
+//                        // Validate range: 1km to 500km
+//                        if (distanceKm < 1) {
+//                            Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
+//                            return;
+//                        }
+//                        if (distanceKm > 500) {
+//                            Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
+//                            return;
+//                        }
+//                        // Convert km to meters for storage
+//                        entrantDist = String.valueOf(distanceKm * 1000);
+//                    } catch (NumberFormatException e) {
+//                        Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
+//                        return;
+//                    }
+//                }
+//            }
+//
+//            //Placeholder image
+//            String imgUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
+//
+//            // Build an eventInfo
+//            EventInfo eventInfo = new EventInfo(name, desc, address, guide, imgUrl, eventTimestamp, regStartTimestamp, regEndTimestamp,
+//                    maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID, image);
+//
+//            // If geolocation is required, get organizer's location to use as event location
+//            if (entrantLoc) {
+//                android.util.Log.d("CreateEvent", "Geolocation required - getting location for event");
+//
+//                com.example.slices.controllers.LocationManager locationManager =
+//                    new com.example.slices.controllers.LocationManager();
+//
+//                // Check if we have location permission
+//                if (com.example.slices.controllers.LocationManager.hasLocationPermission(requireContext())) {
+//                    locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
+//                        @Override
+//                        public void onSuccess(Location eventLocation) {
+//                            android.util.Log.d("CreateEvent", "Got location for event: lat=" +
+//                                             eventLocation.getLatitude() + ", lon=" + eventLocation.getLongitude());
+//
+//                            // Set the location on EventInfo - this will extract and store coordinates
+//                            eventInfo.setLocation(eventLocation);
+//
+//                            // Now create the event with coordinates
+//                            createEventWithInfo(eventInfo);
+//                        }
+//
+//                        @Override
+//                        public void onFailure(Exception e) {
+//                            android.util.Log.w("CreateEvent", "Failed to get location, creating without coordinates", e);
+//                            Toast.makeText(getContext(), "Warning: Location unavailable. Distance validation won't work.", Toast.LENGTH_LONG).show();
+//                            // Still create the event, just without coordinates
+//                            createEventWithInfo(eventInfo);
+//                        }
+//                    });
+//                } else {
+//                    // No location permission - create without coordinates
+//                    android.util.Log.w("CreateEvent", "No location permission for geolocation event");
+//                    Toast.makeText(getContext(), "Warning: Grant location permission for distance validation to work.", Toast.LENGTH_LONG).show();
+//                    createEventWithInfo(eventInfo);
+//                }
+//            } else {
+//                // No geolocation required - create event normally
+//                createEventWithInfo(eventInfo);
+//            }
 
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void buildEvent(String name, String desc, String address, String guide,
+                            String imgUrl, Timestamp eventTimestamp, Timestamp regStartTimestamp, Timestamp regEndTimestamp,
+                            int maxParticipants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID, Image image) {
+        // Get entrant distance if location is required
+        // Store in meters in database, but UI shows kilometers
+        entrantDist = "500000"; // Default: 500km in meters
+        if (entrantLoc) {
+            String maxDistKmStr = editMaxDistance.getText().toString().trim();
+            if (!TextUtils.isEmpty(maxDistKmStr)) {
+                try {
+                    int distanceKm = Integer.parseInt(maxDistKmStr);
+                    // Validate range: 1km to 500km
+                    if (distanceKm < 1) {
+                        Toast.makeText(getContext(), "Distance must be at least 1 km", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (distanceKm > 500) {
+                        Toast.makeText(getContext(), "Distance cannot exceed 500 km", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    // Convert km to meters for storage
+                    entrantDist = String.valueOf(distanceKm * 1000);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(getContext(), "Invalid distance format", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+        }
+
+        EventInfo eventInfo = new EventInfo(name, desc, address, guide, null, eventTimestamp, regStartTimestamp, regEndTimestamp,
+                maxParticipants, maxWaiting, entrantLoc, entrantDist, 0, organizerID, image);
+
+        // If geolocation is required, get organizer's location to use as event location
+        if (entrantLoc) {
+            android.util.Log.d("CreateEvent", "Geolocation required - getting location for event");
+
+            com.example.slices.controllers.LocationManager locationManager =
+                    new com.example.slices.controllers.LocationManager();
+
+            // Check if we have location permission
+            if (com.example.slices.controllers.LocationManager.hasLocationPermission(requireContext())) {
+                locationManager.getUserLocation(requireContext(), new com.example.slices.interfaces.LocationCallback() {
+                    @Override
+                    public void onSuccess(Location eventLocation) {
+                        android.util.Log.d("CreateEvent", "Got location for event: lat=" +
+                                eventLocation.getLatitude() + ", lon=" + eventLocation.getLongitude());
+
+                        // Set the location on EventInfo - this will extract and store coordinates
+                        eventInfo.setLocation(eventLocation);
+
+                        // Now create the event with coordinates
+                        createEventWithInfo(eventInfo);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        android.util.Log.w("CreateEvent", "Failed to get location, creating without coordinates", e);
+                        Toast.makeText(getContext(), "Warning: Location unavailable. Distance validation won't work.", Toast.LENGTH_LONG).show();
+                        // Still create the event, just without coordinates
+                        createEventWithInfo(eventInfo);
+                    }
+                });
+            } else {
+                // No location permission - create without coordinates
+                android.util.Log.w("CreateEvent", "No location permission for geolocation event");
+                Toast.makeText(getContext(), "Warning: Grant location permission for distance validation to work.", Toast.LENGTH_LONG).show();
+                createEventWithInfo(eventInfo);
+            }
+        } else {
+            // No geolocation required - create event normally
+            createEventWithInfo(eventInfo);
+        }
+
     }
 
     /**

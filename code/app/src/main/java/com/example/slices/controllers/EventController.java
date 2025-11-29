@@ -18,6 +18,7 @@ import com.example.slices.models.AsyncBatchExecutor;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
 import com.example.slices.models.SearchSettings;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -570,7 +571,7 @@ public class EventController {
      */
     public static void createEvent(String name, String description, String address, Location location, String guidelines, String imgUrl,
                                    Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
-                                   int maxWaiting, boolean entrantLoc, String entrantDist, int organizerID, EventCallback callback) {
+                                   int maxWaiting, boolean entrantLoc, String entrantDist, int organizerID, Image image, EventCallback callback) {
         try {
             verifyEventTimes(regStart, regEnd, eventDate);
 
@@ -579,7 +580,7 @@ public class EventController {
                 public void onSuccess(int id) {
 
                     Event event = new Event(name, description, address, guidelines, imgUrl,
-                            eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
+                            eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID, image);
                     
                     // Set location if provided
                     if (location != null) {

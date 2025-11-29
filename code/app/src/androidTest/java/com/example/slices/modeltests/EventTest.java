@@ -18,6 +18,7 @@ import com.example.slices.models.Event;
 
 
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
 import com.google.firebase.Timestamp;
 
 
@@ -63,7 +64,7 @@ public class EventTest {
         return new EventInfo(
                 "Name", "Desc", "Loc", "Guide", "Img",
                 ts(now + 10_000), ts(now), ts(now + 5_000),
-                maxEntrants, maxWait, false, "none", id, 123
+                maxEntrants, maxWait, false, "none", id, 123, new Image()
         );
     }
 
@@ -78,7 +79,7 @@ public class EventTest {
         Event e = new Event(
                 "Name", "Desc", "Loc", "Guide", "Img",
                 ts(now + 10000), ts(now), ts(now + 5000),
-                5, 3, false, "none", 77, 999);
+                5, 3, false, "none", 77, 999, new Image());
 
         assertEquals(77, e.getId());
         assertNotNull(e.getEntrants());
@@ -286,10 +287,10 @@ public class EventTest {
         long now = System.currentTimeMillis();
         EventInfo early = new EventInfo("E", "D", "L", "G", "I",
                 ts(now + 1000), ts(now), ts(now + 500),
-                5, 5, false, "none", 1, 111);
+                5, 5, false, "none", 1, 111, new Image());
         EventInfo late = new EventInfo("E", "D", "L", "G", "I",
                 ts(now + 5000), ts(now), ts(now + 500),
-                5, 5, false, "none", 2, 111);
+                5, 5, false, "none", 2, 111, new Image());
         Event e1 = new Event(early);
         Event e2 = new Event(late);
         assertTrue(e1.compareTo(e2) < 0);

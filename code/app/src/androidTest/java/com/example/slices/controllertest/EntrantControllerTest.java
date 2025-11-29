@@ -19,6 +19,7 @@ import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 
+import com.example.slices.models.Image;
 import com.google.firebase.Timestamp;
 
 import org.junit.AfterClass;
@@ -155,8 +156,9 @@ public class EntrantControllerTest {
         Timestamp regStart = times.get(0);
         Timestamp regEnd = times.get(1);
         Timestamp eventDate = times.get(2);
-        EventController.createEvent("Evt", "Desc", null, "Guide", "Img",
-                eventDate, regStart, regEnd, 10, 5, false, "none", 123,
+        Image image = new Image();
+        EventController.createEvent("Evt", "Desc", "add", null ,"Guide", "Img",
+                eventDate, regStart, regEnd, 10, 5, false, "none", 123, image,
                 new EventCallback() {
                     @Override
                     public void onSuccess(Event event) {

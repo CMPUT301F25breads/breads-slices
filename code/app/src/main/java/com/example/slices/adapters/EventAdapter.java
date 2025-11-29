@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
+import com.example.slices.controllers.ImageController;
+import com.example.slices.interfaces.ImageUrlCallback;
 import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.models.EventInfo;
@@ -63,7 +65,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
 
         // Load image
         Glide.with(context)
-                .load(eventInfo.getImageUrl())
+                .load(eventInfo.getImage().getUrl())
                 .placeholder(R.drawable.ic_image)
                 .into(holder.image);
 

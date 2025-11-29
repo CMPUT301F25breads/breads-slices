@@ -35,6 +35,7 @@ import com.bumptech.glide.Glide;
 import com.example.slices.R;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.ImageController;
 import com.example.slices.controllers.QRCodeManager;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
@@ -324,7 +325,7 @@ public class OrganizerEditEventFragment extends Fragment {
                 }
 
                 Glide.with(requireContext())
-                        .load(eventInfo.getImageUrl())
+                        .load(eventInfo.getImage().getUrl())
                         .placeholder(R.drawable.ic_image)
                         .into(eventImage);
             }
@@ -1017,6 +1018,21 @@ public class OrganizerEditEventFragment extends Fragment {
             selectedImageUri = data.getData();
             
             if (selectedImageUri != null) {
+                // Modify existing file at the path
+                ImageController.modifyImage(currentEvent.getEventInfo().getImage().getPath(), selectedImageUri, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Toast.makeText(getContext(), "New image saved!", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(getContext(), "Failed to update image: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+
                 // Display the selected image immediately
                 Glide.with(this)
                         .load(selectedImageUri)
@@ -1024,7 +1040,7 @@ public class OrganizerEditEventFragment extends Fragment {
                         .into(eventImage);
 
                 // Save the image URL to the database
-                saveEventImage(selectedImageUri.toString());
+                //saveEventImage(selectedImageUri.toString());
             }
         }
     }
