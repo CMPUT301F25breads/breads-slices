@@ -46,6 +46,18 @@
                       </LayoutPositions>
                     </value>
                   </entry>
+                  <entry key="EntrantMapFragment">
+                    <value>
+                      <LayoutPositions>
+                        <option name="myPosition">
+                          <Point>
+                            <option name="x" value="12" />
+                            <option name="y" value="12" />
+                          </Point>
+                        </option>
+                      </LayoutPositions>
+                    </value>
+                  </entry>
                   <entry key="EventEntrantsFragment">
                     <value>
                       <LayoutPositions>
@@ -54,6 +66,15 @@
                             <option name="x" value="734" />
                             <option name="y" value="-170" />
                           </Point>
+                        </option>
+                        <option name="myPositions">
+                          <map>
+                            <entry key="action_EventEntrantsFragment_to_EntrantMapFragment">
+                              <value>
+                                <LayoutPositions />
+                              </value>
+                            </entry>
+                          </map>
                         </option>
                       </LayoutPositions>
                     </value>
@@ -231,6 +252,16 @@
                       <LayoutPositions />
                     </value>
                   </entry>
+                  <entry key="action_to_adminImagesFragment">
+                    <value>
+                      <LayoutPositions />
+                    </value>
+                  </entry>
+                  <entry key="action_to_adminNotificationsFragment">
+                    <value>
+                      <LayoutPositions />
+                    </value>
+                  </entry>
                   <entry key="action_to_adminOrganizersFragment">
                     <value>
                       <LayoutPositions />
@@ -270,6 +301,30 @@
                           <Point>
                             <option name="x" value="268" />
                             <option name="y" value="764" />
+                          </Point>
+                        </option>
+                      </LayoutPositions>
+                    </value>
+                  </entry>
+                  <entry key="adminImagesFragment">
+                    <value>
+                      <LayoutPositions>
+                        <option name="myPosition">
+                          <Point>
+                            <option name="x" value="12" />
+                            <option name="y" value="12" />
+                          </Point>
+                        </option>
+                      </LayoutPositions>
+                    </value>
+                  </entry>
+                  <entry key="adminNotificationsFragment">
+                    <value>
+                      <LayoutPositions>
+                        <option name="myPosition">
+                          <Point>
+                            <option name="x" value="12" />
+                            <option name="y" value="12" />
                           </Point>
                         </option>
                       </LayoutPositions>

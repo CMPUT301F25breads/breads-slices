@@ -84,12 +84,12 @@
                 android:text="Guidelines" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_details"
+                android:id="@+id/btn_back"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:text="Details"
+                android:text="Return"
                 android:visibility="invisible"/>
 
             <com.google.android.material.button.MaterialButton

@@ -25,6 +25,7 @@ import com.google.android.material.button.MaterialButton;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -43,13 +44,19 @@ import java.util.TimeZone;
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.VH> {
     private final Context context;
     private final List<Notification> items = new ArrayList<>();
+    private final boolean isAdmin;
 
 
     /**
      * Creates a new NotificationAdapter.
      * @param context context used for inflating views and UI operations
      */
-    public NotificationAdapter(Context context) { this.context = context; }
+    public NotificationAdapter(Context context) { this(context, false); }
+
+    public NotificationAdapter(Context context, boolean isAdmin) {
+        this.context = context;
+        this.isAdmin = isAdmin;
+    }
 
     /**
      * Replaces the adapter's notifications with the provided list and refreshes the UI.
@@ -78,6 +85,11 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
         Notification n = items.get(position);
+
+        if (isAdmin) {
+            h.acceptButton.setVisibility(View.GONE);
+            h.declineButton.setVisibility(View.GONE);
+        }
 
         //Sets the text of the notification card
         h.title.setText(n.getTitle());
@@ -115,6 +127,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 }
             });
         }
+        if (isAdmin) return;
 
         // Configure action buttons based on notification type
         switch (n.getType()) {
@@ -161,8 +174,18 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 h.acceptButton.setVisibility(View.VISIBLE);
                 h.declineButton.setVisibility(View.VISIBLE);
                 h.acceptButton.setOnClickListener(v -> {
-                    items.remove(n);
-                    notifyDataSetChanged();
+                    n.setRead(true);
+                    NotificationManager.updateNotification(n, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            items.remove(n);
+                            notifyDataSetChanged();
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(context, "Error: Couldn't dismiss notification", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 });
                 // Ryan changed this
                 h.declineButton.setOnClickListener(v -> {
@@ -182,7 +205,23 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 });
                 break;
             case NOTIFICATION:
-                h.acceptButton.setVisibility(View.GONE);
+                h.acceptButton.setText("Dismiss");
+                h.acceptButton.setVisibility(View.VISIBLE);
+                h.acceptButton.setOnClickListener(v -> {
+                    n.setRead(true);
+                    NotificationManager.updateNotification(n, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            items.remove(n);
+                            notifyDataSetChanged();
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(context, "Error: Couldn't dismiss notification", Toast.LENGTH_SHORT).show();
+                            }
+                    });
+
+                });
                 h.declineButton.setVisibility(View.GONE);
                 break;
         }

@@ -19,6 +19,7 @@ import com.example.slices.interfaces.LocationCallback;
  * @author Bhupinder Singh
  */
 public class LocationManager {
+    private static Location userLocation = null;
 
     public LocationManager() {}
 
@@ -39,6 +40,10 @@ public class LocationManager {
      * @param callback Callback to handle success or failure
      */
     public void getUserLocation(Context context, LocationCallback callback) {
+        if (userLocation != null) {
+            callback.onSuccess(userLocation);
+            return;
+        }
         // Check if permissions are granted before attempting to get location
         if (!hasLocationPermission(context)) {
             callback.onFailure(new Exception("Location permissions not granted"));
@@ -52,6 +57,7 @@ public class LocationManager {
             @Override
             public void onSuccess(Location location) {
                 if (location != null) {
+                    userLocation = location;
                     callback.onSuccess(location);
                 } else {
                     // Location is null - could be due to location services disabled,

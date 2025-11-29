@@ -18,6 +18,8 @@ import com.example.slices.models.AsyncBatchExecutor;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
+import com.example.slices.models.NotificationType;
 import com.example.slices.models.SearchSettings;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -548,6 +550,93 @@ public class EventController {
     }
 
     /**
+     * Creates an event from the given parameters
+     * @param name
+     *      Event name
+     * @param description
+     *      Event description
+     * @param location
+     *      Event location
+     * @param guidelines
+     *      Event guidelines
+     * @param imgUrl
+     *      Event image URL
+     * @param eventDate
+     *      Event date
+     * @param regStart
+     *      Event registration start
+     * @param regEnd
+     *      Event registration end
+     * @param maxEntrants
+     *      Event max entrants
+     * @param maxWaiting
+     *      Event max waiting list size
+     * @param entrantLoc
+     *      Event entrant location
+     * @param entrantDist
+     *      Event entrant distance
+     * @param organizerID
+     *      Event organizer ID
+     * @param callback
+     *      Callback invoked when the event is created
+     */
+    public static void createEvent(String name, String description, String address, Location location, String guidelines, String imgUrl,
+                                   Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
+                                   int maxWaiting, boolean entrantLoc, String entrantDist, int organizerID, Image image, EventCallback callback) {
+        try {
+            verifyEventTimes(regStart, regEnd, eventDate);
+
+            getNewEventId(new EventIDCallback() {
+                @Override
+                public void onSuccess(int id) {
+
+                    Event event = new Event(name, description, address, guidelines, imgUrl,
+                            eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID, image);
+                    
+                    // Set location if provided
+                    if (location != null) {
+                        event.getEventInfo().setLocation(location);
+                        Logger.logSystem("Event created with location: lat=" + location.getLatitude() + 
+                                       ", lon=" + location.getLongitude() + ", eventId=" + id, null);
+                    } else if (entrantLoc) {
+                        Logger.logSystem("WARNING: Geolocation event created without location, eventId=" + id, null);
+                    } else {
+                        Logger.logSystem("Event created without geolocation, eventId=" + id, null);
+                    }
+                    
+                    writeEvent(event, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            if (location != null) {
+                                Logger.logSystem("Event location stored: lat=" + event.getEventInfo().getEventLatitude() + 
+                                               ", lon=" + event.getEventInfo().getEventLongitude() + ", eventId=" + id, null);
+                            }
+                            Logger.logEventCreate(id, null);
+                            callback.onSuccess(event);
+
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            Logger.logError("Failed to create event id=" + id, null);
+                            callback.onFailure(e);
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Logger.logError("Failed generating ID for new event", null);
+                    callback.onFailure(e);
+                }
+            });
+        }
+        catch(IllegalArgumentException e) {
+            Logger.logError("Event creation failed date validation", null);
+            callback.onFailure(e);
+        }
+    }
+
+    /**
      * Creates an event from an EventInfo object.
      * @param eventInfo
      *      EventInfo containing event fields
@@ -718,10 +807,6 @@ public class EventController {
     public static void removeEntrantFromWaitlist(Event event, Entrant entrant, DBWriteCallback callback) {
         boolean removed = event.removeEntrantFromWaitlist(entrant);
         if (removed) {
-            // Decrement currentEntrants after successful removal, with defensive check
-            event.getEventInfo().setCurrentEntrants(
-                Math.max(0, event.getEventInfo().getCurrentEntrants() - 1)
-            );
             Logger.logWaitlistModified("Removed from waitlist", event.getId(), entrant.getId(), null);
             updateEvent(event, callback);
         }
@@ -758,9 +843,6 @@ public class EventController {
             boolean added = event.addEntrantToWaitlist(entrant);
             if (added) {
                 // Increment currentEntrants after successful add
-                event.getEventInfo().setCurrentEntrants(
-                    event.getEventInfo().getCurrentEntrants() + 1
-                );
                 Logger.logWaitlistModified("Added to waitlist", event.getId(), entrant.getId(), null);
                 updateEvent(event, callback);
             } else {
@@ -788,7 +870,7 @@ public class EventController {
         //Run a check for the locations
         if (!checkLocs(event, loc)) {
             Logger.logError("Location not in event id=" + event.getId(), null);
-            callback.onFailure(new Exception("Location not in event"));
+            callback.onFailure(new Exception("This event isn't available in your area"));
             return;
         }
         
@@ -809,9 +891,6 @@ public class EventController {
             boolean added = event.addEntrantToWaitlist(entrant, loc);
             if (added) {
                 // Increment currentEntrants after successful add
-                event.getEventInfo().setCurrentEntrants(
-                    event.getEventInfo().getCurrentEntrants() + 1
-                );
                 Logger.logWaitlistModified("Added to waitlist with location", event.getId(), entrant.getId(), null);
                 updateEvent(event, callback);
             } else {
@@ -1122,7 +1201,7 @@ public class EventController {
                 }
 
                 if (entrants.size() <= spots) {
-                    addEntrantsToEvent(event, entrants, new DBWriteCallback() {
+                    notifyWinners(entrants, event, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             Logger.logLotteryRun(event.getId(), null);
@@ -1131,7 +1210,7 @@ public class EventController {
 
                         @Override
                         public void onFailure(Exception e) {
-                            Logger.logError("Lottery addEntrantsToEvent failure event id=" + event.getId(), null);
+                            Logger.logError("Lottery notifyWinners failed event id=" + event.getId(), null);
                             callback.onFailure(e);
                         }
                     });
@@ -1146,35 +1225,27 @@ public class EventController {
                     winners.add(pool.remove(randomIndex));
                 }
 
-                addEntrantsToEvent(event, winners, new DBWriteCallback() {
+
+                notifyWinners(winners, event, new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
-                        notifyWinners(winners, event, new DBWriteCallback() {
+                        notifyLosers(pool, event, new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
-                                notifyLosers(pool, event, new DBWriteCallback() {
-                                    @Override
-                                    public void onSuccess() {
-                                        Logger.logLotteryRun(event.getId(), null);
-                                        callback.onSuccess();
-                                    }
-
-                                    @Override
-                                    public void onFailure(Exception e) {
-                                        Logger.logError("Lottery notify losers failed event id=" + event.getId(), null);
-                                        callback.onFailure(e);
-                                    }
-                                });
+                                Logger.logLotteryRun(event.getId(), null);
+                                callback.onSuccess();
                             }
+
                             @Override
                             public void onFailure(Exception e) {
-                                Logger.logError("Lottery notify winners failed event id=" + event.getId(), null);
+                                Logger.logError("Lottery notify losers failed event id=" + event.getId(), null);
                                 callback.onFailure(e);
-                            }});
+                            }
+                        });
                     }
                     @Override
                     public void onFailure(Exception e) {
-                        Logger.logError("Lottery failed adding entrants event id=" + event.getId(), null);
+                        Logger.logError("Lottery notify winners failed event id=" + event.getId(), null);
                         callback.onFailure(e);
                     }
                 });
@@ -1189,14 +1260,109 @@ public class EventController {
     }
 
     /**
-     * Helper method that notifies the winners of the lottery
-     * @param winners
-     *      List of winners
-     * @param event
-     *      Event that the winners were enrolled in
-     * @param callback
-     *      Callback to call when the operation is complete
+     * Performs a replacement lottery draw for an event.
+     * This method draws from the waitlist to fill available spots, excluding:
+     * - Users who have already been invited (invitedIds)
+     * - Users who have declined invitations (cancelledIds)
+     * 
+     * @param event The event to draw replacement lottery for
+     * @param callback Callback invoked when the operation completes
      */
+    public static void doReplacementLottery(Event event, DBWriteCallback callback) {
+        // Calculate available spots
+        int spots = event.getEventInfo().getMaxEntrants() - event.getEntrants().size();
+        if (spots <= 0) {
+            Logger.logError("Replacement lottery failed: no spots available event id=" + event.getId(), null);
+            callback.onFailure(new Exception("No spots available"));
+            return;
+        }
+
+        getWaitlistForEvent(event.getId(), new EntrantListCallback() {
+            @Override
+            public void onSuccess(List<Entrant> entrants) {
+                if (entrants.isEmpty()) {
+                    Logger.logError("Replacement lottery failed: no entrants in waitlist event id=" + event.getId(), null);
+                    callback.onFailure(new Exception("No entrants in waitlist"));
+                    return;
+                }
+
+                // Get exclusion lists
+                List<Integer> cancelledIds = event.getCancelledIds();
+                List<Integer> invitedIds = event.getInvitedIds();
+                
+                if (cancelledIds == null) {
+                    cancelledIds = new ArrayList<>();
+                }
+                if (invitedIds == null) {
+                    invitedIds = new ArrayList<>();
+                }
+
+                // Filter out excluded entrants
+                List<Entrant> eligiblePool = new ArrayList<>();
+                for (Entrant entrant : entrants) {
+                    int entrantId = entrant.getId();
+                    if (!cancelledIds.contains(entrantId) && !invitedIds.contains(entrantId)) {
+                        eligiblePool.add(entrant);
+                    }
+                }
+
+                if (eligiblePool.isEmpty()) {
+                    Logger.logError("Replacement lottery failed: no eligible entrants after exclusions event id=" + event.getId(), null);
+                    callback.onFailure(new Exception("No eligible entrants in waitlist"));
+                    return;
+                }
+
+                // If eligible pool is smaller than or equal to available spots, invite everyone
+                if (eligiblePool.size() <= spots) {
+                    notifyWinners(eligiblePool, event, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Logger.logLotteryRun(event.getId(), null);
+                            callback.onSuccess();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Logger.logError("Replacement lottery notifyWinners failed event id=" + event.getId(), null);
+                            callback.onFailure(e);
+                        }
+                    });
+                    return;
+                }
+
+                // Randomly select winners from eligible pool
+                List<Entrant> pool = new ArrayList<>(eligiblePool);
+                List<Entrant> winners = new ArrayList<>();
+
+                for (int i = 0; i < spots; i++) {
+                    int randomIndex = (int)(Math.random() * pool.size());
+                    winners.add(pool.remove(randomIndex));
+                }
+
+                // Send invitations to winners (no need to notify losers in replacement lottery)
+                notifyWinners(winners, event, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Logger.logLotteryRun(event.getId(), null);
+                        callback.onSuccess();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        Logger.logError("Replacement lottery notify winners failed event id=" + event.getId(), null);
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Logger.logError("Replacement lottery failed fetching waitlist event id=" + event.getId(), null);
+                callback.onFailure(e);
+            }
+        });
+    }
+
     private static void notifyWinners(List<Entrant> winners, Event event, DBWriteCallback callback) {
         String title = "Congratulations!";
         String body = "You have won the lottery for " + event.getEventInfo().getName() + "!";
@@ -1225,7 +1391,7 @@ public class EventController {
         for (Entrant e : losers) {
             recipients.add(e.getId());
         }
-        NotificationManager.sendBulkNotification(title, body, recipients, sender, callback);
+        NotificationManager.sendBulkNotification(title, body, recipients, sender, NotificationType.NOT_SELECTED, callback);
     }
 
     /**

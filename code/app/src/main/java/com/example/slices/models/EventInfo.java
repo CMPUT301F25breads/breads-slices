@@ -66,7 +66,7 @@ public class EventInfo {
      */
 
     private String guidelines;
-    private String imageUrl = "https://cdn.mos.cms.futurecdn.net/39CUYMP8vJqHAYGVzUghBX.jpg";
+    private String imageUrl = "https://firebasestorage.googleapis.com/v0/b/slices-11b97.firebasestorage.app/o/placeholder%2Fplaceholder.png?alt=media&token=3450a6b9-5872-46f3-97e1-c56e2777e2fa";
 
     /**
      * Max amount of people allowed on waiting list
@@ -78,6 +78,7 @@ public class EventInfo {
     private String entrantDist;
 
     private int organizerID;
+    private Image image;
 
 
 
@@ -91,7 +92,7 @@ public class EventInfo {
 
     public EventInfo(String name, String description, String address, String guidelines,
                      String imgUrl, Timestamp eventDate, Timestamp regStart, Timestamp regEnd,
-                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID) {
+                     int maxEntrants, int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID, Image image) {
         this.name = name;
         this.description = description;
         this.location = null; // Not stored in Firebase, only used in memory for validation
@@ -108,9 +109,17 @@ public class EventInfo {
         this.entrantDist = entrantDist;
         this.organizerID = organizerID;
         this.address = address;
+        this.image = image;
 
     }
 
+    public Image getImage() {
+        return image;
+    }
+
+    public void setImage(Image image) {
+        this.image = image;
+    }
 
     public String getName() {
         return name;
@@ -312,7 +321,18 @@ public class EventInfo {
 
 
     public String getImageUrl() {
-        return imageUrl;
+
+        if (image != null &&
+                image.getUrl() != null &&
+                !image.getUrl().isEmpty()) {
+            return image.getUrl();
+        }
+
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            return imageUrl;
+        }
+
+        return "https://firebasestorage.googleapis.com/v0/b/slices-11b97.firebasestorage.app/o/placeholder%2Fplaceholder.png?alt=media&token=3450a6b9-5872-46f3-97e1-c56e2777e2fa";
     }
 
     /**

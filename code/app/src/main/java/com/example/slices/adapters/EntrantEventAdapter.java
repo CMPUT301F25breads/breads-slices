@@ -17,8 +17,10 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.ImageController;
 import com.example.slices.exceptions.DuplicateEntry;
 import com.example.slices.exceptions.WaitlistFull;
+import com.example.slices.interfaces.ImageUrlCallback;
 import com.example.slices.models.Event;
 import com.example.slices.R;
 import com.example.slices.interfaces.DBWriteCallback;
@@ -168,8 +170,11 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
             SimpleDateFormat formatter = new SimpleDateFormat("ha | MMM. dd, yyyy", Locale.CANADA);
             details.setText(formatter.format(date) + " | " + eventInfo.getAddress());
 
-            // Load image from URL
-            Glide.with(context).load(eventInfo.getImageUrl()).into(image);
+            // Load image
+            Glide.with(context)
+                    .load(eventInfo.getImageUrl())
+                    .placeholder(R.drawable.ic_image)
+                    .into(image);
 
             // Item click navigates to EventDetailsFragment
             itemView.setOnClickListener(v -> {
@@ -191,132 +196,184 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
                 // hide the action button if user is not logged in
                 actionBtn.setVisibility(View.GONE);
                 return;
-            } else {
-                actionBtn.setVisibility(View.VISIBLE);
             }
 
+            // Check if event has passed - hide button for past events
+            if (eventInfo.getEventDate() != null) {
+                long eventTimeMillis = eventInfo.getEventDate().toDate().getTime();
+                long currentTimeMillis = System.currentTimeMillis();
+
+                if (eventTimeMillis < currentTimeMillis) {
+                    // Event has passed - hide the join/leave button
+                    actionBtn.setVisibility(View.GONE);
+                    return;
+                }
+            }
+
+            // Event is in the future - show the button
+            actionBtn.setVisibility(View.VISIBLE);
+
             final String eventIdStr = String.valueOf(event.getId());
+            boolean isParticipating = vm.isParticipating(eventIdStr);
+            boolean isWaitlisted = vm.isWaitlisted(eventIdStr);
 
             // initial waitlist state comes from shared view model
-            boolean isOn = vm.isWaitlisted(eventIdStr);
-            
-            // Debug: Log the state
-            android.util.Log.d("EntrantEventAdapter", "Event " + eventIdStr + " - isWaitlisted: " + isOn + 
-                ", User ID: " + vm.getUser().getId());
-            
+            boolean isOn = isWaitlisted || isParticipating;
+
             updateWaitlistButton(actionBtn, isOn);
 
             // toggle join/leave on click using shared state + controller
             actionBtn.setOnClickListener(v -> {
-                // vm and user are already validated above, safe to use here
-                boolean isWaitlisted = vm.isWaitlisted(eventIdStr);
+                // vm and user are already validated above, so this should work
+                boolean nowParticipating = vm.isParticipating(eventIdStr);
+                boolean nowWaitlisted = vm.isWaitlisted(eventIdStr);
 
-                if (isWaitlisted) {
-                    // switch to Join
-                    updateWaitlistButton(actionBtn, false);
+                // FIRST CASE: user is fully participating and then hits leave event
+                if (nowParticipating) {
+                    actionBtn.setText("Leaving...");
 
-                    EventController.removeEntrantFromWaitlist(event, vm.getUser(), new DBWriteCallback() {
+                    EventController.removeEntrantFromEvent(event, vm.getUser(), new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
-                            vm.removeWaitlistedId(eventIdStr);
+                            // update the local state
+                            vm.removeParticipatingId(eventIdStr);
+                            // in the case they were also marked waitlisted in VM for some reason
+                            if (vm.isWaitlisted(eventIdStr)) {
+                                vm.removeWaitlistedId(eventIdStr);
+                            }
+
+                            if (fragment.isAdded()) {
+                                // after leaving, user is neither waitlisted nor participating
+                                updateWaitlistButton(actionBtn, false);
+                                actionBtn.setEnabled(true);
+                            }
+
                             if (actions != null)
                                 actions.onLeaveClicked(event);
                         }
 
                         @Override
                         public void onFailure(Exception e) {
-                            // reverts on failure
-                            updateWaitlistButton(actionBtn, true);
+                            if (fragment.isAdded()) {
+                                // Revert to "on" state on failure
+                                updateWaitlistButton(actionBtn, true);
+                                actionBtn.setEnabled(true);
+                                Toast.makeText(context, "Failed to leave event", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }); return; // don’t fall through to waitlist/join branches
+                }
+
+                // CASE TWO: user is only on waitlist then hits leave waitlist
+                if (nowWaitlisted) {
+                    // Saahil's fancy button that shows "Leaving..." state - very cool
+                    actionBtn.setText("Leaving...");
+
+                    EventController.removeEntrantFromWaitlist(event,
+                            vm.getUser(), new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            vm.removeWaitlistedId(eventIdStr);
+
+                            // only update UI if fragment is still attached
+                            if (fragment.isAdded()) {
+                                updateWaitlistButton(actionBtn, false);
+                                actionBtn.setEnabled(true);
+                            }
+                            if (actions != null)
+                                actions.onLeaveClicked(event);
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            // only update UI if fragment is still attached (again)
+                            if (fragment.isAdded()) {
+                                // revert to "Leave" state on failure
+                                updateWaitlistButton(actionBtn, true);
+                                actionBtn.setEnabled(true);
+                                Toast.makeText(context, "Failed to leave waitlist",
+                                        Toast.LENGTH_SHORT).show();
+                            }
                         }
                     });
                 } else {
-                    // switch to Leave
-                    updateWaitlistButton(actionBtn, true);
+                    // CASE THREE: user is in neither so, join waitlist
+                    actionBtn.setText("Joining...");
 
-                    // Check if event requires geolocation
+                    // check if event requires geolocation
                     boolean requiresLocation = event.getEventInfo() != null && event.getEventInfo().getEntrantLoc();
 
                     if (requiresLocation && locationRequestCallback != null) {
-                        // Request location from fragment
+                        // request location from fragment
                         locationRequestCallback.onLocationRequested(event, new JoinWithLocationCallback() {
                             @Override
                             public void onLocationObtained(Location location) {
-                                // Check if fragment is still attached before proceeding
-                                if (!fragment.isAdded()) {
-                                    android.util.Log.d("EntrantEventAdapter", "Fragment detached, cancelling join operation");
-                                    return;
-                                }
-                                
-                                // Join with location
-                                EventController.addEntrantToWaitlist(event, vm.getUser(), location, new DBWriteCallback() {
+                                EventController.addEntrantToWaitlist(event, vm.getUser(),
+                                        location, new DBWriteCallback() {
                                     @Override
                                     public void onSuccess() {
-                                        // Check if fragment is still attached before updating UI
-                                        if (!fragment.isAdded()) {
-                                            android.util.Log.d("EntrantEventAdapter", "Fragment detached after join success");
-                                            return;
-                                        }
-                                        
                                         vm.addWaitlistedId(eventIdStr);
+
+                                        // only update UI if fragment is still attached
+                                        if (fragment.isAdded()) {
+                                            updateWaitlistButton(actionBtn, true);
+                                            actionBtn.setEnabled(true);
+                                        }
+
                                         if (actions != null)
                                             actions.onJoinClicked(event);
                                     }
 
                                     @Override
                                     public void onFailure(Exception e) {
-                                        // Check if fragment is still attached before updating UI
-                                        if (!fragment.isAdded()) {
-                                            android.util.Log.d("EntrantEventAdapter", "Fragment detached after join failure");
-                                            return;
+                                        // only update UI if fragment is still attached
+                                        if (fragment.isAdded()) {
+                                            // reverts to "Join" state on failure
+                                            updateWaitlistButton(actionBtn, false);
+                                            actionBtn.setEnabled(true);
+                                            showJoinError(e);
                                         }
-                                        
-                                        // reverts on failure
-                                        updateWaitlistButton(actionBtn, false);
-                                        showJoinError(e);
                                     }
                                 });
                             }
 
                             @Override
                             public void onLocationFailed() {
-                                // Check if fragment is still attached before updating UI
-                                if (!fragment.isAdded()) {
-                                    android.util.Log.d("EntrantEventAdapter", "Fragment detached after location failure");
-                                    return;
+                                // only update UI if fragment is still attached
+                                if (fragment.isAdded()) {
+                                    // revert to "Join" state
+                                    updateWaitlistButton(actionBtn, false);
+                                    actionBtn.setEnabled(true);
+                                    Toast.makeText(context, "Location required to join this event", Toast.LENGTH_SHORT).show();
                                 }
-                                
-                                // Revert button state
-                                updateWaitlistButton(actionBtn, false);
-                                Toast.makeText(context, "Location required to join this event", Toast.LENGTH_SHORT).show();
                             }
                         });
                     } else {
-                        // Join without location (non-geolocation event or no callback)
+                        // join without location (non-geolocation event or no callback)
                         EventController.addEntrantToWaitlist(event, vm.getUser(), new DBWriteCallback() {
                             @Override
                             public void onSuccess() {
-                                // Check if fragment is still attached before updating UI
-                                if (!fragment.isAdded()) {
-                                    android.util.Log.d("EntrantEventAdapter", "Fragment detached after join success");
-                                    return;
-                                }
-                                
                                 vm.addWaitlistedId(eventIdStr);
+
+                                // only update UI if fragment is still attached
+                                if (fragment.isAdded()) {
+                                    updateWaitlistButton(actionBtn, true);
+                                    actionBtn.setEnabled(true);
+                                }
+
                                 if (actions != null)
                                     actions.onJoinClicked(event);
                             }
 
                             @Override
                             public void onFailure(Exception e) {
-                                // Check if fragment is still attached before updating UI
-                                if (!fragment.isAdded()) {
-                                    android.util.Log.d("EntrantEventAdapter", "Fragment detached after join failure");
-                                    return;
+                                // only update UI if fragment is still attached
+                                if (fragment.isAdded()) {
+                                    // revert to "Join" state on failure
+                                    updateWaitlistButton(actionBtn, false);
+                                    actionBtn.setEnabled(true);
+                                    showJoinError(e);
                                 }
-                                
-                                // reverts on failure
-                                updateWaitlistButton(actionBtn, false);
-                                showJoinError(e);
                             }
                         });
                     }

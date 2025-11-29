@@ -611,9 +611,17 @@ public class EntrantController {
      *      Callback to call when the operation is complete
      */
     public static void updateProfile(Entrant entrant, Profile profile, DBWriteCallback callback) {
-        entrant.setProfile(profile);
         Logger.logEntrantUpdate(entrant.getId(), -1, null);
-        EntrantController.updateEntrant(entrant, callback);
+        entrantRef.document(String.valueOf(entrant.getId()))
+            .update("profile", profile)
+            .addOnSuccessListener(aVoid -> {
+                Logger.logEntrantUpdate(entrant.getId(), -1, null);
+                callback.onSuccess();
+            })
+            .addOnFailureListener(e -> {
+                Logger.logError("Failed to update profile for entrant id=" + entrant.getId(), null);
+                callback.onFailure(new DBOpFailed("Failed to update profile"));
+            });
     }
 
     /**

@@ -360,10 +360,10 @@ public class BrowseFragment extends Fragment {
                 
                 if ((fineLocationGranted != null && fineLocationGranted) || 
                     (coarseLocationGranted != null && coarseLocationGranted)) {
-                    // Permission granted - get location
+                    // Permission granted - get location and continue join even if fragment detached
                     getUserLocationAndJoin();
                 } else {
-                    // Permission denied
+                    // Permission denied - notify callback even if fragment detached
                     if (pendingJoinCallback != null) {
                         pendingJoinCallback.onLocationFailed();
                         pendingJoinCallback = null;
@@ -402,21 +402,30 @@ public class BrowseFragment extends Fragment {
     private void getUserLocationAndJoin() {
         if (pendingJoinCallback == null) return;
 
+        // Store callback reference before async operation
+        final EntrantEventAdapter.JoinWithLocationCallback callback = pendingJoinCallback;
+        pendingJoinCallback = null; // Clear immediately to prevent double-use
+
         LocationManager locationManager = new LocationManager();
         locationManager.getUserLocation(requireContext(), new LocationCallback() {
             @Override
             public void onSuccess(android.location.Location location) {
-                if (pendingJoinCallback != null && isAdded()) {
-                    pendingJoinCallback.onLocationObtained(location);
-                    pendingJoinCallback = null;
+                // Always call the callback to complete the join, even if fragment is detached
+                // The adapter will handle UI updates only if fragment is still attached
+                if (callback != null) {
+                    callback.onLocationObtained(location);
                 }
             }
 
             @Override
             public void onFailure(Exception e) {
-                if (pendingJoinCallback != null && isAdded()) {
-                    pendingJoinCallback.onLocationFailed();
-                    pendingJoinCallback = null;
+                // Always call the callback, even if fragment is detached
+                if (callback != null) {
+                    callback.onLocationFailed();
+                }
+                
+                // Only show toast if fragment is still attached
+                if (isAdded()) {
                     Toast.makeText(requireContext(),
                         "Unable to get your location. Please ensure location services are enabled.",
                         Toast.LENGTH_LONG).show();

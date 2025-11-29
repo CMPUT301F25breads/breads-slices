@@ -26,6 +26,8 @@ public class Profile {
 
     //private (Something) location
 
+    private boolean isOrganizer;
+
 
     /**
      * Default constructor for the Profile class, need for serialization
@@ -69,6 +71,7 @@ public class Profile {
         this.phoneNumber = phoneNumber;
         this.sendNotifications = true;
         this.id = id;
+        this.isOrganizer = false;
     }
 
     /**
@@ -115,6 +118,9 @@ public class Profile {
     public int getId() {
         return id;
     }
+
+    public boolean isOrganizer() {
+        return isOrganizer; }
 
 
     /**
@@ -165,6 +171,35 @@ public class Profile {
     public void setId(int id) {
         this.id = id;
     }
+
+    public void setOrganizer(boolean organizer) {
+        this.isOrganizer = organizer;
+    }
+
+    /*
+    /**
+     * INTERNAL USE ONLY - Firestore requires this setter
+     * @param location
+     *      Location to set
+     */
+    /*
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+    */
+    /*
+    /**
+     * Getter for the location of the entrant
+     * @return
+     *      Location of the entrant
+     */
+    /*
+    public Location getLocation() {
+        return location;
+    }
+     */
+
+
 
 
 

@@ -35,15 +35,20 @@ import com.bumptech.glide.Glide;
 import com.example.slices.R;
 
 import com.example.slices.controllers.EventController;
+import com.example.slices.controllers.ImageController;
 import com.example.slices.controllers.QRCodeManager;
+import com.example.slices.interfaces.ImageUploadCallback;
 import com.example.slices.models.Event;
 import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.DBWriteCallback;
 import com.example.slices.models.EventInfo;
+import com.example.slices.models.Image;
 import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -70,7 +75,7 @@ public class OrganizerEditEventFragment extends Fragment {
             editMaxWaiting, editMaxParticipants, editMaxDistance;
     private TextView textDescription, textGuidelines, textLocation, textEventTitle;
     private ImageView eventImage, qrCodeImageView;
-    private Button buttonShareQRCode;
+    private Button buttonShareQRCode, buttonDrawLottery, buttonRedrawLottery;
     private SwitchCompat switchEntrantLocation;
     private LinearLayout layoutMaxDistance;
 
@@ -136,6 +141,8 @@ public class OrganizerEditEventFragment extends Fragment {
         switchEntrantLocation = view.findViewById(R.id.switchEntrantLocation);
         layoutMaxDistance = view.findViewById(R.id.layoutMaxDistance);
         Button buttonViewWaitingList = view.findViewById(R.id.buttonViewWaitingList);
+        buttonDrawLottery = view.findViewById(R.id.buttonDrawLottery);
+        buttonRedrawLottery = view.findViewById(R.id.buttonRedrawLottery);
         ImageButton buttonEditDescription = view.findViewById(R.id.buttonEditDescription);
         ImageButton buttonEditGuidelines = view.findViewById(R.id.buttonEditGuidelines);
         ImageButton buttonEditLocation = view.findViewById(R.id.buttonEditLocation);
@@ -221,6 +228,12 @@ public class OrganizerEditEventFragment extends Fragment {
             bundle.putInt("sender_id", currentEvent.getEventInfo().getOrganizerID());
             navigateToEntrantsFragment(bundle);
         });
+
+        // --- Draw Lottery button ---
+        buttonDrawLottery.setOnClickListener(v -> handleDrawLottery());
+
+        // --- Re-draw Lottery button ---
+        buttonRedrawLottery.setOnClickListener(v -> handleRedrawLottery());
 
         // --- Share QR Code button ---
         buttonShareQRCode.setOnClickListener(v -> shareQRCode());
@@ -327,6 +340,12 @@ public class OrganizerEditEventFragment extends Fragment {
                         .load(eventInfo.getImageUrl())
                         .placeholder(R.drawable.ic_image)
                         .into(eventImage);
+
+                // Update lottery button state based on registration deadline
+                updateLotteryButtonState();
+                
+                // Update re-draw button visibility based on whether lottery has been run
+                updateRedrawButtonVisibility();
             }
 
             @Override
@@ -986,13 +1005,19 @@ public class OrganizerEditEventFragment extends Fragment {
         EventController.updateEventInfo(currentEvent, eventInfo, new DBWriteCallback() {
             @Override
             public void onSuccess() {
-                Toast.makeText(getContext(), "Location settings saved!", Toast.LENGTH_SHORT).show();
+                // Only show toast if fragment is still attached
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Location settings saved!", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onFailure(Exception e) {
-                Toast.makeText(getContext(), "Failed to save location settings: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                // Only show toast if fragment is still attached
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Failed to save location settings: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -1017,27 +1042,48 @@ public class OrganizerEditEventFragment extends Fragment {
             selectedImageUri = data.getData();
             
             if (selectedImageUri != null) {
+
                 // Display the selected image immediately
                 Glide.with(this)
                         .load(selectedImageUri)
                         .placeholder(R.drawable.ic_image)
                         .into(eventImage);
 
+                // Modify existing file at the path
+                ImageController.modifyImage(currentEvent.getEventInfo().getImage().getPath(), selectedImageUri, String.valueOf(currentEvent.getEventInfo().getOrganizerID()),
+                        new ImageUploadCallback() {
+                    @Override
+                    public void onSuccess(Image image) {
+                        Toast.makeText(getContext(), "New image saved!", Toast.LENGTH_SHORT).show();
+                        // Save the image URL to the database
+                        saveEventImage(image);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        Toast.makeText(getContext(), "Failed to update image: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+
+
+
                 // Save the image URL to the database
-                saveEventImage(selectedImageUri.toString());
+               // saveEventImage(selectedImageUri.toString());
             }
         }
     }
 
     /**
      * Saves the new event image URL to the database
-     * @param imageUrl The URL/URI of the new image
+     * @param image The URL/URI of the new image
      */
-    private void saveEventImage(String imageUrl) {
+    private void saveEventImage(Image image) {
         if (currentEvent == null) return;
 
         EventInfo currentEventInfo = currentEvent.getEventInfo();
-        currentEventInfo.setImageUrl(imageUrl);
+        currentEventInfo.setImage(image);
 
         EventController.updateEventInfo(currentEvent, currentEventInfo, new DBWriteCallback() {
             @Override
@@ -1058,5 +1104,249 @@ public class OrganizerEditEventFragment extends Fragment {
                 }
             }
         });
+    }
+
+    /**
+     * Handles the Draw Lottery button click.
+     * Checks if registration has closed, shows confirmation dialog, and executes lottery.
+     */
+    private void handleDrawLottery() {
+        if (currentEvent == null) {
+            Toast.makeText(getContext(), "Event data not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check if registration has closed
+        Timestamp regEnd = currentEvent.getEventInfo().getRegEnd();
+        Timestamp now = Timestamp.now();
+
+        if (regEnd != null && now.compareTo(regEnd) < 0) {
+            // Registration hasn't closed yet
+            Toast.makeText(getContext(), "Registration must close first", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Check if there are spots available
+        int maxEntrants = currentEvent.getEventInfo().getMaxEntrants();
+        int currentEntrants = currentEvent.getEntrants().size();
+        int availableSpots = maxEntrants - currentEntrants;
+
+        if (availableSpots <= 0) {
+            Toast.makeText(getContext(), "Event is already full", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check if there are entrants in the waitlist
+        int waitlistSize = currentEvent.getWaitlist().getEntrants().size();
+        if (waitlistSize == 0) {
+            Toast.makeText(getContext(), "No entrants in waitlist", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show confirmation dialog
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Draw Lottery")
+                .setMessage("Draw lottery for " + availableSpots + " spot(s) from " + 
+                           waitlistSize + " entrant(s) in the waitlist?")
+                .setPositiveButton("Draw", (dialog, which) -> executeLottery())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Executes the lottery draw.
+     * Shows progress indicator, calls EventController.doLottery, and refreshes event data.
+     */
+    private void executeLottery() {
+        // Disable button to prevent double-clicks
+        buttonDrawLottery.setEnabled(false);
+        buttonDrawLottery.setText("Drawing...");
+
+        EventController.doLottery(currentEvent, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                // Refresh event data to show updated counts
+                loadEventData(eventID);
+                
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Lottery drawn successfully!", Toast.LENGTH_SHORT).show();
+                    buttonDrawLottery.setText("Draw Lottery");
+                    buttonDrawLottery.setEnabled(true);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Failed to draw lottery: " + e.getMessage(), 
+                                 Toast.LENGTH_LONG).show();
+                    buttonDrawLottery.setText("Draw Lottery");
+                    buttonDrawLottery.setEnabled(true);
+                }
+            }
+        });
+    }
+
+    /**
+     * Updates the Draw Lottery button state based on registration deadline.
+     * Enables button only when registration has closed.
+     */
+    private void updateLotteryButtonState() {
+        if (currentEvent == null || buttonDrawLottery == null) {
+            return;
+        }
+
+        Timestamp regEnd = currentEvent.getEventInfo().getRegEnd();
+        Timestamp now = Timestamp.now();
+
+        if (regEnd == null) {
+            // No registration deadline set, enable button
+            buttonDrawLottery.setEnabled(true);
+            buttonDrawLottery.setAlpha(1.0f);
+        } else if (now.compareTo(regEnd) >= 0) {
+            // Registration has closed, enable button
+            buttonDrawLottery.setEnabled(true);
+            buttonDrawLottery.setAlpha(1.0f);
+        } else {
+            // Registration still open, disable button
+            buttonDrawLottery.setEnabled(false);
+            buttonDrawLottery.setAlpha(0.5f);
+        }
+    }
+
+    /**
+     * Handles the Re-draw Lottery button click.
+     * Draws replacement lottery for available spots, excluding cancelled and already invited users.
+     */
+    private void handleRedrawLottery() {
+        if (currentEvent == null) {
+            Toast.makeText(getContext(), "Event data not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check if there are spots available
+        int maxEntrants = currentEvent.getEventInfo().getMaxEntrants();
+        int currentEntrants = currentEvent.getEntrants().size();
+        int availableSpots = maxEntrants - currentEntrants;
+
+        if (availableSpots <= 0) {
+            Toast.makeText(getContext(), "Event is already full", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check if there are entrants in the waitlist
+        int waitlistSize = currentEvent.getWaitlist().getEntrants().size();
+        if (waitlistSize == 0) {
+            Toast.makeText(getContext(), "No entrants in waitlist", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show confirmation dialog
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Re-draw Lottery")
+                .setMessage("Draw replacement lottery for " + availableSpots + " spot(s) from " + 
+                           waitlistSize + " entrant(s) in the waitlist?")
+                .setPositiveButton("Re-draw", (dialog, which) -> executeReplacementLottery())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Executes the replacement lottery draw.
+     * Shows progress indicator, calls EventController.doReplacementLottery, and refreshes event data.
+     */
+    private void executeReplacementLottery() {
+        // Disable button to prevent double-clicks
+        buttonRedrawLottery.setEnabled(false);
+        buttonRedrawLottery.setText("Drawing...");
+
+        EventController.doReplacementLottery(currentEvent, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                // Refresh event data to show updated counts
+                loadEventData(eventID);
+                
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Replacement lottery drawn successfully!", Toast.LENGTH_SHORT).show();
+                    buttonRedrawLottery.setText("Re-draw Lottery");
+                    buttonRedrawLottery.setEnabled(true);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                if (isAdded() && getContext() != null) {
+                    Toast.makeText(getContext(), "Failed to draw replacement lottery: " + e.getMessage(), 
+                                 Toast.LENGTH_LONG).show();
+                    buttonRedrawLottery.setText("Re-draw Lottery");
+                    buttonRedrawLottery.setEnabled(true);
+                }
+            }
+        });
+    }
+
+    /**
+     * Updates the Re-draw button visibility based on whether the initial lottery has been run.
+     * The button is visible only after at least one invitation has been sent.
+     */
+    private void updateRedrawButtonVisibility() {
+        if (currentEvent == null || buttonRedrawLottery == null) {
+            return;
+        }
+
+        // Show re-draw button if there are invited users (lottery has been run)
+        List<Integer> invitedIds = currentEvent.getInvitedIds();
+        if (invitedIds != null && !invitedIds.isEmpty()) {
+            buttonRedrawLottery.setVisibility(View.VISIBLE);
+        } else {
+            buttonRedrawLottery.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Called when the fragment is paused (user navigates away).
+     * Saves any pending changes to ensure data isn't lost.
+     */
+    @Override
+    public void onPause() {
+        super.onPause();
+        
+        // Save any pending changes before the fragment is paused
+        if (currentEvent != null) {
+            // Save location settings if the distance field has content
+            if (switchEntrantLocation.isChecked() && !editMaxDistance.getText().toString().trim().isEmpty()) {
+                saveEntrantLocationSettings();
+            }
+            
+            // Save other fields that might have changed
+            String currentName = editEventName.getText().toString().trim();
+            if (!currentName.isEmpty() && !currentName.equals(currentEvent.getEventInfo().getName())) {
+                saveEventName();
+            }
+            
+            String maxParticipantsStr = editMaxParticipants.getText().toString().trim();
+            if (!maxParticipantsStr.isEmpty()) {
+                try {
+                    int maxParticipants = Integer.parseInt(maxParticipantsStr);
+                    if (maxParticipants != currentEvent.getEventInfo().getMaxEntrants()) {
+                        saveMaxParticipants();
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore invalid input
+                }
+            }
+            
+            String maxWaitingStr = editMaxWaiting.getText().toString().trim();
+            if (!maxWaitingStr.isEmpty()) {
+                try {
+                    int maxWaiting = Integer.parseInt(maxWaitingStr);
+                    if (maxWaiting != currentEvent.getWaitlist().getMaxCapacity()) {
+                        saveMaxWaitingCapacity();
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore invalid input
+                }
+            }
+        }
     }
 }

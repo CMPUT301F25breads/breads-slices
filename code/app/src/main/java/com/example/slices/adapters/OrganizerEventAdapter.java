@@ -90,7 +90,7 @@ public class OrganizerEventAdapter extends RecyclerView.Adapter<OrganizerEventAd
         String eventTime = sdf.format(eventInfo.getEventDate().toDate());
         holder.eventDateTime.setText(eventTime + " | " + eventInfo.getAddress());
 
-        // Load image with Glide
+        // Load image
         Glide.with(context)
                 .load(eventInfo.getImageUrl())
                 .placeholder(R.drawable.ic_image)

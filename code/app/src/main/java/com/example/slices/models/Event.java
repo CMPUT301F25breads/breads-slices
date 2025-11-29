@@ -39,11 +39,11 @@ public class Event implements Comparable<Event> {
 
     private EventInfo eventInfo;
     private List<Integer> entrantIds;
+    private List<Integer> cancelledIds;
+    private List<Integer> invitedIds;
 
     @com.google.firebase.firestore.Exclude
     private ArrayList<Location> entrantLocs;
-
-
 
 
     /**
@@ -55,13 +55,15 @@ public class Event implements Comparable<Event> {
 
     public Event(String name, String description, String address, String guidelines, String imgUrl,
                  Timestamp eventDate, Timestamp regStart, Timestamp regEnd, int maxEntrants,
-                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID)  {
+                 int maxWaiting, boolean entrantLoc, String entrantDist, int id, int organizerID, Image image)  {
         this.eventInfo = new EventInfo(name, description, address,  guidelines, imgUrl,
-                eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID);
+                eventDate, regStart, regEnd, maxEntrants, maxWaiting, entrantLoc, entrantDist, id, organizerID, image);
         this.id = id;
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist(maxWaiting);
         this.entrantIds = new ArrayList<>();
+        this.cancelledIds = new ArrayList<>();
+        this.invitedIds = new ArrayList<>();
     }
 
     public Event(EventInfo eventInfo) {
@@ -70,6 +72,8 @@ public class Event implements Comparable<Event> {
         this.entrants = new ArrayList<Entrant>();
         this.waitlist = new Waitlist(eventInfo.getMaxWaiting());
         this.entrantIds = new ArrayList<>();
+        this.cancelledIds = new ArrayList<>();
+        this.invitedIds = new ArrayList<>();
     }
     /**
      * Getter for the ID of the event
@@ -138,6 +142,22 @@ public class Event implements Comparable<Event> {
 
     public void setEntrantIds(List<Integer> entrantIds) {
         this.entrantIds = entrantIds;
+    }
+
+    public List<Integer> getCancelledIds() {
+        return cancelledIds;
+    }
+
+    public void setCancelledIds(List<Integer> cancelledIds) {
+        this.cancelledIds = cancelledIds;
+    }
+
+    public List<Integer> getInvitedIds() {
+        return invitedIds;
+    }
+
+    public void setInvitedIds(List<Integer> invitedIds) {
+        this.invitedIds = invitedIds;
     }
 
     /**
