@@ -25,6 +25,12 @@ import com.google.firebase.storage.StorageReference;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Controller for facilitating the storing, updating, and retrieving
+ * of images in the Firestore Storage
+ *
+ * @author Brad
+ */
 public class ImageController {
 
     @SuppressLint("StaticFieldLeak")
@@ -33,6 +39,15 @@ public class ImageController {
 
     private ImageController() {}
 
+    /**
+     * Uploads an image to the firebase storage asynchronously
+     * @param imageUri
+     *      Uri of the image to be uploaded
+     * @param userId
+     *      userId of the organizer who uploaded the image (to be used to generate a unique key)
+     * @param callback
+     *      Callback to call once the operation is complete
+     */
     public static void uploadImage(Uri imageUri, String userId, ImageUploadCallback callback) {
         if (imageUri == null) {
             callback.onFailure(new IllegalArgumentException("Image URI is null"));
@@ -58,6 +73,13 @@ public class ImageController {
                 });
     }
 
+    /**
+     * Uploads an placeholder to the firebase storage asynchronously
+     * @param userId
+     *      userId of the organizer who uploaded the image (to be used to generate a unique key)
+     * @param callback
+     *      Callback to call once the operation is complete
+     */
     public static void uploadPlaceholder(String userId, Context context, ImageUploadCallback callback) {
         String path = userId + Timestamp.now().toDate().getTime();
 
@@ -79,6 +101,11 @@ public class ImageController {
 
     }
 
+    /**
+     * Gets a list of all images from the storage
+     * @param callback
+     *      Callback to call once the operation is complete
+     */
     public static void getAllImages(ImageListCallback callback) {
         imagesRef.listAll()
                 .addOnSuccessListener(listResult -> {
@@ -117,6 +144,13 @@ public class ImageController {
                 });
     }
 
+    /**
+     * Gets a single image's download url, likely not used with current implementation
+     * @param path
+     *      path of the image in storage
+     * @param callback
+     *      Callback to when the operation is complete
+     */
     public static void getImageUrl(String path, ImageUrlCallback callback) {
         imagesRef.child(path)
                 .getDownloadUrl()
@@ -132,6 +166,13 @@ public class ImageController {
                 });
     }
 
+    /**
+     * Deletes an image from the firebase storage
+     * @param path
+     *      path of the image in storage to delete
+     * @param callback
+     *      Callback to when the operation is complete
+     */
     public static void deleteImage(String path, DBWriteCallback callback) {
         imagesRef.child(path)
                 .delete()
@@ -151,6 +192,17 @@ public class ImageController {
                 });
     }
 
+    /**
+     * Modify an image in storage by deleting and uploading in order to refresh glide
+     * @param path
+     *      path of the image in storage to delete
+     * @param imageUri
+     *      Uri of the new image to upload
+     * @param userId
+     *      Id of the organizer who uploaded the image
+     * @param callback
+     *      Callback to when the operation is complete
+     */
     public static void modifyImage(String path, Uri imageUri, String userId, ImageUploadCallback callback) {
         storage.getReference()
                 .child("event_images/" + path)
