@@ -85,13 +85,13 @@ public class BrowseFragment extends Fragment {
             @Override
             public void onJoinClicked(Event event) {
                 // Refresh user's waitlisted events
-                loadUserWaitlistedEvents();
+                loadUserEvents();
             }
 
             @Override
             public void onLeaveClicked(Event event) {
                 // Refresh user's waitlisted events after leaving
-                loadUserWaitlistedEvents();
+                loadUserEvents();
             }
         });
 
@@ -106,7 +106,7 @@ public class BrowseFragment extends Fragment {
         });
 
         // Load user's waitlisted events to populate button states correctly
-        loadUserWaitlistedEvents();
+        loadUserEvents();
 
         setupEvents(search);
 
@@ -303,17 +303,17 @@ public class BrowseFragment extends Fragment {
     }
 
     /**
-     * Loads the user's waitlisted events and populates the waitlistedEventIds in the ViewModel.
+     * Loads the user's events and populates the waitlistedEventIds and participatingEventIds in the ViewModel.
      * This ensures that the browse screen shows correct button states (Join vs Leave).
      */
-    private void loadUserWaitlistedEvents() {
+    private void loadUserEvents() {
         // Only load if user is initialized
         if (vm.getUser() == null || vm.getUser().getId() == 0) {
-            Log.d("BrowseFragment", "Skipping loadUserWaitlistedEvents - user not initialized");
+            Log.d("BrowseFragment", "Skipping loadUserEvents - user not initialized");
             return;
         }
 
-        Log.d("BrowseFragment", "Loading user's waitlisted events from database");
+        Log.d("BrowseFragment", "Loading user's events from database");
 
         // Always load from database to ensure fresh state
         EventController.getEventsForEntrant(vm.getUser(), new com.example.slices.interfaces.EntrantEventCallback() {
@@ -322,14 +322,18 @@ public class BrowseFragment extends Fragment {
                 if (!isAdded()) return;
                 
                 vm.setWaitlistedEvents(waitEvents);
+                vm.setEvents(events);
 
                 // Clear existing waitlisted IDs and rebuild from fresh data
                 vm.clearWaitlistedIds();
+                vm.clearParticipatingIds();
                 
                 // Populate waitlistedEventIds for button state tracking
                 for (Event event : waitEvents) {
                     vm.addWaitlistedId(String.valueOf(event.getId()));
                 }
+                for(Event event : events)
+                    vm.addParticipatingId(String.valueOf(event.getId()));
                 
                 Log.d("BrowseFragment", "Loaded " + waitEvents.size() + " waitlisted events");
 
@@ -343,7 +347,7 @@ public class BrowseFragment extends Fragment {
             @Override
             public void onFailure(Exception e) {
                 // Silently fail - user can still browse events
-                Log.e("BrowseFragment", "Failed to load user's waitlisted events", e);
+                Log.e("BrowseFragment", "Failed to load user's events", e);
             }
         });
     }
@@ -452,7 +456,7 @@ public class BrowseFragment extends Fragment {
                 
                 // Load user's waitlisted events AFTER event list is updated
                 // This ensures proper synchronization between event data and button states
-                loadUserWaitlistedEvents();
+                loadUserEvents();
             }
 
             @Override
@@ -462,7 +466,7 @@ public class BrowseFragment extends Fragment {
                 
                 // Still attempt to refresh waitlist state even if event query failed
                 if (isAdded()) {
-                    loadUserWaitlistedEvents();
+                    loadUserEvents();
                 }
             }
         });
