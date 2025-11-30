@@ -201,16 +201,25 @@ public class  MenuFragment extends Fragment {
     }
 
     private void onAdminSignInClicked() {
-        ((MainActivity) requireActivity()).switchToAdmin();
+        Entrant user = vm.getUser();
 
-        NavController navController = NavHostFragment.findNavController(this);
+        if (user != null && user.getAdmin()) {
 
-        NavOptions options = new NavOptions.Builder()
-                .setRestoreState(true)
-                .setPopUpTo(R.id.nav_graph, false)
-                .build();
+            // Switch bottom nav to admin mode
+            ((MainActivity) requireActivity()).switchToAdmin();
 
-        navController.navigate(R.id.adminHomeFragment, null, options);
+            NavController navController = NavHostFragment.findNavController(this);
+
+            NavOptions options = new NavOptions.Builder()
+                    .setRestoreState(true)
+                    .setPopUpTo(R.id.nav_graph, false)
+                    .build();
+
+            navController.navigate(R.id.adminHomeFragment, null, options);
+
+        } else {
+            Toast.makeText(requireContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void onAdminClicked() {
