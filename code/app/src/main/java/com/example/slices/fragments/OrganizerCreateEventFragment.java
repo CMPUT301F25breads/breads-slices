@@ -436,8 +436,9 @@ public class OrganizerCreateEventFragment extends Fragment {
                 pendingEventInfo = null;
 
                 // Navigate to organizer events list to see the new event
-                NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
-                        .navigate(R.id.action_to_organizerEventsFragment);
+                navigateToOrgEventsFragment();
+//                NavHostFragment.findNavController(OrganizerCreateEventFragment.this)
+//                        .navigate(R.id.action_to_organizerEventsFragment);
             }
 
             @Override
@@ -508,11 +509,10 @@ public class OrganizerCreateEventFragment extends Fragment {
     }
 
     /**
-     * Navigates to the OrganizerEditEventFragment after event creation.
+     * Navigates to the OrganizerEventsFragment after event creation.
      *
-     * @param bundle Bundle containing event ID.
      */
-    private void navigateToEditFragment(Bundle bundle) {
+    private void navigateToOrgEventsFragment() {
         NavController navController = NavHostFragment.findNavController(this);
 
         NavOptions options = new NavOptions.Builder()
@@ -521,6 +521,6 @@ public class OrganizerCreateEventFragment extends Fragment {
                 .setRestoreState(true)
                 .build();
 
-        navController.navigate(R.id.action_OrganizerEventsFragment_to_OrganizerEditEventFragment, bundle, options);
+        navController.navigate(R.id.OrganizerEventsFragment, null, options);
     }
 }
