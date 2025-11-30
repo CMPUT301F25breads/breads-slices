@@ -79,12 +79,9 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/browse_list"
-        android:paddingTop="4dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:divider="@color/dark_grey"
-        android:dividerHeight="1dp"
-        android:paddingVertical="4dp"
+        tools:listitem="@layout/browse_events_card"
         android:listSelector="?android:attr/selectableItemBackground"
         android:focusable="false"
         android:clickable="true" />

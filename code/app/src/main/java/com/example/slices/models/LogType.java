@@ -10,6 +10,8 @@ public enum LogType {
      * Log entry is a general notification
      */
     NOTIFICATION_SENT,
+    NOTSELECTED_SENT,
+
 
     /**
      * Log entry is an invitation

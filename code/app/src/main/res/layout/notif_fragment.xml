@@ -25,9 +25,18 @@
         android:layout_marginHorizontal="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:listitem="@layout/notification_card">
-
+        tools:listitem="@layout/notification_card"
+        android:visibility="visible">
     </androidx.recyclerview.widget.RecyclerView>
+
+    <TextView
+        android:id="@+id/no_notif_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        android:visibility="gone"
+        android:text="You have no new notifications"/>
 
 
 </LinearLayout>
