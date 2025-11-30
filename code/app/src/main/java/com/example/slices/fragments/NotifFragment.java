@@ -24,6 +24,7 @@ import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.Event;
 import com.example.slices.models.Invitation;
+import com.example.slices.models.NotSelected;
 import com.example.slices.models.Notification;
 
 import java.util.ArrayList;
@@ -74,36 +75,49 @@ public class NotifFragment extends Fragment {
                         recyclerNotifications.add(invitation);
                     }
                 }
-                NotificationManager.getNotificationsByRecipientId(vm.getUser().getId(), new NotificationListCallback() {
-                    // Adds the notifications to the recycler view,
-                    // This is inside since we want invitations to come before notifications
+                NotificationManager.getNotSelectedByRecipientId(vm.getUser().getId(), new NotificationListCallback() {
                     @Override
-                    public void onSuccess(List<Notification> notifications) {
-                        for (Notification notification : notifications) {
-                            if (!notification.getRead()) {
-                                recyclerNotifications.add(notification);
+                    public void onSuccess(List<Notification> notSelected) {
+                        for (Notification notSelectedNotification : notSelected) {
+                            if (!((NotSelected) notSelectedNotification).isStayed() && !((NotSelected) notSelectedNotification).isDeclined()) {
+                                recyclerNotifications.add(notSelectedNotification);
                             }
                         }
+                        NotificationManager.getNotificationsByRecipientId(vm.getUser().getId(), new NotificationListCallback() {
+                            // Adds the notifications to the recycler view,
+                            // This is inside since we want invitations to come before notifications
+                            @Override
+                            public void onSuccess(List<Notification> notifications) {
+                                for (Notification notification : notifications) {
+                                    if (!notification.getRead()) {
+                                        recyclerNotifications.add(notification);
+                                    }
+                                }
 
-                        // Sort by timestamp in descending order (most recent first)
-                        recyclerNotifications.sort((n1, n2) -> {
-                            if (n1.getTimestamp() == null && n2.getTimestamp() == null) return 0;
-                            if (n1.getTimestamp() == null) return 1;
-                            if (n2.getTimestamp() == null) return -1;
-                            return n2.getTimestamp().compareTo(n1.getTimestamp());
+                                // Sort by timestamp in descending order (most recent first)
+                                recyclerNotifications.sort((n1, n2) -> {
+                                    if (n1.getTimestamp() == null && n2.getTimestamp() == null) return 0;
+                                    if (n1.getTimestamp() == null) return 1;
+                                    if (n2.getTimestamp() == null) return -1;
+                                    return n2.getTimestamp().compareTo(n1.getTimestamp());
+                                });
+
+                                notificationAdapter.setNotifications(recyclerNotifications);
+                                if (recyclerNotifications.isEmpty()) {
+                                    binding.noNotifText.setVisibility(View.VISIBLE);
+                                } else {
+                                    binding.noNotifText.setVisibility(View.GONE);
+                                }
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                Log.e("NotifFragment", "Error fetching notifications", e);
+                                Toast.makeText(requireContext(), "Error: Couldn't load notifications", Toast.LENGTH_SHORT).show();
+                            }
                         });
-                        
-                        notificationAdapter.setNotifications(recyclerNotifications);
-                        if (recyclerNotifications.isEmpty()) {
-                            binding.noNotifText.setVisibility(View.VISIBLE);
-                        } else {
-                            binding.noNotifText.setVisibility(View.GONE);
-                        }
                     }
                     @Override
                     public void onFailure(Exception e) {
-                        Log.e("NotifFragment", "Error fetching notifications", e);
-                        Toast.makeText(requireContext(), "Error: Couldn't load notifications", Toast.LENGTH_SHORT).show();
                     }
                 });
             }

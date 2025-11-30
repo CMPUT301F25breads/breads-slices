@@ -312,6 +312,11 @@ public class Logger {
         logAction(LogType.NOTIFICATION_SENT, "Notification", data, callback);
     }
 
+    public static void logNotSelected(String message, int recipientId, int senderId, DBWriteCallback callback) {
+        Map<String, Object> data = Map.of("message", message, "recipientId", recipientId, "senderId", senderId);
+        logAction(LogType.NOTSELECTED_SENT, "NotSelected", data, callback);
+    }
+
     /**
      * Logs a modification to an event's waitlist
      *

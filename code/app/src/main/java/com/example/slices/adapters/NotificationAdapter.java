@@ -20,6 +20,7 @@ import com.example.slices.interfaces.EventCallback;
 import com.example.slices.models.Event;
 import com.example.slices.models.EventInfo;
 import com.example.slices.models.Invitation;
+import com.example.slices.models.NotSelected;
 import com.example.slices.models.Notification;
 import com.google.android.material.button.MaterialButton;
 
@@ -153,19 +154,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 });
 
                 h.declineButton.setOnClickListener(v -> {
-                    NotificationManager.declineInvitation((Invitation) n, new DBWriteCallback() {
-                        @Override
-                        public void onSuccess() {
-                            items.remove(n);
-                            notifyDataSetChanged();
-                        }
 
-                        @Override
-                        public void onFailure(Exception e) {
-                            Toast.makeText(context, "Error: Couldn't decline invitation", Toast.LENGTH_SHORT).show();
-                            Log.e("NotificationAdapter", "Error declining invitation", e);
-                        }
-                    });
                 });
 
                 break;
@@ -189,7 +178,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 });
                 // Ryan changed this
                 h.declineButton.setOnClickListener(v -> {
-                    NotificationManager.declineInvitation((Invitation) n, new DBWriteCallback() {
+                    NotificationManager.declineNotSelected((NotSelected) n, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             items.remove(n);
