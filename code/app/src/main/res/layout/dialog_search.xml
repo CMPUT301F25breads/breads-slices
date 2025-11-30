@@ -12,12 +12,6 @@ xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_height="wrap_content"/>
 
     <EditText
-        android:id="@+id/edit_location"
-        android:hint="Location"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <EditText
         android:id="@+id/edit_start_date"
         android:hint="Start Date"
         android:layout_width="match_parent"

@@ -6,8 +6,6 @@ import com.google.firebase.Timestamp;
 
 public class SearchSettings {
     private String name = null;
-    private String address = null;
-    private Location loc;
     private Timestamp availStart = null;
     private Timestamp availEnd = null;
     private int id;
@@ -35,18 +33,6 @@ public class SearchSettings {
         return id;
     }
 
-    public Location getLoc() {
-        return loc;
-    }
-
-    public void setLoc(Location loc) {
-        this.loc = loc;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
     public void setId(int id) {
         this.id = id;
     }
@@ -65,12 +51,7 @@ public class SearchSettings {
         return enrolled;
     }
 
-    public void checkEnrolled() {
-        enrolled = !enrolled;
-    }
-
-
-    public String getAddress() {
-        return address;
+    public void setCheck(boolean check) {
+        enrolled = check;
     }
 }

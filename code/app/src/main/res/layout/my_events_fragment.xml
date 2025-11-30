@@ -39,7 +39,6 @@
                 android:text="Confirmed"
                 android:textSize="30sp"
                 android:textStyle="bold"
-                android:paddingHorizontal="10dp"
                 android:paddingVertical="8dp"/>
 
             <androidx.recyclerview.widget.RecyclerView
