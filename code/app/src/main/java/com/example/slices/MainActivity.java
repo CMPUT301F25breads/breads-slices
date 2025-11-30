@@ -58,6 +58,16 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void disableNavigation() {
+        binding.bottomNav.setVisibility(View.GONE);
+        binding.bottomNavOrg.setVisibility(View.GONE);
+    }
+
+    public void enableNavigation() {
+        binding.bottomNav.setVisibility(View.VISIBLE);
+        binding.bottomNavOrg.setVisibility(View.VISIBLE);
+    }
+
     /**
      * Switches visibility of Bottom Navigation Menu to enable User Mode
      */

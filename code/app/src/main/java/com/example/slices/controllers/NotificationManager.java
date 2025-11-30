@@ -628,6 +628,23 @@ public class NotificationManager {
                 });
     }
 
+    public static void acceptNotSelected(NotSelected notSelected, DBWriteCallback callback) {
+        notSelected.setDeclined(false);
+        notSelected.setStayed(true);
+        updateNotSelected(notSelected, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Logger.logSystem("NotSelected accept pipeline completed successfully", null);
+                callback.onSuccess();
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Logger.logError("NotSelected accept pipeline failed", null);
+                callback.onFailure(e);
+            }
+        });
+    }
+
     public static void declineNotSelected(NotSelected notSelected, DBWriteCallback callback) {
         notSelected.setDeclined(true);
         notSelected.setStayed(false);
