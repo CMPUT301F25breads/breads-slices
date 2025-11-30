@@ -1392,7 +1392,7 @@ public class EventController {
         for (Entrant e : losers) {
             recipients.add(e.getId());
         }
-        NotificationManager.sendBulkNotification(title, body, recipients, sender, NotificationType.NOT_SELECTED, callback);
+        NotificationManager.sendBulkNotSelected(title, body, recipients, sender, event.getId(), callback);
     }
 
     /**

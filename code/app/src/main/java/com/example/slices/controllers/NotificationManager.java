@@ -14,6 +14,7 @@ import com.example.slices.interfaces.NotificationListCallback;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
 import com.example.slices.models.Invitation;
+import com.example.slices.models.NotSelected;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationType;
 
@@ -105,12 +106,6 @@ public class NotificationManager {
         sendNotification(title, body, recipientId, senderId, 0, callback);
     }
 
-    public static void sendNotification(String title, String body,
-                                        int recipientId, int senderId, NotificationType notificationType,
-                                        DBWriteCallback callback) {
-        sendNotification(title, body, recipientId, senderId, 0, notificationType, callback);
-    }
-
     /**
      * Sends a standard notification to a recipient with an associated event.
      * Creates a Notification object, writes it to the database, and logs it.
@@ -131,37 +126,6 @@ public class NotificationManager {
 
         Notification notification = new Notification(title, body, id, recipientId, senderId);
         notification.setType(NotificationType.NOTIFICATION);
-        notification.setEventId(eventId);
-
-        ref.set(notification)
-                .addOnSuccessListener(aVoid ->
-                        Logger.logNotification(title + " " + body, recipientId, senderId, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                Logger.logSystem("Notification sent successfully to recipientId=" + recipientId, null);
-                                callback.onSuccess();
-                            }
-                            @Override
-                            public void onFailure(Exception e) {
-                                Logger.logError("Failed to log notification for recipientId=" + recipientId, null);
-                                callback.onFailure(e);
-                            }
-                        }))
-                .addOnFailureListener(e -> {
-                    Logger.logError("Failed to send notification to recipientId=" + recipientId + " senderId=" + senderId, null);
-                    callback.onFailure(e);
-                });
-    }
-
-    public static void sendNotification(String title, String body,
-                                        int recipientId, int senderId, int eventId, NotificationType notificationType,
-                                        DBWriteCallback callback) {
-
-        DocumentReference ref = notificationRef.document();
-        String id = ref.getId();
-
-        Notification notification = new Notification(title, body, id, recipientId, senderId);
-        notification.setType(notificationType);
         notification.setEventId(eventId);
 
         ref.set(notification)
@@ -236,20 +200,48 @@ public class NotificationManager {
         }
     }
 
-    public static void sendBulkNotification(String title, String body, List<Integer> recipients,
-                                            int senderId, NotificationType notificationType, DBWriteCallback callback) {
+    public static void sendNotSelected(String title, String body,
+                                       int recipientId, int senderId, int eventId,
+                                       DBWriteCallback callback) {
+        DocumentReference ref = notificationRef.document();
+        String id = ref.getId();
+
+        NotSelected notification = new NotSelected(title, body, id, recipientId, senderId, eventId);
+
+        ref.set(notification)
+                .addOnSuccessListener(aVoid ->
+                        Logger.logNotSelected(title + " " + body, recipientId, senderId, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                Logger.logSystem("NotSelected sent successfully to recipientId=" + recipientId, null);
+                                callback.onSuccess();
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                Logger.logError("Failed to log NotSelected for recipientId=" + recipientId, null);
+                                callback.onFailure(e);
+                            }
+                        }))
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to send notification to recipientId=" + recipientId + " senderId=" + senderId, null);
+                    callback.onFailure(e);
+                });
+    }
+
+    public static void sendBulkNotSelected(String title, String body, List<Integer> recipients,
+                                            int senderId, int eventId, DBWriteCallback callback) {
         if (recipients.isEmpty()) {
-            Logger.logSystem("sendBulkNotification called with empty recipients list", null);
+            Logger.logSystem("sendBulkNotSelected called with empty recipients list", null);
             callback.onSuccess();
             return;
         }
 
-        Logger.logSystem("Starting bulk notification send to " + recipients.size() + " recipients", null);
+        Logger.logSystem("Starting bulk not selected send to " + recipients.size() + " recipients", null);
 
         AtomicInteger completed = new AtomicInteger(0);
         AtomicBoolean failed = new AtomicBoolean(false);
         for (int recipient : recipients) {
-            sendNotification(title, body, recipient, senderId, notificationType, new DBWriteCallback() {
+            sendNotSelected(title, body, recipient, senderId, eventId, new DBWriteCallback() {
                 @Override
                 public void onSuccess() {
                     if (failed.get()) {
@@ -257,7 +249,7 @@ public class NotificationManager {
                     }
                     if (completed.incrementAndGet() == recipients.size()) {
                         if (!failed.get()) {
-                            Logger.logSystem("Bulk notification send completed for " + recipients.size() + " recipients", null);
+                            Logger.logSystem("Bulk not selected send completed for " + recipients.size() + " recipients", null);
                             callback.onSuccess();
                         }
                     }
@@ -266,7 +258,7 @@ public class NotificationManager {
                 @Override
                 public void onFailure(Exception e) {
                     if (failed.compareAndSet(false, true)) {
-                        Logger.logError("Bulk notification send failed: " + e.getMessage(), null);
+                        Logger.logError("Bulk not selected send failed: " + e.getMessage(), null);
                         callback.onFailure(e);
                     }
                 }
@@ -609,6 +601,92 @@ public class NotificationManager {
                 .addOnFailureListener(e -> {
                     Logger.logError("Failed to get notifications by senderID " + senderId , null);
                     callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                });
+    }
+
+    public static void getNotSelectedByRecipientId ( int recipientId, NotificationListCallback callback){
+        notificationRef.whereEqualTo("recipientId", recipientId)
+                .whereEqualTo("type", NotificationType.NOT_SELECTED)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                            if (!queryDocumentSnapshots.isEmpty()) {
+                                List<Notification> notifications = new ArrayList<>();
+                                for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                                    NotSelected notSelected = doc.toObject(NotSelected.class);
+                                    notifications.add(notSelected);
+                                }
+                                Logger.logSystem("Found " + notifications.size() + " NotSelected by recipientID " + recipientId, null);
+                                callback.onSuccess(notifications);
+                            } else {
+                                Logger.logSystem("No NotSelected found by recipientID " + recipientId, null);
+                                callback.onSuccess(new ArrayList<>());
+                            }
+                        })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get NotSelected by recipientID " + recipientId, null);
+                    callback.onFailure(new DBOpFailed("Failed to get NotSelected"));
+                });
+    }
+
+    public static void declineNotSelected(NotSelected notSelected, DBWriteCallback callback) {
+        notSelected.setDeclined(true);
+        notSelected.setStayed(false);
+        EventController.getEvent(notSelected.getEventId(), new EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+                EntrantController.getEntrant(notSelected.getRecipientId(), new EntrantCallback() {
+                    @Override
+                    public void onSuccess(Entrant entrant) {
+                        EventController.removeEntrantFromWaitlist(event, entrant, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                Logger.logWaitlistModified("Removed from waitlist", event.getId(), entrant.getId(), null);
+                                updateNotSelected(notSelected, new DBWriteCallback() {
+                                    @Override
+                                    public void onSuccess() {
+                                        Logger.logSystem("NotSelected decline pipeline completed successfully", null);
+                                        callback.onSuccess();
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        Logger.logError("NotSelected decline pipeline failed", null);
+                                        callback.onFailure(e);
+                                    }
+                                });
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                Logger.logError("Failed to remove entrant from waitlist during NotSelected decline pipeline", null);
+                                callback.onFailure(e);
+                            }
+                        });
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        Logger.logError("Failed to get entrant during NotSelected decline pipeline", null);
+                        callback.onFailure(e);
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Logger.logError("Failed to get event during NotSelected decline pipeline", null);
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    public static void updateNotSelected(NotSelected notSelected, DBWriteCallback callback) {
+        notificationRef.document(String.valueOf(notSelected.getId()))
+                .set(notSelected)
+                .addOnSuccessListener(aVoid -> {
+                    Logger.logSystem("NotSelected updated with id=" + notSelected.getId(), null);
+                    callback.onSuccess();
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to update NotSelected with id=" + notSelected.getId(), null);
+                    callback.onFailure(new DBOpFailed("Failed to write NotSelected to database"));
                 });
     }
 

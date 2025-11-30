@@ -16,6 +16,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -130,9 +132,12 @@ public class BrowseFragment extends Fragment {
                 // store selected event in viewmodel
                 vm.setSelectedEvent(event);
 
+                Log.d("CAMERA", "EVENT NAME: " + event.getEventInfo().getName());
+
                 // navigate to EventDetailsFragment
-                NavHostFragment.findNavController(BrowseFragment.this)
-                        .navigate(R.id.eventDetailsFragment);
+                goToDetails();
+
+
             }
 
             @Override
@@ -141,6 +146,18 @@ public class BrowseFragment extends Fragment {
                         "Event not found, try again", Toast.LENGTH_SHORT).show();
             }
         });
+
+
+    }
+
+    private void goToDetails() {
+        NavController navController = NavHostFragment.findNavController(this);
+        NavOptions options = new NavOptions.Builder()
+                .setRestoreState(true)
+                .setPopUpTo(R.id.nav_graph, false)
+                .build();
+
+        navController.navigate(R.id.action_global_EventDetailsFragment, null, options);
     }
 
     public void setupEvents(SearchSettings search) {
@@ -204,13 +221,6 @@ public class BrowseFragment extends Fragment {
         EditText locationInput = dialogView.findViewById(R.id.edit_location);
         EditText startDateInput = dialogView.findViewById(R.id.edit_start_date);
         EditText endDateInput = dialogView.findViewById(R.id.edit_end_date);
-
-        // Disable keyboard for date fields
-        startDateInput.setInputType(InputType.TYPE_NULL);
-        endDateInput.setInputType(InputType.TYPE_NULL);
-        startDateInput.setFocusable(false);
-        endDateInput.setFocusable(false);
-
 
         startDateInput.setOnClickListener(v -> showDatePicker(startDateInput));
         endDateInput.setOnClickListener(v -> showDatePicker(endDateInput));
@@ -299,7 +309,14 @@ public class BrowseFragment extends Fragment {
      * Opens the camera app when tapped
      */
     private void navigateToCamera() {
-        NavHostFragment.findNavController(BrowseFragment.this).navigate(R.id.cameraFragment);
+        NavController navController = NavHostFragment.findNavController(this);
+
+        NavOptions options = new NavOptions.Builder()
+                .setPopUpTo(R.id.nav_graph, false)
+                .setRestoreState(true)
+                .build();
+
+        navController.navigate(R.id.action_global_cameraFragment, null, options);
     }
 
     /**
