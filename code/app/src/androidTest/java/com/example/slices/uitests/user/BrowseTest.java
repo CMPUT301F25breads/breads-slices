@@ -12,6 +12,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 
 import android.view.View;
 
@@ -83,6 +84,7 @@ public class BrowseTest {
     }
 
     // Testing: US 01.01.01, 01.01.02, 01.01.03
+    // - Raj
     @Test
     public void testJoinLeaveWaitlistButtonToggles() {
         onView(isRoot()).perform(waitFor(2000));
@@ -110,4 +112,27 @@ public class BrowseTest {
                 .check(matches(hasDescendant(withText("Join"))));
     }
 
+    // Testing US 01.01.04
+    // -Raj
+    @Test
+    public void testFilterEvents() {
+        //give fragment a moment to load events
+        onView(isRoot()).perform(waitFor(2000));
+
+        // type the search keyword into the search bar
+        onView(withId(R.id.search_edit_text))
+                .perform(click(), androidx.test.espresso.action.ViewActions
+                                .replaceText("swim"),
+                        androidx.test.espresso.action.ViewActions.closeSoftKeyboard());
+
+        // click the search button
+        onView(withId(R.id.search_button)).perform(click());
+
+        // wait for adapter
+        onView(isRoot()).perform(waitFor(1500));
+
+        // check that the results contain the tested swimmer event
+        onView(withId(R.id.browse_list)).check(matches
+                (hasDescendant(withText(containsString("swimmers")))));
+    }
 }
