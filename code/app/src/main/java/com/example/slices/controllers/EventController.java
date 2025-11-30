@@ -1109,7 +1109,7 @@ public class EventController {
      */
     public static void queryEvents(SearchSettings search, EventListCallback callback) {
 
-        Query q = eventRef.whereGreaterThanOrEqualTo("eventInfo.eventDate", Timestamp.now());
+        Query q = eventRef.whereGreaterThanOrEqualTo("eventInfo.regEnd", Timestamp.now());
 
         // Date filters
         if (search.getAvailStart() != null)
@@ -1117,10 +1117,6 @@ public class EventController {
 
         if (search.getAvailEnd() != null)
             q = q.whereLessThan("eventInfo.eventDate", search.getAvailEnd());
-
-        // Location filter
-        if (search.getAddress() != null && !search.getAddress().trim().isEmpty())
-            q = q.whereEqualTo("eventInfo.address", search.getAddress().trim());
 
         q.get().addOnSuccessListener(query -> {
             ArrayList<Event> events = new ArrayList<>();
@@ -1150,7 +1146,7 @@ public class EventController {
                             event.getWaitlist().getEntrantIds() != null &&
                             event.getWaitlist().getEntrantIds().contains(id);
 
-                    if (!inEntrants && !inWaitlist) {
+                    if (inEntrants || inWaitlist) {
                         include = false;
                     }
                 }

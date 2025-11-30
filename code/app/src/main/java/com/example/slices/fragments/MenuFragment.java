@@ -82,6 +82,10 @@ public class  MenuFragment extends Fragment {
         binding.phoneNumberTextfield.setText(phoneNumber);
         binding.sendNotificationsSwitch.setChecked(notifications);
 
+        if (binding.nameTextfield.getText().toString().trim().isEmpty() || binding.emailTextfield.getText().toString().trim().isEmpty())   {
+            ((MainActivity) requireActivity()).disableNavigation();
+        }
+
         if (user.getAdmin()) {
             binding.adminModeButton.setVisibility(View.VISIBLE);
         }
@@ -166,6 +170,7 @@ public class  MenuFragment extends Fragment {
                 binding.profileSaveButton.setEnabled(true);
                 binding.profileCancelButton.setEnabled(true);
                 setProfileEditingEnabled(false);
+                ((MainActivity) requireActivity()).enableNavigation();
             }
 
             @Override public void onFailure(Exception e) {
@@ -245,6 +250,7 @@ public class  MenuFragment extends Fragment {
                                 if (binding.adminModeButton.getVisibility() == View.VISIBLE) {
                                     binding.adminModeButton.setVisibility(View.GONE);
                                 }
+                                ((MainActivity) requireActivity()).disableNavigation();
                                 Toast.makeText(requireContext(), "Profile Deleted", Toast.LENGTH_SHORT).show();
                             }
                             @Override
