@@ -477,19 +477,23 @@ public class EventController {
 
                 Logger.logSystem("Starting delete pipeline for event id=" + id, null);
 
-                List<Entrant> entrants = event.getEntrants();
-                ImageController.deleteImage(event.getEventInfo().getImage().getPath(), new DBWriteCallback() {
-                    @Override
-                    public void onSuccess() {
-                        Log.d("Image Controller", "Successfully deleted image for event");
-                    }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        Logger.logError("Failed to delete image for event id: " + id, null);
-                        callback.onFailure(new DBOpFailed("Failed to delete image"));
-                    }
-                });
+                if(event.getEventInfo().getImage() == null) {
+                    ImageController.deleteImage(event.getEventInfo().getImage().getPath(), new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Log.d("Image Controller", "Successfully deleted image for event");
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Logger.logError("Failed to delete image for event id: " + id, null);
+                            callback.onFailure(new DBOpFailed("Failed to delete image"));
+                        }
+                    });
+                }
+
+                List<Entrant> entrants = event.getEntrants();
 
                 if (entrants == null || entrants.isEmpty()) {
                     eventRef.document(id).delete()
