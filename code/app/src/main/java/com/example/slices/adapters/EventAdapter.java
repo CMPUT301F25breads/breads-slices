@@ -60,8 +60,9 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         // Set text fields
         holder.title.setText(eventInfo.getName());
         Date date = eventInfo.getEventDate().toDate();
-        SimpleDateFormat formatter = new SimpleDateFormat("ha | MMM. dd, yyyy", Locale.CANADA);
-        holder.details.setText(formatter.format(date) + " | " + eventInfo.getAddress());
+        SimpleDateFormat formatter = new SimpleDateFormat("h:mm a | MMM dd, yyyy", Locale.CANADA);
+        holder.details.setText(formatter.format(date));
+        holder.place.setText(eventInfo.getAddress());
 
         // Load image
         Glide.with(context)
@@ -99,7 +100,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView title, details;
+        TextView title, details, place;
         ImageView image;
 
         public ViewHolder(@NonNull View itemView) {
@@ -107,6 +108,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
             title = itemView.findViewById(R.id.event_title);
             details = itemView.findViewById(R.id.event_date_place);
             image = itemView.findViewById(R.id.image);
+            place = itemView.findViewById(R.id.event_place);
         }
     }
 }
