@@ -105,6 +105,12 @@ public class EventEntrantsFragment extends Fragment {
         // Set up map button
         setupMapButton();
 
+        // Set up download CSV button
+        setupDownloadButton();
+
+        // Set up draw replacement button
+        setupDrawReplacementButton();
+
         // Load event data for notifications
         loadEventData();
     }
@@ -247,6 +253,34 @@ public class EventEntrantsFragment extends Fragment {
     }
 
     /**
+     * Set up download CSV button
+     */
+    private void setupDownloadButton() {
+        if (binding == null) return;
+
+        binding.fabDownloadCsv.setOnClickListener(v -> {
+            onExportCSVClicked();
+        });
+
+        // Initially hide download button until participants view is shown
+        binding.fabDownloadCsv.setVisibility(View.GONE);
+    }
+
+    /**
+     * Set up draw replacement button
+     */
+    private void setupDrawReplacementButton() {
+        if (binding == null) return;
+
+        binding.btnDrawReplacement.setOnClickListener(v -> {
+            onDrawReplacementClicked();
+        });
+
+        // Initially hide button until appropriate view is shown
+        binding.btnDrawReplacement.setVisibility(View.GONE);
+    }
+
+    /**
      * Navigate to the map fragment to show entrant locations
      */
     private void showEntrantMap() {
@@ -314,6 +348,12 @@ public class EventEntrantsFragment extends Fragment {
     private void displayEntrantsForCurrentType() {
         if (binding == null || currentEvent == null) return;
 
+        // Update download button visibility based on list type
+        updateDownloadButtonVisibility();
+
+        // Update draw replacement button visibility based on list type
+        updateDrawReplacementButtonVisibility();
+
         switch (currentListType) {
             case WAITLIST:
                 displayWaitlistEntrants();
@@ -328,6 +368,125 @@ public class EventEntrantsFragment extends Fragment {
                 displayCancelledEntrants();
                 break;
         }
+    }
+
+    /**
+     * Update download button visibility based on current list type
+     * Only show download button when viewing participants
+     * Download button and map button share the same position - only one shows at a time
+     */
+    private void updateDownloadButtonVisibility() {
+        if (binding == null || currentEvent == null) return;
+
+        // Show download button only when viewing participants list
+        if (currentListType == ListType.PARTICIPANTS) {
+            // Check if there are enrolled entrants
+            boolean hasParticipants = currentEvent.getEntrants() != null && 
+                                     !currentEvent.getEntrants().isEmpty();
+            if (hasParticipants) {
+                binding.fabDownloadCsv.setVisibility(View.VISIBLE);
+                binding.fabDownloadCsv.setEnabled(true);
+                // Hide map button when download button is shown
+                binding.fabShowMap.setVisibility(View.GONE);
+            } else {
+                binding.fabDownloadCsv.setVisibility(View.GONE);
+                // Show map button if geolocation is enabled
+                updateMapButtonVisibility();
+            }
+        } else {
+            binding.fabDownloadCsv.setVisibility(View.GONE);
+            // Show map button if geolocation is enabled
+            updateMapButtonVisibility();
+        }
+    }
+
+    /**
+     * Update draw replacement button visibility and enabled state
+     * Show button only when:
+     * 1. Viewing waitlist or invited list
+     * 2. Registration period has ended (or no reg end date exists)
+     * Enable button only when:
+     * 1. There are available spots (not all invited entrants have accepted)
+     * 2. There are eligible entrants in the waitlist
+     */
+    private void updateDrawReplacementButtonVisibility() {
+        if (binding == null || currentEvent == null) return;
+
+        // Only show on waitlist or invited views
+        if (currentListType != ListType.WAITLIST && currentListType != ListType.INVITED) {
+            binding.btnDrawReplacement.setVisibility(View.GONE);
+            return;
+        }
+
+        // Check if registration period has ended
+        boolean regPeriodEnded = true; // Default to true if no reg end date
+        if (currentEvent.getEventInfo() != null && currentEvent.getEventInfo().getRegEnd() != null) {
+            com.google.firebase.Timestamp now = com.google.firebase.Timestamp.now();
+            regPeriodEnded = now.compareTo(currentEvent.getEventInfo().getRegEnd()) >= 0;
+        }
+
+        // Only show button if reg period has ended
+        if (!regPeriodEnded) {
+            binding.btnDrawReplacement.setVisibility(View.GONE);
+            return;
+        }
+
+        // Show the button
+        binding.btnDrawReplacement.setVisibility(View.VISIBLE);
+
+        // Determine if button should be enabled
+        boolean shouldEnable = isDrawReplacementValid();
+        binding.btnDrawReplacement.setEnabled(shouldEnable);
+        
+        // Update button appearance based on enabled state
+        if (!shouldEnable) {
+            binding.btnDrawReplacement.setAlpha(0.5f);
+        } else {
+            binding.btnDrawReplacement.setAlpha(1.0f);
+        }
+    }
+
+    /**
+     * Check if draw replacement is valid (should be enabled)
+     * Valid when:
+     * 1. There are available spots (maxEntrants > current enrolled entrants)
+     * 2. There are eligible entrants in waitlist (not already invited or cancelled)
+     */
+    private boolean isDrawReplacementValid() {
+        if (currentEvent == null || currentEvent.getEventInfo() == null) {
+            return false;
+        }
+
+        // Check if there are available spots
+        int maxEntrants = currentEvent.getEventInfo().getMaxEntrants();
+        int currentEntrants = currentEvent.getEntrants() != null ? currentEvent.getEntrants().size() : 0;
+        int availableSpots = maxEntrants - currentEntrants;
+
+        if (availableSpots <= 0) {
+            return false; // Event is full
+        }
+
+        // Check if there are eligible entrants in waitlist
+        List<Entrant> waitlistEntrants = currentEvent.getWaitlist() != null && 
+                                         currentEvent.getWaitlist().getEntrants() != null
+                                         ? currentEvent.getWaitlist().getEntrants()
+                                         : new ArrayList<>();
+
+        if (waitlistEntrants.isEmpty()) {
+            return false; // No one in waitlist
+        }
+
+        // Check if there are any eligible entrants (not invited and not cancelled)
+        List<Integer> invitedIds = currentEvent.getInvitedIds() != null ? currentEvent.getInvitedIds() : new ArrayList<>();
+        List<Integer> cancelledIds = currentEvent.getCancelledIds() != null ? currentEvent.getCancelledIds() : new ArrayList<>();
+
+        for (Entrant entrant : waitlistEntrants) {
+            if (!invitedIds.contains(entrant.getId()) && !cancelledIds.contains(entrant.getId())) {
+                return true; // Found at least one eligible entrant
+            }
+        }
+
+        return false; // No eligible entrants
     }
 
     // Display waitlist entrants
@@ -346,9 +505,9 @@ public class EventEntrantsFragment extends Fragment {
         if (waitlistEntrants.isEmpty()) {
             showEmptyState();
         } else {
-            // Create and set adapter
+            // Create and set adapter with event to show "Invited" labels
             com.example.slices.adapters.EntrantAdapter adapter = 
-                new com.example.slices.adapters.EntrantAdapter(requireContext(), waitlistEntrants);
+                new com.example.slices.adapters.EntrantAdapter(requireContext(), waitlistEntrants, currentEvent);
             binding.recyclerViewEntrants.setAdapter(adapter);
             
             // Show RecyclerView, hide other states
@@ -393,7 +552,7 @@ public class EventEntrantsFragment extends Fragment {
                             showEmptyState();
                         } else {
                             // Fetch entrant details for each invited user
-                            fetchEntrantsByIds(invitedEntrantIds);
+                            fetchEntrantsByIdsWithCancelListener(invitedEntrantIds);
                         }
                     });
                 }
@@ -508,6 +667,48 @@ public class EventEntrantsFragment extends Fragment {
         }
     }
 
+    // Helper method to fetch entrants by their IDs with cancel listener
+    private void fetchEntrantsByIdsWithCancelListener(List<Integer> entrantIds) {
+        if (entrantIds == null || entrantIds.isEmpty()) {
+            showEmptyState();
+            return;
+        }
+
+        List<Entrant> entrants = new ArrayList<>();
+        AtomicInteger fetchedCount = new AtomicInteger(0);
+        AtomicInteger totalCount = new AtomicInteger(entrantIds.size());
+
+        for (Integer entrantId : entrantIds) {
+            EntrantController.getEntrant(entrantId, new EntrantCallback() {
+                @Override
+                public void onSuccess(Entrant entrant) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            entrants.add(entrant);
+                            
+                            // Check if all entrants have been fetched
+                            if (fetchedCount.incrementAndGet() == totalCount.get()) {
+                                displayEntrantListWithCancelListener(entrants);
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            // Still increment count even on failure
+                            if (fetchedCount.incrementAndGet() == totalCount.get()) {
+                                displayEntrantListWithCancelListener(entrants);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    }
+
     // Helper method to display a list of entrants
     private void displayEntrantList(List<Entrant> entrants) {
         if (binding == null) return;
@@ -518,6 +719,31 @@ public class EventEntrantsFragment extends Fragment {
             // Create and set adapter
             com.example.slices.adapters.EntrantAdapter adapter = 
                 new com.example.slices.adapters.EntrantAdapter(requireContext(), entrants);
+            binding.recyclerViewEntrants.setAdapter(adapter);
+            
+            // Show RecyclerView, hide other states
+            binding.recyclerViewEntrants.setVisibility(View.VISIBLE);
+            binding.layoutEmptyState.setVisibility(View.GONE);
+            binding.layoutErrorState.setVisibility(View.GONE);
+            binding.progressBar.setVisibility(View.GONE);
+        }
+    }
+
+    // Helper method to display a list of entrants with cancel listener
+    private void displayEntrantListWithCancelListener(List<Entrant> entrants) {
+        if (binding == null) return;
+
+        if (entrants.isEmpty()) {
+            showEmptyState();
+        } else {
+            // Create and set adapter with event and cancel listener
+            com.example.slices.adapters.EntrantAdapter adapter = 
+                new com.example.slices.adapters.EntrantAdapter(
+                    requireContext(), 
+                    entrants, 
+                    currentEvent,
+                    this::onCancelEntrant
+                );
             binding.recyclerViewEntrants.setAdapter(adapter);
             
             // Show RecyclerView, hide other states
@@ -635,6 +861,237 @@ public class EventEntrantsFragment extends Fragment {
         INVITED,
         PARTICIPANTS,
         CANCELLED
+    }
+
+    /**
+     * Handler for Draw Replacement button
+     * Draws replacement entrants from the waitlist to fill available spots
+     */
+    private void onDrawReplacementClicked() {
+        if (currentEvent == null) {
+            android.widget.Toast.makeText(requireContext(),
+                    "Event data not loaded yet",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show loading indicator
+        if (binding != null) {
+            binding.progressBar.setVisibility(View.VISIBLE);
+            binding.btnDrawReplacement.setEnabled(false);
+        }
+
+        // Call EventController.doReplacementLottery()
+        com.example.slices.controllers.EventController.doReplacementLottery(currentEvent, new com.example.slices.interfaces.DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Hide loading indicator
+                        if (binding != null) {
+                            binding.progressBar.setVisibility(View.GONE);
+                        }
+
+                        // Show success message
+                        android.widget.Toast.makeText(requireContext(),
+                                "Replacement lottery completed successfully!",
+                                android.widget.Toast.LENGTH_SHORT).show();
+
+                        // Reload event data to refresh UI and button state
+                        loadEventData();
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        // Hide loading indicator
+                        if (binding != null) {
+                            binding.progressBar.setVisibility(View.GONE);
+                            binding.btnDrawReplacement.setEnabled(true);
+                        }
+
+                        // Show error message
+                        String errorMessage = "Failed to draw replacements.";
+                        if (e.getMessage() != null) {
+                            if (e.getMessage().contains("No eligible entrants")) {
+                                errorMessage = "No eligible entrants remain in the waitlist.";
+                            } else if (e.getMessage().contains("full")) {
+                                errorMessage = "Event is full. No spots available.";
+                            }
+                        }
+
+                        android.widget.Toast.makeText(requireContext(),
+                                errorMessage,
+                                android.widget.Toast.LENGTH_LONG).show();
+                    });
+                }
+            }
+        });
+    }
+
+    /**
+     * Handler for Export CSV action
+     * Exports enrolled entrants to a CSV file
+     */
+    private void onExportCSVClicked() {
+        if (currentEvent == null) {
+            android.widget.Toast.makeText(requireContext(),
+                    "Event data not loaded yet",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Check if enrolled entrants exist
+        List<Entrant> enrolledEntrants = currentEvent.getEntrants();
+        if (enrolledEntrants == null || enrolledEntrants.isEmpty()) {
+            android.widget.Toast.makeText(requireContext(),
+                    "No enrolled entrants to export.",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Show loading indicator
+        if (binding != null) {
+            binding.progressBar.setVisibility(View.VISIBLE);
+        }
+        
+        // Call EventController.exportEntrantsToCSV()
+        com.example.slices.controllers.EventController.exportEntrantsToCSV(
+            currentEvent, 
+            requireContext(), 
+            new com.example.slices.interfaces.CSVExportCallback() {
+                @Override
+                public void onSuccess(android.net.Uri fileUri) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            // Hide loading indicator
+                            if (binding != null) {
+                                binding.progressBar.setVisibility(View.GONE);
+                            }
+                            
+                            // Open share dialog with file URI
+                            showCSVShareDialog(fileUri);
+                        });
+                    }
+                }
+                
+                @Override
+                public void onFailure(Exception e) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            // Hide loading indicator
+                            if (binding != null) {
+                                binding.progressBar.setVisibility(View.GONE);
+                            }
+                            
+                            // Display error toast
+                            String errorMessage = "Failed to export CSV.";
+                            if (e.getMessage() != null) {
+                                if (e.getMessage().contains("No enrolled entrants")) {
+                                    errorMessage = "No enrolled entrants to export.";
+                                } else if (e.getMessage().contains("storage") || e.getMessage().contains("permission")) {
+                                    errorMessage = "Failed to create CSV file. Check storage permissions.";
+                                }
+                            }
+                            
+                            android.widget.Toast.makeText(requireContext(),
+                                    errorMessage,
+                                    android.widget.Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }
+            }
+        );
+    }
+
+    /**
+     * Shows Android's share dialog for the CSV file
+     * 
+     * @param fileUri URI of the CSV file to share
+     */
+    private void showCSVShareDialog(android.net.Uri fileUri) {
+        android.content.Intent shareIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
+        shareIntent.setType("text/csv");
+        shareIntent.putExtra(android.content.Intent.EXTRA_STREAM, fileUri);
+        shareIntent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        
+        android.content.Intent chooser = android.content.Intent.createChooser(shareIntent, "Export Entrants CSV");
+        startActivity(chooser);
+    }
+
+    /**
+     * Handler for cancelling a single non-responsive entrant
+     * 
+     * @param entrantId ID of the entrant to cancel
+     */
+    private void onCancelEntrant(int entrantId) {
+        if (currentEvent == null) {
+            android.widget.Toast.makeText(requireContext(),
+                    "Event data not loaded yet",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Show loading indicator
+        if (binding != null) {
+            binding.progressBar.setVisibility(View.VISIBLE);
+        }
+        
+        // Call EventController.cancelSingleEntrant()
+        com.example.slices.controllers.EventController.cancelSingleEntrant(
+            currentEvent, 
+            entrantId, 
+            new com.example.slices.interfaces.DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            // Hide loading indicator
+                            if (binding != null) {
+                                binding.progressBar.setVisibility(View.GONE);
+                            }
+                            
+                            // Show success message
+                            android.widget.Toast.makeText(requireContext(),
+                                    "Entrant cancelled successfully.",
+                                    android.widget.Toast.LENGTH_SHORT).show();
+                            
+                            // Refresh entrant lists after success
+                            loadEventData();
+                        });
+                    }
+                }
+                
+                @Override
+                public void onFailure(Exception e) {
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            // Hide loading indicator
+                            if (binding != null) {
+                                binding.progressBar.setVisibility(View.GONE);
+                            }
+                            
+                            // Display appropriate error message
+                            String errorMessage = "Failed to cancel entrant.";
+                            if (e.getMessage() != null) {
+                                if (e.getMessage().contains("not found") || e.getMessage().contains("not invited")) {
+                                    errorMessage = "Entrant not found or already cancelled.";
+                                } else if (e.getMessage().contains("already accepted") || e.getMessage().contains("invalid state")) {
+                                    errorMessage = "Cannot cancel: entrant has already accepted invitation.";
+                                }
+                            }
+                            
+                            android.widget.Toast.makeText(requireContext(),
+                                    errorMessage,
+                                    android.widget.Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }
+            }
+        );
     }
 
     @Override

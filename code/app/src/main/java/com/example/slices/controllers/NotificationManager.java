@@ -976,6 +976,9 @@ public class NotificationManager {
                                 if (!cancelledIds.contains(entrant.getId())) {
                                     cancelledIds.add(entrant.getId());
                                     Logger.logSystem("Added entrant to cancelledIds: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+                                    
+                                    // Send automatic cancellation notification
+                                    EventController.sendCancelledNotification(entrant.getId(), event.getEventInfo().getName());
                                 }
 
                                 // 5. Persist updated event to Firestore

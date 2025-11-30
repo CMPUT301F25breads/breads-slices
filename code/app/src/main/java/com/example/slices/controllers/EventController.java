@@ -1458,6 +1458,207 @@ public class EventController {
                 .addOnFailureListener(e1 -> callback.onFailure(new Exception("Failed to remove image")));
     }
 
+    /**
+     * Exports enrolled entrants to a CSV file
+     * 
+     * @param event Event containing entrants to export
+     * @param context Android context for file operations
+     * @param callback Callback with file URI or error
+     */
+    public static void exportEntrantsToCSV(Event event, android.content.Context context, com.example.slices.interfaces.CSVExportCallback callback) {
+        try {
+            // Get enrolled entrants
+            List<Entrant> entrants = event.getEntrants();
+            if (entrants == null || entrants.isEmpty()) {
+                callback.onFailure(new Exception("No enrolled entrants to export"));
+                return;
+            }
+            
+            // Create CSV file in cache directory
+            java.io.File csvFile = new java.io.File(context.getCacheDir(), "event_" + event.getId() + "_entrants.csv");
+            java.io.FileWriter writer = new java.io.FileWriter(csvFile);
+            
+            // Write header row
+            writer.append("ID,Name,Email,Phone\n");
+            
+            // Write data rows
+            for (Entrant entrant : entrants) {
+                writer.append(String.valueOf(entrant.getId())).append(",");
+                
+                // Get profile data with null checks
+                String name = "";
+                String email = "";
+                String phone = "";
+                
+                if (entrant.getProfile() != null) {
+                    name = entrant.getProfile().getName() != null ? entrant.getProfile().getName() : "";
+                    email = entrant.getProfile().getEmail() != null ? entrant.getProfile().getEmail() : "";
+                    phone = entrant.getProfile().getPhoneNumber() != null ? entrant.getProfile().getPhoneNumber() : "";
+                }
+                
+                // Escape CSV special characters
+                writer.append(escapeCsv(name)).append(",");
+                writer.append(escapeCsv(email)).append(",");
+                writer.append(escapeCsv(phone)).append("\n");
+            }
+            
+            writer.close();
+            
+            // Get URI using FileProvider
+            android.net.Uri fileUri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                context.getPackageName() + ".fileprovider",
+                csvFile
+            );
+            
+            Logger.logSystem("CSV export successful for event id=" + event.getId() + ", " + entrants.size() + " entrants", null);
+            callback.onSuccess(fileUri);
+            
+        } catch (Exception e) {
+            Logger.logError("CSV export failed for event id=" + event.getId() + ": " + e.getMessage(), null);
+            callback.onFailure(e);
+        }
+    }
+    
+    /**
+     * Helper method to escape CSV special characters
+     * 
+     * @param value String value to escape
+     * @return Escaped string safe for CSV
+     */
+    private static String escapeCsv(String value) {
+        if (value == null) {
+            return "";
+        }
+        
+        // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        
+        return value;
+    }
+
+    /**
+     * Sends a preset notification to a cancelled entrant.
+     * This method is called automatically when an entrant is moved to the cancelled list.
+     * 
+     * @param entrantId ID of the cancelled entrant
+     * @param eventName Name of the event for message formatting
+     */
+    public static void sendCancelledNotification(int entrantId, String eventName) {
+        String title = "We're Sorry to See You Go";
+        String message = String.format(
+            "Thank you for your interest in %s. We hope to see you at future events!",
+            eventName
+        );
+        
+        // Send notification with sender ID 0 (system notification)
+        NotificationManager.sendNotification(title, message, entrantId, 0, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Logger.logSystem("Cancelled notification sent to entrantId=" + entrantId + " for event=" + eventName, null);
+            }
+            
+            @Override
+            public void onFailure(Exception e) {
+                // Log error but don't throw exception - notification failure shouldn't block cancellation
+                Logger.logError("Failed to send cancelled notification to entrantId=" + entrantId + " for event=" + eventName + ": " + e.getMessage(), null);
+            }
+        });
+    }
+
+    /**
+     * Cancels a single non-responsive entrant who has been invited but has not accepted.
+     * This method:
+     * 1. Verifies the entrant is in invitedIds but not in entrantIds
+     * 2. Removes the entrant from invitedIds
+     * 3. Adds the entrant to cancelledIds
+     * 4. Sends a cancellation notification with preset message
+     * 5. Updates the event in the database
+     * 
+     * @param event The event to process
+     * @param entrantId ID of the entrant to cancel
+     * @param callback Callback invoked when the operation completes
+     */
+    public static void cancelSingleEntrant(Event event, int entrantId, DBWriteCallback callback) {
+        // Get the lists (initialize if null)
+        List<Integer> invitedIds = event.getInvitedIds();
+        List<Integer> entrantIds = event.getEntrantIds();
+        List<Integer> cancelledIds = event.getCancelledIds();
+        
+        if (invitedIds == null) {
+            invitedIds = new ArrayList<>();
+            event.setInvitedIds(invitedIds);
+        }
+        if (entrantIds == null) {
+            entrantIds = new ArrayList<>();
+            event.setEntrantIds(entrantIds);
+        }
+        if (cancelledIds == null) {
+            cancelledIds = new ArrayList<>();
+            event.setCancelledIds(cancelledIds);
+        }
+        
+        // Verify entrant is in invitedIds but not in entrantIds (non-responsive)
+        if (!invitedIds.contains(entrantId)) {
+            Logger.logError("Cannot cancel entrant: not in invited list, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
+            callback.onFailure(new Exception("Entrant not found or already cancelled"));
+            return;
+        }
+        
+        if (entrantIds.contains(entrantId)) {
+            Logger.logError("Cannot cancel entrant: already accepted invitation, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
+            callback.onFailure(new Exception("Cannot cancel: entrant has already accepted invitation"));
+            return;
+        }
+        
+        // Remove from invitedIds
+        invitedIds.remove(Integer.valueOf(entrantId));
+        
+        // Add to cancelledIds
+        if (!cancelledIds.contains(entrantId)) {
+            cancelledIds.add(entrantId);
+        }
+        
+        // Create and send cancellation notification
+        String title = "Invitation Expired";
+        String message = String.format(
+            "Your invitation to %s has expired. Thank you for your interest.",
+            event.getEventInfo().getName()
+        );
+        
+        // Send notification with organizer as sender
+        int senderId = event.getEventInfo().getOrganizerID();
+        NotificationManager.sendNotification(title, message, entrantId, senderId, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Logger.logSystem("Expiration notification sent to entrantId=" + entrantId + " for event=" + event.getEventInfo().getName(), null);
+            }
+            
+            @Override
+            public void onFailure(Exception e) {
+                // Log error but don't block the cancellation
+                Logger.logError("Failed to send expiration notification to entrantId=" + entrantId + ": " + e.getMessage(), null);
+            }
+        });
+        
+        // Update event in database
+        updateEvent(event, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Logger.logSystem("Successfully cancelled non-responsive entrant, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
+                callback.onSuccess();
+            }
+            
+            @Override
+            public void onFailure(Exception e) {
+                Logger.logError("Failed to update event after cancelling entrant, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
+                callback.onFailure(new Exception("Failed to cancel entrant: database update failed"));
+            }
+        });
+    }
+
 
 }
 

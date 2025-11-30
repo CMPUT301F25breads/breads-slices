@@ -156,6 +156,22 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 tools:listitem="@layout/entrant_list_item" />
 
+            <!-- Draw Replacement Button (shown at end of waitlist/invited view) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_draw_replacement"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="8dp"
+                android:text="Draw Replacement"
+                android:visibility="gone"
+                app:icon="@drawable/ic_add"
+                app:layout_constraintTop_toBottomOf="@id/recycler_view_entrants"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
             <!-- Empty State View -->
             <LinearLayout
                 android:id="@+id/layout_empty_state"
@@ -236,5 +252,18 @@
         app:backgroundTint="#7E57C2"
         app:srcCompat="@android:drawable/ic_dialog_map"
         app:tint="@android:color/white" />
+
+    <!-- Download CSV FAB (bottom right, same position as map button) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_download_csv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="Export CSV"
+        app:backgroundTint="#7E57C2"
+        app:srcCompat="@android:drawable/stat_sys_download"
+        app:tint="@android:color/white"
+        android:visibility="gone" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
