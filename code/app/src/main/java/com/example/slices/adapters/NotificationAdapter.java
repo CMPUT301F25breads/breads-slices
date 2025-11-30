@@ -136,7 +136,6 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 h.acceptButton.setText("Accept");
                 h.declineButton.setVisibility(View.VISIBLE);
                 h.acceptButton.setVisibility(View.VISIBLE);
-                // Ryan changed this
                 h.acceptButton.setOnClickListener(v -> {
                     NotificationManager.acceptInvitation((Invitation) n, new DBWriteCallback() {
                         @Override
@@ -154,7 +153,19 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 });
 
                 h.declineButton.setOnClickListener(v -> {
+                    NotificationManager.declineInvitation((Invitation) n, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            items.remove(n);
+                            notifyDataSetChanged();
+                        }
 
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(context, "Error: Couldn't decline invitation", Toast.LENGTH_SHORT).show();
+                            Log.e("NotificationAdapter", "Error declining invitation", e);
+                        }
+                    });
                 });
 
                 break;
@@ -163,8 +174,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 h.acceptButton.setVisibility(View.VISIBLE);
                 h.declineButton.setVisibility(View.VISIBLE);
                 h.acceptButton.setOnClickListener(v -> {
-                    n.setRead(true);
-                    NotificationManager.updateNotification(n, new DBWriteCallback() {
+                    NotificationManager.acceptNotSelected((NotSelected) n, new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             items.remove(n);
@@ -172,11 +182,11 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                         }
                         @Override
                         public void onFailure(Exception e) {
-                            Toast.makeText(context, "Error: Couldn't dismiss notification", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, "Error: Couldn't accept NotSelected", Toast.LENGTH_SHORT).show();
+                            Log.e("NotificationAdapter", "Error accepting NotSelected", e);
                         }
                     });
                 });
-                // Ryan changed this
                 h.declineButton.setOnClickListener(v -> {
                     NotificationManager.declineNotSelected((NotSelected) n, new DBWriteCallback() {
                         @Override
