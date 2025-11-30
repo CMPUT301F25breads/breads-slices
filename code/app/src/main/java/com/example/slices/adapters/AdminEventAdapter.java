@@ -87,7 +87,6 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
             return;
         }
 
-        // SAFE AFTER THIS POINT
         holder.title.setText(eventInfo.getName() != null ? eventInfo.getName() : "Unnamed Event");
         holder.details.setText(eventInfo.getDescription() != null ? eventInfo.getDescription() : "No description");
 
@@ -139,7 +138,6 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
         return eventList.size();
     }
 
-    //Filtering and updates
 
     /**
      * Filters displayed events based on query
@@ -154,8 +152,6 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
             String lowerQuery = query.toLowerCase();
             for (Event e : eventListFull) {
                 EventInfo eventInfo = e.getEventInfo();
-                //if (eventInfo.getName().toLowerCase().contains(lowerQuery)
-                        //|| (eventInfo.getLocation() != null && eventInfo.getLocation().toLowerCase().contains(lowerQuery))) {
                 if (eventInfo.getName().toLowerCase().contains(lowerQuery)) {
                     filtered.add(e);
                 }

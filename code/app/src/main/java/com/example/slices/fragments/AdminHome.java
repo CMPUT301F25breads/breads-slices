@@ -15,6 +15,10 @@ import androidx.navigation.Navigation;
 import com.example.slices.R;
 import com.google.android.material.card.MaterialCardView;
 
+/** Home Fragment for Administrator
+ * @author Sasieni
+ */
+
 public class AdminHome extends Fragment {
 
     private MaterialCardView btnBrowseEvents;
