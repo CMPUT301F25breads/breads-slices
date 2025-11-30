@@ -25,6 +25,11 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment for administrators to browse all event images in firestore
+ * Loads every event and displays those with images
+ * @author Sasieni
+ */
 public class AdminImagesFragment extends Fragment {
 
     private RecyclerView recyclerView;
