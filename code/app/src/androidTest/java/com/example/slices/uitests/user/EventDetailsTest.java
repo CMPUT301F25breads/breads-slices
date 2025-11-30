@@ -41,6 +41,11 @@ public class EventDetailsTest {
     public ActivityScenarioRule<MainActivity> scenario =
             new ActivityScenarioRule<>(MainActivity.class);
 
+    /**
+     * setup()
+     * sets up each test by waiting for the user to be initialized with DB calls
+     * and then navigates to the browse screen
+     */
     @Before
     public void setup() {
         onView(isRoot()).perform(waitFor(2000));
@@ -51,6 +56,15 @@ public class EventDetailsTest {
         onView(withId(R.id.browse_list)).check(matches(isDisplayed()));
     }
 
+    /**
+     * waitFor
+     * simple helper function that makes Espresso wait for a set amount of milliseconds.
+     * Used in letting firestore DB finish setting up before the test runs
+     * @param millis
+     *   millis for how long to wait in milliseconds
+     * @return
+     *   returns a timer message that can be logged
+     */
     private static ViewAction waitFor(long millis) {
         return new ViewAction() {
             @Override
@@ -70,6 +84,15 @@ public class EventDetailsTest {
         };
     }
 
+    /**
+     * Helper function that reads the test from a textview with the given id.
+     *
+     * Used to capture the initial button label so the test can check that it changes
+     * @param viewId
+     *     resource id of the textview to read
+     * @return
+     *   the current text shown in the textview
+     */
     private static String getTextFromView(final int viewId) {
         final AtomicReference<String> textRef = new AtomicReference<>();
 
@@ -93,6 +116,13 @@ public class EventDetailsTest {
         return textRef.get();
     }
 
+    /**
+     * testJoinLeaveWaitlistEventDetailsToggle
+     *    Tests the join/leave waitlist button on the Event Details page
+     *
+     *    The test does not assume that the user initially joined or not; it just checks
+     *    that the label changes and then reverts back
+     */
     // Testing US 01.05.04, 01.06.02
     @Test
     public void testJoinLeaveWaitlistEventDetailsToggle() {
@@ -115,6 +145,7 @@ public class EventDetailsTest {
                 .check(matches(isDisplayed()))
                 .perform(click());
         onView(isRoot()).perform(waitFor(800));
+
         // check to ensure that the text has actually changed
         onView(withId(R.id.btn_join_waitlist))
                 .check(matches(not(withText(initialText))));

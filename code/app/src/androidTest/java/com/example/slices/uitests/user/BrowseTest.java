@@ -39,6 +39,11 @@ public class BrowseTest {
     public ActivityScenarioRule<MainActivity> scenario =
             new ActivityScenarioRule<>(MainActivity.class);
 
+    /**
+     * setup()
+     * sets up each test by waiting for the user to be initialized with DB calls
+     * and then navigates to the browse screen
+     */
     @Before
     public void setup() {
         onView(isRoot()).perform(waitFor(2000));
@@ -49,6 +54,15 @@ public class BrowseTest {
         onView(withId(R.id.browse_list)).check(matches(isDisplayed()));
     }
 
+    /**
+     * waitFor
+     * simple helper function that makes Espresso wait for a set amount of milliseconds.
+     * Used in letting firestore DB finish setting up before the test runs
+     * @param millis
+     *   millis for how long to wait in milliseconds
+     * @return
+     *   returns a timer message that can be logged
+     */
     private static ViewAction waitFor(long millis) {
         return new ViewAction() {
             @Override public Matcher<View> getConstraints() {
@@ -63,6 +77,14 @@ public class BrowseTest {
         };
     }
 
+    /**
+     * clickChildViewWithId
+     * helper that clicks a child view inside the RecyclerView
+     * @param id
+     *    resource id of the child view that needs to be clicked
+     * @return
+     *  returns a ViewAction that find the child and calls performClick() on it
+     */
     private static ViewAction clickChildViewWithId(int id) {
         return new ViewAction() {
             @Override
@@ -83,6 +105,11 @@ public class BrowseTest {
         };
     }
 
+    /**
+     * testJoinLeaveWaitlistButtonToggles
+     *   Tests that the join/leave button in the Browse list toggles correctly
+     *   First click should siwtch the label to "leave" and a second click should switch it back
+     */
     // Testing: US 01.01.01, 01.01.02, 01.01.03
     // - Raj
     @Test
@@ -112,6 +139,11 @@ public class BrowseTest {
                 .check(matches(hasDescendant(withText("Join"))));
     }
 
+    /**
+     * testFilterEvents
+     *  tests the search bar on the Browse screen. Typing a keyword ("swim") and pressing search
+     *  should filter the list so that the event with "swim" in its name appears in the results
+     */
     // Testing US 01.01.04
     // -Raj
     @Test
