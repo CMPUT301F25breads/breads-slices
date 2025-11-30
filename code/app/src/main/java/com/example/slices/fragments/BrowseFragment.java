@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -218,7 +219,7 @@ public class BrowseFragment extends Fragment {
 
         EditText nameInput = dialogView.findViewById(R.id.edit_name);
         nameInput.setText(binding.searchEditText.getText());
-        EditText locationInput = dialogView.findViewById(R.id.edit_location);
+        CheckBox enrollCheck = dialogView.findViewById(R.id.exclude_check);
         EditText startDateInput = dialogView.findViewById(R.id.edit_start_date);
         EditText endDateInput = dialogView.findViewById(R.id.edit_end_date);
 
@@ -230,14 +231,13 @@ public class BrowseFragment extends Fragment {
         if (current != null) {
             if (current.getName() != null)
                 nameInput.setText(current.getName());
-            if (current.getAddress() != null)
-                locationInput.setText(current.getAddress());
 
             SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
             if (current.getAvailStart() != null)
                 startDateInput.setText(sdf.format(current.getAvailStart().toDate()));
             if (current.getAvailEnd() != null)
                 endDateInput.setText(sdf.format(current.getAvailEnd().toDate()));
+            enrollCheck.setChecked(current.isEnrolled());
         }
 
 
@@ -247,7 +247,6 @@ public class BrowseFragment extends Fragment {
                 .setPositiveButton("Search", (dialog, which) -> {
 
                     String name = nameInput.getText().toString().trim();
-                    String location = locationInput.getText().toString().trim();
 
                     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
                     Timestamp startTimestamp = null;
@@ -274,9 +273,10 @@ public class BrowseFragment extends Fragment {
 
                     SearchSettings newSearch = new SearchSettings();
                     newSearch.setName(name);
-                    newSearch.setAddress(location);
                     newSearch.setAvailStart(startTimestamp);
                     newSearch.setAvailEnd(endTimestamp);
+                    newSearch.setId(vm.getUser().getId());
+                    newSearch.setCheck(enrollCheck.isChecked());
 
                     vm.setSearch(newSearch);
                     binding.searchEditText.setText(name);
