@@ -16,9 +16,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.slices.SharedViewModel;
 import com.example.slices.adapters.NotificationAdapter;
 
+import com.example.slices.controllers.EventController;
 import com.example.slices.controllers.NotificationManager;
 import com.example.slices.databinding.NotifFragmentBinding;
+import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.NotificationListCallback;
+import com.example.slices.models.Event;
 import com.example.slices.models.Invitation;
 import com.example.slices.models.Notification;
 
@@ -90,6 +94,11 @@ public class NotifFragment extends Fragment {
                         });
                         
                         notificationAdapter.setNotifications(recyclerNotifications);
+                        if (recyclerNotifications.isEmpty()) {
+                            binding.noNotifText.setVisibility(View.VISIBLE);
+                        } else {
+                            binding.noNotifText.setVisibility(View.GONE);
+                        }
                     }
                     @Override
                     public void onFailure(Exception e) {

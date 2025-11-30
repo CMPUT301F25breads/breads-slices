@@ -1385,7 +1385,8 @@ public class EventController {
      */
     private static void notifyLosers(List<Entrant> losers, Event event, DBWriteCallback callback) {
         String title = "Sorry!";
-        String body = "You have lost the lottery for " + event.getEventInfo().getName() + "!";
+        String body = "You have lost the lottery for " + event.getEventInfo().getName() + "!\n" +
+                "You can still stay registered in case somebody declines their invitation.";
         int sender = event.getEventInfo().getOrganizerID();
         List<Integer> recipients = new ArrayList<>();
         for (Entrant e : losers) {
