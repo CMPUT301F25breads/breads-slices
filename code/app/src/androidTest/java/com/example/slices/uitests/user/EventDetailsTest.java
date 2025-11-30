@@ -93,6 +93,7 @@ public class EventDetailsTest {
         return textRef.get();
     }
 
+    // Testing US 01.05.04, 01.06.02
     @Test
     public void testJoinLeaveWaitlistEventDetailsToggle() {
         // give browsefrag a sec to finish loading events

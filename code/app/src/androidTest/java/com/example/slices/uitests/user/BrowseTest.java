@@ -82,7 +82,7 @@ public class BrowseTest {
         };
     }
 
-
+    // Testing: US 01.01.01, 01.01.02, 01.01.03
     @Test
     public void testJoinLeaveWaitlistButtonToggles() {
         onView(isRoot()).perform(waitFor(2000));
