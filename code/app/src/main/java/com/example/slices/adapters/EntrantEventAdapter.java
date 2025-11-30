@@ -145,6 +145,7 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
         private final ImageView image;
         private final Button actionBtn;
         private final TextView details;
+        private final TextView place;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -152,6 +153,7 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
             image = itemView.findViewById(R.id.image);
             actionBtn = itemView.findViewById(R.id.btn_event_action);
             details = itemView.findViewById(R.id.event_date_place);
+            place =  itemView.findViewById(R.id.event_place);
         }
 
         /**
@@ -167,8 +169,9 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
             // Set text fields
             title.setText(eventInfo.getName());
             Date date = eventInfo.getEventDate().toDate();
-            SimpleDateFormat formatter = new SimpleDateFormat("ha | MMM. dd, yyyy", Locale.CANADA);
-            details.setText(formatter.format(date) + " | " + eventInfo.getAddress());
+            SimpleDateFormat formatter = new SimpleDateFormat("h:mm a | MMM dd, yyyy", Locale.CANADA);
+            details.setText(formatter.format(date));
+            place.setText(eventInfo.getAddress());
 
             // Load image
             Glide.with(context)
