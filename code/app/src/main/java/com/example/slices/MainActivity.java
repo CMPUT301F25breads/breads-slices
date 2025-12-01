@@ -49,23 +49,21 @@ public class MainActivity extends AppCompatActivity {
         // Start in User mode
         appMode = "User";
 
-        initializeUser();
-
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupWithNavController(binding.bottomNav, navController);
         NavigationUI.setupWithNavController(binding.bottomNavOrg, navController);
         NavigationUI.setupWithNavController(binding.bottomNavAdmin, navController);
 
+        initializeUser();
+
     }
 
     public void disableNavigation() {
-        binding.bottomNav.setVisibility(View.GONE);
-        binding.bottomNavOrg.setVisibility(View.GONE);
+        binding.bottomNavContainer.setVisibility(View.GONE);
     }
 
     public void enableNavigation() {
-        binding.bottomNav.setVisibility(View.VISIBLE);
-        binding.bottomNavOrg.setVisibility(View.VISIBLE);
+        binding.bottomNavContainer.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -108,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
      * deviceId
      */
     public void initializeUser() {
+        disableNavigation();
         String deviceId = InstanceUtil.getDeviceId(this);
         Logger.logSystem("User initialized with Device ID: " + deviceId, null);
 
@@ -119,7 +118,13 @@ public class MainActivity extends AppCompatActivity {
                 sharedViewModel.setUser(entrant);
                 //Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getProfile().getName()), Toast.LENGTH_SHORT).show();
                 NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
-                navController.navigate(R.id.MyEventsFragment);
+                if(entrant.getProfile().getName() == null || entrant.getProfile().getEmail() == null)
+                    navController.navigate(R.id.MenuFragment);
+
+                else {
+                    enableNavigation();
+                    navController.navigate(R.id.MyEventsFragment);
+                }
             }
 
             @Override
