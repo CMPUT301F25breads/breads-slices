@@ -2,4 +2,6 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Cache directory for temporary QR code sharing -->
     <cache-path name="shared_images" path="images/" />
+    <!-- Cache directory root for CSV exports -->
+    <cache-path name="shared_files" path="." />
 </paths>

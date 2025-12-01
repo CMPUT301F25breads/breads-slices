@@ -1502,29 +1502,46 @@ public class EventController {
     }
 
     /**
-     * Exports enrolled entrants to a CSV file
+     * Exports enrolled entrants to a CSV file in the Downloads folder
      * 
      * @param event Event containing entrants to export
      * @param context Android context for file operations
-     * @param callback Callback with file URI or error
+     * @param callback Callback with file path or error
      */
     public static void exportEntrantsToCSV(Event event, android.content.Context context, com.example.slices.interfaces.CSVExportCallback callback) {
         try {
             // Get enrolled entrants
             List<Entrant> entrants = event.getEntrants();
             if (entrants == null || entrants.isEmpty()) {
+                Logger.logError("CSV export failed: No enrolled entrants", null);
                 callback.onFailure(new Exception("No enrolled entrants to export"));
                 return;
             }
             
-            // Create CSV file in cache directory
-            java.io.File csvFile = new java.io.File(context.getCacheDir(), "event_" + event.getId() + "_entrants.csv");
+            Logger.logSystem("Starting CSV export for event id=" + event.getId() + ", " + entrants.size() + " entrants", null);
+            
+            // Get Downloads directory
+            java.io.File downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
+                android.os.Environment.DIRECTORY_DOWNLOADS
+            );
+            
+            // Create filename with event name and timestamp
+            String eventName = event.getEventInfo().getName().replaceAll("[^a-zA-Z0-9]", "_");
+            String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+            String fileName = eventName + "_entrants_" + timestamp + ".csv";
+            
+            java.io.File csvFile = new java.io.File(downloadsDir, fileName);
+            Logger.logSystem("CSV file path: " + csvFile.getAbsolutePath(), null);
+            
+            // Write CSV content
             java.io.FileWriter writer = new java.io.FileWriter(csvFile);
             
             // Write header row
             writer.append("ID,Name,Email,Phone\n");
             
             // Write data rows
+            int rowCount = 0;
             for (Entrant entrant : entrants) {
                 writer.append(String.valueOf(entrant.getId())).append(",");
                 
@@ -1537,28 +1554,37 @@ public class EventController {
                     name = entrant.getProfile().getName() != null ? entrant.getProfile().getName() : "";
                     email = entrant.getProfile().getEmail() != null ? entrant.getProfile().getEmail() : "";
                     phone = entrant.getProfile().getPhoneNumber() != null ? entrant.getProfile().getPhoneNumber() : "";
+                } else {
+                    Logger.logSystem("Warning: Entrant " + entrant.getId() + " has null profile", null);
                 }
                 
                 // Escape CSV special characters
                 writer.append(escapeCsv(name)).append(",");
                 writer.append(escapeCsv(email)).append(",");
                 writer.append(escapeCsv(phone)).append("\n");
+                rowCount++;
             }
             
+            writer.flush();
             writer.close();
             
-            // Get URI using FileProvider
-            android.net.Uri fileUri = androidx.core.content.FileProvider.getUriForFile(
+            Logger.logSystem("CSV file written successfully: " + rowCount + " rows", null);
+            Logger.logSystem("File exists: " + csvFile.exists() + ", size: " + csvFile.length() + " bytes", null);
+            
+            // Notify media scanner so file appears in Downloads immediately
+            android.media.MediaScannerConnection.scanFile(
                 context,
-                context.getPackageName() + ".fileprovider",
-                csvFile
+                new String[]{csvFile.getAbsolutePath()},
+                new String[]{"text/csv"},
+                null
             );
             
-            Logger.logSystem("CSV export successful for event id=" + event.getId() + ", " + entrants.size() + " entrants", null);
-            callback.onSuccess(fileUri);
+            Logger.logSystem("CSV export successful for event id=" + event.getId(), null);
+            callback.onSuccess(csvFile.getAbsolutePath());
             
         } catch (Exception e) {
             Logger.logError("CSV export failed for event id=" + event.getId() + ": " + e.getMessage(), null);
+            e.printStackTrace();
             callback.onFailure(e);
         }
     }

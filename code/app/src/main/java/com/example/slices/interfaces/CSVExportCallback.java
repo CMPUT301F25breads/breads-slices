@@ -1,7 +1,5 @@
 package com.example.slices.interfaces;
 
-import android.net.Uri;
-
 /**
  * Callback interface for CSV export operations
  * @author Kiro
@@ -10,9 +8,9 @@ import android.net.Uri;
 public interface CSVExportCallback {
     /**
      * Called when CSV export succeeds
-     * @param fileUri URI of the exported CSV file
+     * @param filePath Path where the CSV file was saved
      */
-    void onSuccess(Uri fileUri);
+    void onSuccess(String filePath);
 
     /**
      * Called when CSV export fails

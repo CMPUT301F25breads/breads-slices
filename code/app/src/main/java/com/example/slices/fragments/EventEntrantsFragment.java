@@ -1,9 +1,7 @@
 package com.example.slices.fragments;
 
 import android.os.Bundle;
-import android.view.GestureDetector;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -45,8 +43,6 @@ public class EventEntrantsFragment extends Fragment {
     private int senderId;
     private Event currentEvent;
     private ListType currentListType = ListType.WAITLIST;
-    private GestureDetector gestureDetector;
-    private boolean hasLotteryBeenDrawn = false;
 
     /**
      * Create a new instance of EventEntrantsFragment with event data
@@ -102,9 +98,6 @@ public class EventEntrantsFragment extends Fragment {
 
         // Initialize the entrants list container
         setupEntrantsContainer();
-
-        // Set up swipe gesture detector
-        setupSwipeGesture();
 
         // Set up notification buttons
         setupNotificationButtons();
@@ -196,123 +189,7 @@ public class EventEntrantsFragment extends Fragment {
         });
     }
 
-    // Set up swipe gesture detector for switching between lists
-    private void setupSwipeGesture() {
-        if (binding == null) return;
 
-        gestureDetector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
-            private static final int SWIPE_THRESHOLD = 100;
-            private static final int SWIPE_VELOCITY_THRESHOLD = 100;
-
-            @Override
-            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                // Only allow swipe if lottery has been drawn
-                if (!hasLotteryBeenDrawn) {
-                    return false;
-                }
-
-                if (e1 == null || e2 == null) {
-                    return false;
-                }
-
-                float diffX = e2.getX() - e1.getX();
-                float diffY = e2.getY() - e1.getY();
-
-                // Check if horizontal swipe is dominant
-                if (Math.abs(diffX) > Math.abs(diffY)) {
-                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                        if (diffX > 0) {
-                            // Swipe right - go to previous list
-                            switchToPreviousList();
-                        } else {
-                            // Swipe left - go to next list
-                            switchToNextList();
-                        }
-                        return true;
-                    }
-                }
-                return false;
-            }
-        });
-
-        // Attach gesture detector to multiple areas for better UX
-        // 1. Event name/count area (top card)
-        binding.tvEventName.setOnTouchListener((v, event) -> {
-            gestureDetector.onTouchEvent(event);
-            return false;
-        });
-        
-        binding.tvEntrantCount.setOnTouchListener((v, event) -> {
-            gestureDetector.onTouchEvent(event);
-            return false;
-        });
-    }
-
-    // Switch to the next list type
-    private void switchToNextList() {
-        switch (currentListType) {
-            case WAITLIST:
-                currentListType = ListType.INVITED;
-                break;
-            case INVITED:
-                currentListType = ListType.PARTICIPANTS;
-                break;
-            case PARTICIPANTS:
-                currentListType = ListType.CANCELLED;
-                break;
-            case CANCELLED:
-                // Wrap around to waitlist
-                currentListType = ListType.WAITLIST;
-                break;
-        }
-        updateDropdownText();
-        displayEntrantsForCurrentType();
-    }
-
-    // Switch to the previous list type
-    private void switchToPreviousList() {
-        switch (currentListType) {
-            case WAITLIST:
-                // Wrap around to cancelled
-                currentListType = ListType.CANCELLED;
-                break;
-            case INVITED:
-                currentListType = ListType.WAITLIST;
-                break;
-            case PARTICIPANTS:
-                currentListType = ListType.INVITED;
-                break;
-            case CANCELLED:
-                currentListType = ListType.PARTICIPANTS;
-                break;
-        }
-        updateDropdownText();
-        displayEntrantsForCurrentType();
-    }
-
-    // Update the dropdown text to match current list type
-    private void updateDropdownText() {
-        if (binding == null) return;
-
-        String text;
-        switch (currentListType) {
-            case WAITLIST:
-                text = getString(R.string.waiting_list);
-                break;
-            case INVITED:
-                text = getString(R.string.invited_list);
-                break;
-            case PARTICIPANTS:
-                text = getString(R.string.participants_list);
-                break;
-            case CANCELLED:
-                text = getString(R.string.cancelled_list);
-                break;
-            default:
-                text = getString(R.string.waiting_list);
-        }
-        binding.dropdownListType.setText(text, false);
-    }
 
     /**
      * Set up notification button click listeners
@@ -448,13 +325,6 @@ public class EventEntrantsFragment extends Fragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         currentEvent = event;
-                        
-                        // Check if lottery has been drawn (invited list is not empty)
-                        hasLotteryBeenDrawn = event.getInvitedIds() != null && !event.getInvitedIds().isEmpty();
-                        
-                        // Hide dropdown if lottery has been drawn, show swipe hint
-                        updateDropdownVisibility();
-                        
                         updateNotificationButtonStates();
                         updateMapButtonVisibility();
                         displayEntrantsForCurrentType();
@@ -479,14 +349,7 @@ public class EventEntrantsFragment extends Fragment {
         });
     }
 
-    // Update dropdown visibility based on whether lottery has been drawn
-    private void updateDropdownVisibility() {
-        if (binding == null) return;
 
-        // Always keep dropdown visible - it's useful for navigation
-        // Swipe gestures are just an additional convenience
-        binding.dropdownLayout.setVisibility(View.VISIBLE);
-    }
 
     // Update map button visibility based on event geolocation setting
     private void updateMapButtonVisibility() {
@@ -697,11 +560,7 @@ public class EventEntrantsFragment extends Fragment {
         }
         
         // Update entrant count display
-        String countText = waitlistEntrants.size() + " entrants on waitlist";
-        if (hasLotteryBeenDrawn) {
-            countText += " • Swipe here to switch lists";
-        }
-        binding.tvEntrantCount.setText(countText);
+        binding.tvEntrantCount.setText(waitlistEntrants.size() + " entrants on waitlist");
         
         if (waitlistEntrants.isEmpty()) {
             showEmptyState();
@@ -736,11 +595,7 @@ public class EventEntrantsFragment extends Fragment {
         }
 
         // Update count display
-        String countText = invitedIds.size() + " invited entrants";
-        if (hasLotteryBeenDrawn) {
-            countText += " • Swipe here to switch lists";
-        }
-        binding.tvEntrantCount.setText(countText);
+        binding.tvEntrantCount.setText(invitedIds.size() + " invited entrants");
 
         if (invitedIds.isEmpty()) {
             showEmptyState();
@@ -761,11 +616,7 @@ public class EventEntrantsFragment extends Fragment {
         }
         
         // Update entrant count display
-        String countText = participants.size() + " confirmed participants";
-        if (hasLotteryBeenDrawn) {
-            countText += " • Swipe here to switch lists";
-        }
-        binding.tvEntrantCount.setText(countText);
+        binding.tvEntrantCount.setText(participants.size() + " confirmed participants");
         
         if (participants.isEmpty()) {
             showEmptyState();
@@ -794,11 +645,7 @@ public class EventEntrantsFragment extends Fragment {
         }
 
         // Update count display
-        String countText = cancelledIds.size() + " cancelled entrants";
-        if (hasLotteryBeenDrawn) {
-            countText += " • Swipe here to switch lists";
-        }
-        binding.tvEntrantCount.setText(countText);
+        binding.tvEntrantCount.setText(cancelledIds.size() + " cancelled entrants");
 
         if (cancelledIds.isEmpty()) {
             showEmptyState();
@@ -1259,7 +1106,7 @@ public class EventEntrantsFragment extends Fragment {
             requireContext(), 
             new com.example.slices.interfaces.CSVExportCallback() {
                 @Override
-                public void onSuccess(android.net.Uri fileUri) {
+                public void onSuccess(String filePath) {
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
                             // Hide loading indicator
@@ -1267,8 +1114,8 @@ public class EventEntrantsFragment extends Fragment {
                                 binding.progressBar.setVisibility(View.GONE);
                             }
                             
-                            // Open share dialog with file URI
-                            showCSVShareDialog(fileUri);
+                            // Show success message with file location
+                            showCSVDownloadSuccess(filePath);
                         });
                     }
                 }
@@ -1282,8 +1129,11 @@ public class EventEntrantsFragment extends Fragment {
                                 binding.progressBar.setVisibility(View.GONE);
                             }
                             
-                            // Display error toast
-                            String errorMessage = "Failed to export CSV.";
+                            // Log the full error for debugging
+                            android.util.Log.e("EventEntrantsFragment", "CSV export failed", e);
+                            
+                            // Display error toast with more details
+                            String errorMessage = "Failed to export CSV: " + e.getMessage();
                             if (e.getMessage() != null) {
                                 if (e.getMessage().contains("No enrolled entrants")) {
                                     errorMessage = "No enrolled entrants to export.";
@@ -1294,7 +1144,7 @@ public class EventEntrantsFragment extends Fragment {
                             
                             android.widget.Toast.makeText(requireContext(),
                                     errorMessage,
-                                    android.widget.Toast.LENGTH_SHORT).show();
+                                    android.widget.Toast.LENGTH_LONG).show();
                         });
                     }
                 }
@@ -1303,18 +1153,14 @@ public class EventEntrantsFragment extends Fragment {
     }
 
     /**
-     * Shows Android's share dialog for the CSV file
+     * Shows a success message after CSV is saved
      * 
-     * @param fileUri URI of the CSV file to share
+     * @param filePath Path where the CSV file was saved
      */
-    private void showCSVShareDialog(android.net.Uri fileUri) {
-        android.content.Intent shareIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
-        shareIntent.setType("text/csv");
-        shareIntent.putExtra(android.content.Intent.EXTRA_STREAM, fileUri);
-        shareIntent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        
-        android.content.Intent chooser = android.content.Intent.createChooser(shareIntent, "Export Entrants CSV");
-        startActivity(chooser);
+    private void showCSVDownloadSuccess(String filePath) {
+        android.widget.Toast.makeText(requireContext(),
+                "CSV downloaded to: " + filePath,
+                android.widget.Toast.LENGTH_LONG).show();
     }
 
     /**
