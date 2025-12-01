@@ -8,9 +8,11 @@ import androidx.annotation.NonNull;
 
 import com.example.slices.exceptions.DBOpFailed;
 import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.ImageListCallback;
 import com.example.slices.interfaces.ImageUploadCallback;
 import com.example.slices.interfaces.ImageUrlCallback;
+import com.example.slices.models.Event;
 import com.example.slices.models.Image;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -152,20 +154,76 @@ public class ImageController {
     public static void deleteImage(String path, DBWriteCallback callback) {
         imagesRef.child(path)
                 .delete()
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void unused) {
-                        Log.d("Image Controller", "Successfully deleted image at: " + path, null);
-                        callback.onSuccess();
-                    }
+                .addOnSuccessListener(unused -> {
+                    Log.d("Image Controller", "Successfully deleted image at: " + path, null);
+                    callback.onSuccess();
                 })
-                .addOnFailureListener(new OnFailureListener() {
+                .addOnFailureListener(e -> {
+                    Log.d("Image Controller", "Failed to delete at: " + path, null);
+                    callback.onFailure(new DBOpFailed("Failed to delete at: " + path));
+                });
+    }
+    public static void deleteEventImage(String eventId, DBWriteCallback callback) {
+
+        EventController.getEvent(Integer.parseInt(eventId), new EventCallback() {
+            @Override
+            public void onSuccess(Event event) {
+
+                if (event == null || event.getEventInfo() == null) {
+                    callback.onFailure(new Exception("Event not found"));
+                    return;
+                }
+
+                if (event.getEventInfo().getImage() == null) {
+                    callback.onFailure(new Exception("Event has no image"));
+                    return;
+                }
+
+                String path = event.getEventInfo().getImage().getPath();
+
+                if (path == null || path.isEmpty()) {
+                    callback.onFailure(new Exception("Image path missing"));
+                    return;
+                }
+
+                // 1. Delete storage file
+                deleteImage(path, new DBWriteCallback() {
                     @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d("Image Controller","Failed to delete at: " + path, null);
-                        callback.onFailure(new DBOpFailed("Failed to delete at: " + path));
+                    public void onSuccess() {
+
+                        // 2. Remove image fields from Firestore
+                        event.getEventInfo().setImage(null);
+                        event.getEventInfo().setImageUrl(null);
+
+                        EventController.updateEvent(event, new DBWriteCallback() {
+                            @Override
+                            public void onSuccess() {
+                                callback.onSuccess();
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                callback.onFailure(new Exception(
+                                        "Storage deleted but Firestore update failed: " + e.getMessage()
+                                ));
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(new Exception(
+                                "Failed to delete from storage: " + e.getMessage()
+                        ));
                     }
                 });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(new Exception("Event not found"));
+            }
+        });
     }
 
     /**
