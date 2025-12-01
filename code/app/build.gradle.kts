@@ -74,11 +74,27 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("org.mockito:mockito-core:5.7.0")
     testImplementation("org.quicktheories:quicktheories:0.26")
+    testImplementation("org.mockito:mockito-core:5.10.0")
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation("androidx.test.espresso:espresso-contrib:3.5.1") {
         exclude(group = "com.google.protobuf", module = "protobuf-lite")
     }
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.5.1")
+    androidTestImplementation("androidx.test.espresso:espresso-idling-resource:3.5.1")
+
+    // FragmentScenario (for fragment-only tests)
+    debugImplementation("androidx.fragment:fragment-testing:1.6.2")
+    debugImplementation("androidx.fragment:fragment-testing:1.6.2")
+
+    // Navigation testing (to test your adapter + nav graph)
+    androidTestImplementation("androidx.navigation:navigation-testing:2.7.7")
+
+    // Test runner + rules
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("androidx.test:rules:1.5.0")
+
+    androidTestImplementation("org.mockito:mockito-android:5.10.0")
 
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     implementation("com.google.zxing:core:3.5.3")
