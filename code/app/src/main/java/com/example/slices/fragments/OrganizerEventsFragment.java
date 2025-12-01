@@ -146,6 +146,10 @@ public class OrganizerEventsFragment extends Fragment {
         binding = null;
     }
 
+    public OrganizerEventsFragmentBinding getBinding() {
+        return binding;
+    }
+
 
 //        Feel free to delete but was just leaving it here in case its helpful, was just testing some db queries
 //          loadOrganizerEvents()
