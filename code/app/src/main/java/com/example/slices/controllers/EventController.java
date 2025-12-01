@@ -660,6 +660,21 @@ public class EventController {
      * @param callback
      *      Callback invoked when the event is created
      */
+    public static void createEvent(Event event, EventCallback callback) {
+        if (event == null || event.getEventInfo() == null) {
+            callback.onFailure(new IllegalArgumentException("Event or EventInfo is null"));
+            return;
+        }
+        createEvent(event.getEventInfo(), callback);
+    }
+
+    /**
+     * Creates an event from an EventInfo object.
+     * @param eventInfo
+     *      EventInfo containing event fields
+     * @param callback
+     *      Callback invoked when the event is created
+     */
     public static void createEvent(EventInfo eventInfo, EventCallback callback) {
 
         getNewEventId(new EventIDCallback() {
@@ -1384,7 +1399,35 @@ public class EventController {
         for (Entrant e : winners) {
             recipients.add(e.getId());
         }
-        NotificationManager.sendBulkInvitation(title, body, recipients, sender, event.getId(), callback);
+
+        // Add winners to invitedIds list
+        List<Integer> invitedIds = event.getInvitedIds();
+        if (invitedIds == null) {
+            invitedIds = new ArrayList<>();
+            event.setInvitedIds(invitedIds);
+        }
+
+        // Add each winner to invitedIds if not already present
+        for (Integer winnerId : recipients) {
+            if (!invitedIds.contains(winnerId)) {
+                invitedIds.add(winnerId);
+            }
+        }
+
+        // Update event first, then send invitations
+        updateEvent(event, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                // Event updated, now send invitations
+                NotificationManager.sendBulkInvitation(title, body, recipients, sender, event.getId(), callback);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Logger.logError("Failed to update event with invitedIds during lottery, eventId=" + event.getId(), null);
+                callback.onFailure(e);
+            }
+        });
     }
 
     /**
@@ -1569,14 +1612,18 @@ public class EventController {
     }
 
     /**
-     * Cancels a single non-responsive entrant who has been invited but has not accepted.
+     * Cancels a single invited entrant and removes them completely from the event.
      * This method:
-     * 1. Verifies the entrant is in invitedIds but not in entrantIds
+     * 1. Verifies the entrant is in invitedIds
      * 2. Removes the entrant from invitedIds
-     * 3. Adds the entrant to cancelledIds
-     * 4. Sends a cancellation notification with preset message
-     * 5. Updates the event in the database
-     * 
+     * 3. Removes the entrant from waitlist (if present)
+     * 4. Removes the entrant from enrolled entrants (if they accepted)
+     * 5. Adds the entrant to cancelledIds
+     * 6. Sends a cancellation notification with preset message
+     * 7. Updates the event in the database
+     *
+     * After removal, the entrant will not see this event in any fragments.
+     *
      * @param event The event to process
      * @param entrantId ID of the entrant to cancel
      * @param callback Callback invoked when the operation completes
@@ -1586,7 +1633,7 @@ public class EventController {
         List<Integer> invitedIds = event.getInvitedIds();
         List<Integer> entrantIds = event.getEntrantIds();
         List<Integer> cancelledIds = event.getCancelledIds();
-        
+
         if (invitedIds == null) {
             invitedIds = new ArrayList<>();
             event.setInvitedIds(invitedIds);
@@ -1599,58 +1646,74 @@ public class EventController {
             cancelledIds = new ArrayList<>();
             event.setCancelledIds(cancelledIds);
         }
-        
-        // Verify entrant is in invitedIds but not in entrantIds (non-responsive)
+
+        // Verify entrant is in invitedIds
         if (!invitedIds.contains(entrantId)) {
             Logger.logError("Cannot cancel entrant: not in invited list, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
             callback.onFailure(new Exception("Entrant not found or already cancelled"));
             return;
         }
-        
-        if (entrantIds.contains(entrantId)) {
-            Logger.logError("Cannot cancel entrant: already accepted invitation, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
-            callback.onFailure(new Exception("Cannot cancel: entrant has already accepted invitation"));
-            return;
-        }
-        
+
+        // Check if entrant has accepted (in enrolled list)
+        boolean hasAccepted = entrantIds.contains(entrantId);
+
         // Remove from invitedIds
         invitedIds.remove(Integer.valueOf(entrantId));
-        
+
+        // Remove from enrolled entrants if they accepted
+        if (hasAccepted) {
+            // Remove from entrantIds list
+            entrantIds.remove(Integer.valueOf(entrantId));
+
+            // Remove from Entrants list
+            if (event.getEntrants() != null) {
+                event.getEntrants().removeIf(e -> e.getId() == entrantId);
+            }
+        }
+
+        // Remove from waitlist if present
+        if (event.getWaitlist() != null && event.getWaitlist().getEntrants() != null) {
+            event.getWaitlist().getEntrants().removeIf(e -> e.getId() == entrantId);
+        }
+        if (event.getWaitlist() != null && event.getWaitlist().getEntrantIds() != null) {
+            event.getWaitlist().getEntrantIds().remove(Integer.valueOf(entrantId));
+        }
+
         // Add to cancelledIds
         if (!cancelledIds.contains(entrantId)) {
             cancelledIds.add(entrantId);
         }
-        
+
         // Create and send cancellation notification
-        String title = "Invitation Expired";
+        String title = "Invitation Cancelled";
         String message = String.format(
-            "Your invitation to %s has expired. Thank you for your interest.",
+            "Your invitation to %s has been cancelled by the organizer. Thank you for your interest.",
             event.getEventInfo().getName()
         );
-        
+
         // Send notification with organizer as sender
         int senderId = event.getEventInfo().getOrganizerID();
         NotificationManager.sendNotification(title, message, entrantId, senderId, new DBWriteCallback() {
             @Override
             public void onSuccess() {
-                Logger.logSystem("Expiration notification sent to entrantId=" + entrantId + " for event=" + event.getEventInfo().getName(), null);
+                Logger.logSystem("Cancellation notification sent to entrantId=" + entrantId + " for event=" + event.getEventInfo().getName(), null);
             }
-            
+
             @Override
             public void onFailure(Exception e) {
                 // Log error but don't block the cancellation
-                Logger.logError("Failed to send expiration notification to entrantId=" + entrantId + ": " + e.getMessage(), null);
+                Logger.logError("Failed to send cancellation notification to entrantId=" + entrantId + ": " + e.getMessage(), null);
             }
         });
-        
+
         // Update event in database
         updateEvent(event, new DBWriteCallback() {
             @Override
             public void onSuccess() {
-                Logger.logSystem("Successfully cancelled non-responsive entrant, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
+                Logger.logSystem("Successfully cancelled and removed entrant, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
                 callback.onSuccess();
             }
-            
+
             @Override
             public void onFailure(Exception e) {
                 Logger.logError("Failed to update event after cancelling entrant, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
@@ -1659,6 +1722,176 @@ public class EventController {
         });
     }
 
+    /**
+     * Cancels multiple invited entrants and removes them completely from the event.
+     * This method processes all provided entrant IDs in parallel using AsyncBatchExecutor.
+     * For each entrant:
+     * 1. Verifies the entrant is in invitedIds
+     * 2. Removes the entrant from invitedIds
+     * 3. Removes the entrant from waitlist (if present)
+     * 4. Removes the entrant from enrolled entrants (if they accepted)
+     * 5. Adds the entrant to cancelledIds
+     * 6. Sends a cancellation notification with preset message
+     *
+     * After all individual operations complete, updates the event once in the database.
+     * After removal, cancelled entrants will not see this event in any fragments.
+     *
+     * @param event The event to process
+     * @param entrantIds List of entrant IDs to cancel
+     * @param callback Callback invoked when all operations complete
+     */
+    public static void cancelMultipleEntrants(Event event, List<Integer> entrantIds, DBWriteCallback callback) {
+        if (entrantIds == null || entrantIds.isEmpty()) {
+            callback.onSuccess();
+            return;
+        }
+
+        // Get the lists (initialize if null)
+        List<Integer> invitedIds = event.getInvitedIds();
+        List<Integer> enrolledIds = event.getEntrantIds();
+        List<Integer> cancelledIds = event.getCancelledIds();
+
+        if (invitedIds == null) {
+            invitedIds = new ArrayList<>();
+            event.setInvitedIds(invitedIds);
+        }
+        if (enrolledIds == null) {
+            enrolledIds = new ArrayList<>();
+            event.setEntrantIds(enrolledIds);
+        }
+        if (cancelledIds == null) {
+            cancelledIds = new ArrayList<>();
+            event.setCancelledIds(cancelledIds);
+        }
+
+        // Track successfully cancelled entrants
+        List<Integer> successfullyCancelled = new ArrayList<>();
+        List<Integer> failedCancellations = new ArrayList<>();
+
+        // Process each entrant
+        for (Integer entrantId : entrantIds) {
+            // Verify entrant is in invitedIds
+            if (!invitedIds.contains(entrantId)) {
+                Logger.logError("Cannot cancel entrant: not in invited list, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
+                failedCancellations.add(entrantId);
+                continue;
+            }
+
+            // Check if entrant has accepted (in enrolled list)
+            boolean hasAccepted = enrolledIds.contains(entrantId);
+
+            // Remove from invitedIds
+            invitedIds.remove(Integer.valueOf(entrantId));
+
+            // Remove from enrolled entrants if they accepted
+            if (hasAccepted) {
+                // Remove from entrantIds list
+                enrolledIds.remove(Integer.valueOf(entrantId));
+
+                // Remove from Entrants list
+                if (event.getEntrants() != null) {
+                    event.getEntrants().removeIf(e -> e.getId() == entrantId);
+                }
+            }
+
+            // Remove from waitlist if present
+            if (event.getWaitlist() != null && event.getWaitlist().getEntrants() != null) {
+                event.getWaitlist().getEntrants().removeIf(e -> e.getId() == entrantId);
+            }
+            if (event.getWaitlist() != null && event.getWaitlist().getEntrantIds() != null) {
+                event.getWaitlist().getEntrantIds().remove(Integer.valueOf(entrantId));
+            }
+
+            // Add to cancelledIds
+            if (!cancelledIds.contains(entrantId)) {
+                cancelledIds.add(entrantId);
+            }
+
+            successfullyCancelled.add(entrantId);
+        }
+
+        // Send notifications to all successfully cancelled entrants in parallel
+        if (!successfullyCancelled.isEmpty()) {
+            String eventName = event.getEventInfo().getName();
+            int senderId = event.getEventInfo().getOrganizerID();
+
+            // Create list of operations for AsyncBatchExecutor
+            List<Consumer<DBWriteCallback>> operations = new ArrayList<>();
+
+            for (Integer entrantId : successfullyCancelled) {
+                operations.add(opCallback -> {
+                    String title = "Invitation Cancelled";
+                    String message = String.format(
+                        "Your invitation to %s has been cancelled by the organizer. Thank you for your interest.",
+                        eventName
+                    );
+
+                    NotificationManager.sendNotification(title, message, entrantId, senderId, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Logger.logSystem("Expiration notification sent to entrantId=" + entrantId + " for event=" + eventName, null);
+                            opCallback.onSuccess();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            // Log error but don't block the cancellation
+                            Logger.logError("Failed to send expiration notification to entrantId=" + entrantId + ": " + e.getMessage(), null);
+                            opCallback.onSuccess(); // Still mark as success to continue
+                        }
+                    });
+                });
+            }
+
+            // Run all notification operations in parallel
+            AsyncBatchExecutor.runBatch(operations, new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    // All notifications sent (or attempted), now update the event
+                    updateEvent(event, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Logger.logSystem("Successfully cancelled " + successfullyCancelled.size() + " non-responsive entrants, eventId=" + event.getId(), null);
+                            callback.onSuccess();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Logger.logError("Failed to update event after bulk cancellation, eventId=" + event.getId(), null);
+                            callback.onFailure(new Exception("Failed to cancel entrants: database update failed"));
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    // Some notifications failed, but still update event
+                    Logger.logError("Some notifications failed during bulk cancellation: " + e.getMessage(), null);
+                    updateEvent(event, new DBWriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            Logger.logSystem("Cancelled " + successfullyCancelled.size() + " entrants (some notifications failed), eventId=" + event.getId(), null);
+                            callback.onSuccess(); // Still consider it a success since entrants were cancelled
+                        }
+
+                        @Override
+                        public void onFailure(Exception updateError) {
+                            Logger.logError("Failed to update event after bulk cancellation, eventId=" + event.getId(), null);
+                            callback.onFailure(new Exception("Failed to cancel entrants: database update failed"));
+                        }
+                    });
+                }
+            });
+        } else {
+            // No entrants were successfully cancelled
+            if (failedCancellations.size() == entrantIds.size()) {
+                callback.onFailure(new Exception("None of the provided entrants could be cancelled"));
+            } else {
+                callback.onSuccess();
+            }
+        }
+    }
 
 }
+
 

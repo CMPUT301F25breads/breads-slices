@@ -409,6 +409,33 @@ public class NotificationManager {
     }
 
     /**
+     * Convenience accessor used by tests: fetch all notifications for a recipient (any type).
+     * @param recipientId recipient entrant ID
+     * @param callback callback to receive notifications
+     */
+    public static void getNotifications(int recipientId, NotificationListCallback callback) {
+        notificationRef.whereEqualTo("recipientId", recipientId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Notification> notifications = new ArrayList<>();
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            Notification notification = doc.toObject(Notification.class);
+                            if (notification != null) {
+                                notifications.add(notification);
+                            }
+                        }
+                    }
+                    Logger.logSystem("Fetched " + notifications.size() + " notifications for recipientId=" + recipientId, null);
+                    callback.onSuccess(notifications);
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to get notifications for recipientId=" + recipientId, null);
+                    callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                });
+    }
+
+    /**
      * Deletes a notification from the database
      * @param id
      *      Notification ID to delete

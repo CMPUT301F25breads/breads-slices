@@ -297,26 +297,77 @@ public class EventDetailsFragment extends Fragment {
                 binding.btnJoinWaitlist.setEnabled(false);
                 binding.btnJoinWaitlist.setText("Leaving...");
 
+                // First remove from event
                 EventController.removeEntrantFromEvent(e, vm.getUser(), new DBWriteCallback() {
                     @Override
                     public void onSuccess() {
-                        vm.removeParticipatingId(eventIdStr);
-                        isParticipating = false;
-                        isWaitlisted = false;     // ensures consistency w/ waitlist status
-
-                        if (isAdded()) {
-                            updateWaitlistButton(false);
-                            binding.btnJoinWaitlist.setEnabled(true);
+                        // After successful removal, add to cancelled list
+                        java.util.List<Integer> cancelledIds = e.getCancelledIds();
+                        if (cancelledIds == null) {
+                            cancelledIds = new java.util.ArrayList<>();
+                            e.setCancelledIds(cancelledIds);
                         }
+                        
+                        int userId = vm.getUser().getId();
+                        if (!cancelledIds.contains(userId)) {
+                            cancelledIds.add(userId);
+                            
+                            // Update event with cancelled user
+                            EventController.updateEvent(e, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    vm.removeParticipatingId(eventIdStr);
+                                    isParticipating = false;
+                                    isWaitlisted = false;     // ensures consistency w/ waitlist status
 
-                        // refresh event obj
-                        EventController.getEvent(eventId, new EventCallback() {
-                            @Override
-                            public void onSuccess(Event refreshed) {
-                                e = refreshed; }
-                            @Override
-                            public void onFailure(Exception ex) { }
-                        });
+                                    if (isAdded()) {
+                                        updateWaitlistButton(false);
+                                        binding.btnJoinWaitlist.setEnabled(true);
+                                        Toast.makeText(requireContext(),
+                                                "You have left the event",
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+
+                                    // refresh event obj
+                                    EventController.getEvent(eventId, new EventCallback() {
+                                        @Override
+                                        public void onSuccess(Event refreshed) {
+                                            e = refreshed; }
+                                        @Override
+                                        public void onFailure(Exception ex) { }
+                                    });
+                                }
+
+                                @Override
+                                public void onFailure(Exception ex) {
+                                    if (isAdded()) {
+                                        updateWaitlistButton(true);
+                                        binding.btnJoinWaitlist.setEnabled(true);
+                                    }
+                                    Toast.makeText(requireContext(),
+                                            "Failed to update event status", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        } else {
+                            // Already in cancelled list, just update UI
+                            vm.removeParticipatingId(eventIdStr);
+                            isParticipating = false;
+                            isWaitlisted = false;
+
+                            if (isAdded()) {
+                                updateWaitlistButton(false);
+                                binding.btnJoinWaitlist.setEnabled(true);
+                            }
+
+                            // refresh event obj
+                            EventController.getEvent(eventId, new EventCallback() {
+                                @Override
+                                public void onSuccess(Event refreshed) {
+                                    e = refreshed; }
+                                @Override
+                                public void onFailure(Exception ex) { }
+                            });
+                        }
                     }
 
                     @Override

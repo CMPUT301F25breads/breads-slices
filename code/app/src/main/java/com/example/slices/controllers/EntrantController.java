@@ -517,6 +517,45 @@ public class EntrantController {
      * @param callback
      *      Callback to call when the operation is complete
      */
+    public static void createEntrant(Entrant entrant, EntrantCallback callback) {
+        if (entrant == null || entrant.getProfile() == null) {
+            callback.onFailure(new IllegalArgumentException("Entrant or profile is null"));
+            return;
+        }
+        EntrantController.getNewEntrantId(new EntrantIDCallback() {
+            @Override
+            public void onSuccess(int id) {
+                entrant.setId(id);
+                EntrantController.writeEntrant(entrant, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Logger.logSystem("Created entrant id=" + id + " via Entrant payload", null);
+                        callback.onSuccess(entrant);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        Logger.logError("Failed to create entrant via Entrant payload id=" + id, null);
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Logger.logError("Failed to generate ID while creating entrant via Entrant payload", null);
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    /**
+     * Creates an entrant asynchronously
+     * @param deviceId
+     *      Device ID of the entrant
+     * @param callback
+     *      Callback to call when the operation is complete
+     */
     public static void createEntrant(String deviceId, EntrantCallback callback) {
         //First check if the entrant already exists
         EntrantController.getEntrantByDeviceId(deviceId, new EntrantCallback() {

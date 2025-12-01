@@ -1189,10 +1189,22 @@ public class OrganizerEditEventFragment extends Fragment {
 
     /**
      * Updates the Draw Lottery button state based on registration deadline.
-     * Enables button only when registration has closed.
+     * Enables button only when registration has closed and event is not full.
      */
     private void updateLotteryButtonState() {
         if (currentEvent == null || buttonDrawLottery == null) {
+            return;
+        }
+
+        // Check if event is full
+        int maxEntrants = currentEvent.getEventInfo().getMaxEntrants();
+        int currentEntrants = currentEvent.getEntrants() != null ? currentEvent.getEntrants().size() : 0;
+        boolean isFull = currentEntrants >= maxEntrants;
+
+        if (isFull) {
+            // Event is full, disable button
+            buttonDrawLottery.setEnabled(false);
+            buttonDrawLottery.setAlpha(0.5f);
             return;
         }
 
@@ -1287,10 +1299,21 @@ public class OrganizerEditEventFragment extends Fragment {
 
     /**
      * Updates the Re-draw button visibility based on whether the initial lottery has been run.
-     * The button is visible only after at least one invitation has been sent.
+     * The button is visible only after at least one invitation has been sent and event is not full.
      */
     private void updateRedrawButtonVisibility() {
         if (currentEvent == null || buttonRedrawLottery == null) {
+            return;
+        }
+
+        // Check if event is full
+        int maxEntrants = currentEvent.getEventInfo().getMaxEntrants();
+        int currentEntrants = currentEvent.getEntrants() != null ? currentEvent.getEntrants().size() : 0;
+        boolean isFull = currentEntrants >= maxEntrants;
+
+        if (isFull) {
+            // Event is full, hide button
+            buttonRedrawLottery.setVisibility(View.GONE);
             return;
         }
 

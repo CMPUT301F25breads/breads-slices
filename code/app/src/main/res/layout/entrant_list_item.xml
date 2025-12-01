@@ -45,13 +45,27 @@
         android:padding="6dp"
         android:visibility="gone" />
 
+    <TextView
+        android:id="@+id/tv_accepted_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="8dp"
+        android:text="Accepted"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textStyle="bold"
+        android:textColor="@android:color/holo_green_dark"
+        android:background="@drawable/card_background"
+        android:padding="6dp"
+        android:visibility="gone" />
+
     <Button
         android:id="@+id/btn_cancel_entrant"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
         android:layout_marginStart="8dp"
-        android:text="Cancel"
+        android:text="Remove"
         android:textSize="12sp"
         android:minWidth="0dp"
         android:minHeight="0dp"

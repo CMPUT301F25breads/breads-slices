@@ -9,5 +9,7 @@ import com.example.slices.models.Event;
  */
 public interface EventCallback {
     void onSuccess(Event event);
-    void onFailure(Exception e);
+    default void onFailure(Exception e) {
+        // Optional override for failure handling
+    }
 }

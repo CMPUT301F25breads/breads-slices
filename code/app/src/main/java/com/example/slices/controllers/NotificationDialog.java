@@ -27,8 +27,30 @@ public class NotificationDialog {
      * @return AlertDialog instance
      */
     public static AlertDialog showNotificationDialog(Context context, NotificationDialogCallback callback) {
+        return showNotificationDialog(context, callback, null, null);
+    }
+
+    /**
+     * Show a dialog for composing and sending notifications with default values
+     *
+     * @param context Context for creating the dialog
+     * @param callback Callback for handling user actions
+     * @param defaultTitle Default title text (can be edited by user)
+     * @param defaultMessage Default message text (can be edited by user)
+     * @return AlertDialog instance
+     */
+    public static AlertDialog showNotificationDialog(Context context, NotificationDialogCallback callback,
+                                                     String defaultTitle, String defaultMessage) {
         LayoutInflater inflater = LayoutInflater.from(context);
         DialogSendNotificationBinding binding = DialogSendNotificationBinding.inflate(inflater);
+
+        // Set default values if provided
+        if (defaultTitle != null && !defaultTitle.isEmpty()) {
+            binding.etNotificationTitle.setText(defaultTitle);
+        }
+        if (defaultMessage != null && !defaultMessage.isEmpty()) {
+            binding.etNotificationMessage.setText(defaultMessage);
+        }
 
         AlertDialog dialog = new AlertDialog.Builder(context)
                 .setView(binding.getRoot())

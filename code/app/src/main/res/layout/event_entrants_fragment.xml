@@ -172,6 +172,25 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
 
+            <!-- Cancel All Non-Responsive Button (shown for invited list with non-responsive entrants) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel_all_non_responsive"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="8dp"
+                android:text="Cancel All Non-Responsive"
+                android:visibility="gone"
+                android:textColor="?attr/colorError"
+                app:strokeColor="?attr/colorError"
+                app:icon="@android:drawable/ic_menu_close_clear_cancel"
+                app:iconTint="?attr/colorError"
+                app:layout_constraintTop_toBottomOf="@id/btn_draw_replacement"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
             <!-- Empty State View -->
             <LinearLayout
                 android:id="@+id/layout_empty_state"

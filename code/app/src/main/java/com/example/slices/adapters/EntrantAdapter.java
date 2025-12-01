@@ -102,30 +102,28 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.ViewHold
             holder.emailTextView.setText(email);
         }
 
-        // Show "Invited" label if entrant is in invitedIds list
-        if (event != null && event.getInvitedIds() != null && 
-            event.getInvitedIds().contains(entrant.getId())) {
-            holder.invitedLabel.setVisibility(View.VISIBLE);
+        // Check if entrant has accepted invitation (in event.getEntrantIds())
+        boolean hasAccepted = event != null && event.getEntrantIds() != null &&
+                              event.getEntrantIds().contains(entrant.getId());
+
+        // Hide "Invited" label - invited users are shown in a separate list
+        holder.invitedLabel.setVisibility(View.GONE);
+
+        // Show "Accepted" label if entrant has accepted their invitation
+        if (hasAccepted) {
+            holder.acceptedLabel.setVisibility(View.VISIBLE);
         } else {
-            holder.invitedLabel.setVisibility(View.GONE);
+            holder.acceptedLabel.setVisibility(View.GONE);
         }
 
-        // Show "Cancel" button if entrant is invited but not accepted (non-responsive)
-        // Check if entrant has accepted (in event.getEntrantIds())
-        if (event != null && event.getInvitedIds() != null && 
-            event.getInvitedIds().contains(entrant.getId())) {
-            // Entrant is invited
-            boolean hasAccepted = event.getEntrantIds() != null && 
-                                  event.getEntrantIds().contains(entrant.getId());
-            if (!hasAccepted && cancelListener != null) {
-                // Show cancel button for non-responsive entrants
-                holder.cancelButton.setVisibility(View.VISIBLE);
-                holder.cancelButton.setOnClickListener(v -> 
-                    cancelListener.onCancelEntrant(entrant.getId())
-                );
-            } else {
-                holder.cancelButton.setVisibility(View.GONE);
-            }
+        // Show "Remove" button only if entrant is invited but hasn't accepted yet
+        // Don't show remove button for accepted participants
+        if (event != null && event.getInvitedIds() != null &&
+            event.getInvitedIds().contains(entrant.getId()) && !hasAccepted && cancelListener != null) {
+            holder.cancelButton.setVisibility(View.VISIBLE);
+            holder.cancelButton.setOnClickListener(v ->
+                cancelListener.onCancelEntrant(entrant.getId())
+            );
         } else {
             holder.cancelButton.setVisibility(View.GONE);
         }
@@ -147,12 +145,13 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.ViewHold
 
     /**
      * ViewHolder class for entrant list items
-     * Holds references to the name, email TextViews, invited label, and cancel button
+     * Holds references to the name, email TextViews, invited label, accepted label, and cancel button
      */
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView nameTextView;
         TextView emailTextView;
         TextView invitedLabel;
+        TextView acceptedLabel;
         Button cancelButton;
 
         public ViewHolder(@NonNull View itemView) {
@@ -160,6 +159,7 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.ViewHold
             nameTextView = itemView.findViewById(R.id.tv_entrant_name);
             emailTextView = itemView.findViewById(R.id.tv_entrant_email);
             invitedLabel = itemView.findViewById(R.id.tv_invited_label);
+            acceptedLabel = itemView.findViewById(R.id.tv_accepted_label);
             cancelButton = itemView.findViewById(R.id.btn_cancel_entrant);
         }
     }

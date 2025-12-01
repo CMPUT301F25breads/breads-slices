@@ -1,7 +1,9 @@
 package com.example.slices.fragments;
 
 import android.os.Bundle;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -43,6 +45,8 @@ public class EventEntrantsFragment extends Fragment {
     private int senderId;
     private Event currentEvent;
     private ListType currentListType = ListType.WAITLIST;
+    private GestureDetector gestureDetector;
+    private boolean hasLotteryBeenDrawn = false;
 
     /**
      * Create a new instance of EventEntrantsFragment with event data
@@ -99,6 +103,9 @@ public class EventEntrantsFragment extends Fragment {
         // Initialize the entrants list container
         setupEntrantsContainer();
 
+        // Set up swipe gesture detector
+        setupSwipeGesture();
+
         // Set up notification buttons
         setupNotificationButtons();
 
@@ -110,6 +117,9 @@ public class EventEntrantsFragment extends Fragment {
 
         // Set up draw replacement button
         setupDrawReplacementButton();
+
+        // Set up cancel all non-responsive button
+        setupCancelAllButton();
 
         // Load event data for notifications
         loadEventData();
@@ -184,6 +194,124 @@ public class EventEntrantsFragment extends Fragment {
             // Reload data for the selected list type
             displayEntrantsForCurrentType();
         });
+    }
+
+    // Set up swipe gesture detector for switching between lists
+    private void setupSwipeGesture() {
+        if (binding == null) return;
+
+        gestureDetector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
+            private static final int SWIPE_THRESHOLD = 100;
+            private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                // Only allow swipe if lottery has been drawn
+                if (!hasLotteryBeenDrawn) {
+                    return false;
+                }
+
+                if (e1 == null || e2 == null) {
+                    return false;
+                }
+
+                float diffX = e2.getX() - e1.getX();
+                float diffY = e2.getY() - e1.getY();
+
+                // Check if horizontal swipe is dominant
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffX > 0) {
+                            // Swipe right - go to previous list
+                            switchToPreviousList();
+                        } else {
+                            // Swipe left - go to next list
+                            switchToNextList();
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+
+        // Attach gesture detector to multiple areas for better UX
+        // 1. Event name/count area (top card)
+        binding.tvEventName.setOnTouchListener((v, event) -> {
+            gestureDetector.onTouchEvent(event);
+            return false;
+        });
+        
+        binding.tvEntrantCount.setOnTouchListener((v, event) -> {
+            gestureDetector.onTouchEvent(event);
+            return false;
+        });
+    }
+
+    // Switch to the next list type
+    private void switchToNextList() {
+        switch (currentListType) {
+            case WAITLIST:
+                currentListType = ListType.INVITED;
+                break;
+            case INVITED:
+                currentListType = ListType.PARTICIPANTS;
+                break;
+            case PARTICIPANTS:
+                currentListType = ListType.CANCELLED;
+                break;
+            case CANCELLED:
+                // Wrap around to waitlist
+                currentListType = ListType.WAITLIST;
+                break;
+        }
+        updateDropdownText();
+        displayEntrantsForCurrentType();
+    }
+
+    // Switch to the previous list type
+    private void switchToPreviousList() {
+        switch (currentListType) {
+            case WAITLIST:
+                // Wrap around to cancelled
+                currentListType = ListType.CANCELLED;
+                break;
+            case INVITED:
+                currentListType = ListType.WAITLIST;
+                break;
+            case PARTICIPANTS:
+                currentListType = ListType.INVITED;
+                break;
+            case CANCELLED:
+                currentListType = ListType.PARTICIPANTS;
+                break;
+        }
+        updateDropdownText();
+        displayEntrantsForCurrentType();
+    }
+
+    // Update the dropdown text to match current list type
+    private void updateDropdownText() {
+        if (binding == null) return;
+
+        String text;
+        switch (currentListType) {
+            case WAITLIST:
+                text = getString(R.string.waiting_list);
+                break;
+            case INVITED:
+                text = getString(R.string.invited_list);
+                break;
+            case PARTICIPANTS:
+                text = getString(R.string.participants_list);
+                break;
+            case CANCELLED:
+                text = getString(R.string.cancelled_list);
+                break;
+            default:
+                text = getString(R.string.waiting_list);
+        }
+        binding.dropdownListType.setText(text, false);
     }
 
     /**
@@ -281,6 +409,20 @@ public class EventEntrantsFragment extends Fragment {
     }
 
     /**
+     * Set up cancel all non-responsive button
+     */
+    private void setupCancelAllButton() {
+        if (binding == null) return;
+
+        binding.btnCancelAllNonResponsive.setOnClickListener(v -> {
+            onCancelAllNonResponsiveClicked();
+        });
+
+        // Initially hide button until appropriate view is shown
+        binding.btnCancelAllNonResponsive.setVisibility(View.GONE);
+    }
+
+    /**
      * Navigate to the map fragment to show entrant locations
      */
     private void showEntrantMap() {
@@ -306,6 +448,13 @@ public class EventEntrantsFragment extends Fragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         currentEvent = event;
+                        
+                        // Check if lottery has been drawn (invited list is not empty)
+                        hasLotteryBeenDrawn = event.getInvitedIds() != null && !event.getInvitedIds().isEmpty();
+                        
+                        // Hide dropdown if lottery has been drawn, show swipe hint
+                        updateDropdownVisibility();
+                        
                         updateNotificationButtonStates();
                         updateMapButtonVisibility();
                         displayEntrantsForCurrentType();
@@ -328,6 +477,15 @@ public class EventEntrantsFragment extends Fragment {
                 }
             }
         });
+    }
+
+    // Update dropdown visibility based on whether lottery has been drawn
+    private void updateDropdownVisibility() {
+        if (binding == null) return;
+
+        // Always keep dropdown visible - it's useful for navigation
+        // Swipe gestures are just an additional convenience
+        binding.dropdownLayout.setVisibility(View.VISIBLE);
     }
 
     // Update map button visibility based on event geolocation setting
@@ -353,6 +511,9 @@ public class EventEntrantsFragment extends Fragment {
 
         // Update draw replacement button visibility based on list type
         updateDrawReplacementButtonVisibility();
+
+        // Update cancel all button visibility based on list type
+        updateCancelAllButtonVisibility();
 
         switch (currentListType) {
             case WAITLIST:
@@ -489,6 +650,42 @@ public class EventEntrantsFragment extends Fragment {
         return false; // No eligible entrants
     }
 
+    /**
+     * Update cancel all non-responsive button visibility and enabled state
+     * Show button only when:
+     * 1. Viewing invited list
+     * 2. There are non-responsive invited entrants (invited but not accepted)
+     */
+    private void updateCancelAllButtonVisibility() {
+        if (binding == null || currentEvent == null) return;
+
+        // Only show on invited view
+        if (currentListType != ListType.INVITED) {
+            binding.btnCancelAllNonResponsive.setVisibility(View.GONE);
+            return;
+        }
+
+        // Check if there are non-responsive entrants (invited but not accepted)
+        List<Integer> invitedIds = currentEvent.getInvitedIds() != null ? currentEvent.getInvitedIds() : new ArrayList<>();
+        List<Integer> entrantIds = currentEvent.getEntrantIds() != null ? currentEvent.getEntrantIds() : new ArrayList<>();
+
+        // Find non-responsive entrants
+        List<Integer> nonResponsiveIds = new ArrayList<>();
+        for (Integer invitedId : invitedIds) {
+            if (!entrantIds.contains(invitedId)) {
+                nonResponsiveIds.add(invitedId);
+            }
+        }
+
+        // Only show button if there are non-responsive entrants
+        if (nonResponsiveIds.isEmpty()) {
+            binding.btnCancelAllNonResponsive.setVisibility(View.GONE);
+        } else {
+            binding.btnCancelAllNonResponsive.setVisibility(View.VISIBLE);
+            binding.btnCancelAllNonResponsive.setEnabled(true);
+        }
+    }
+
     // Display waitlist entrants
     private void displayWaitlistEntrants() {
         if (binding == null || currentEvent == null) return;
@@ -500,7 +697,11 @@ public class EventEntrantsFragment extends Fragment {
         }
         
         // Update entrant count display
-        binding.tvEntrantCount.setText(waitlistEntrants.size() + " entrants on waitlist");
+        String countText = waitlistEntrants.size() + " entrants on waitlist";
+        if (hasLotteryBeenDrawn) {
+            countText += " • Swipe here to switch lists";
+        }
+        binding.tvEntrantCount.setText(countText);
         
         if (waitlistEntrants.isEmpty()) {
             showEmptyState();
@@ -528,45 +729,25 @@ public class EventEntrantsFragment extends Fragment {
         binding.layoutEmptyState.setVisibility(View.GONE);
         binding.layoutErrorState.setVisibility(View.GONE);
 
-        // Query invitations for this event
-        NotificationManager.getInvitationByEventId(eventId, new NotificationListCallback() {
-            @Override
-            public void onSuccess(List<Notification> notifications) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        // Filter for pending invitations (not accepted, not declined)
-                        List<Integer> invitedEntrantIds = new ArrayList<>();
-                        for (Notification notification : notifications) {
-                            if (notification instanceof Invitation) {
-                                Invitation invitation = (Invitation) notification;
-                                if (!invitation.isAccepted() && !invitation.isDeclined()) {
-                                    invitedEntrantIds.add(invitation.getRecipientId());
-                                }
-                            }
-                        }
+        // Use invitedIds from the event directly to avoid duplicates
+        List<Integer> invitedIds = currentEvent.getInvitedIds();
+        if (invitedIds == null) {
+            invitedIds = new ArrayList<>();
+        }
 
-                        // Update count display
-                        binding.tvEntrantCount.setText(invitedEntrantIds.size() + " invited entrants");
+        // Update count display
+        String countText = invitedIds.size() + " invited entrants";
+        if (hasLotteryBeenDrawn) {
+            countText += " • Swipe here to switch lists";
+        }
+        binding.tvEntrantCount.setText(countText);
 
-                        if (invitedEntrantIds.isEmpty()) {
-                            showEmptyState();
-                        } else {
-                            // Fetch entrant details for each invited user
-                            fetchEntrantsByIdsWithCancelListener(invitedEntrantIds);
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        showErrorState("Failed to load invited entrants: " + e.getMessage());
-                    });
-                }
-            }
-        });
+        if (invitedIds.isEmpty()) {
+            showEmptyState();
+        } else {
+            // Fetch entrant details for each invited user
+            fetchEntrantsByIdsWithCancelListener(invitedIds);
+        }
     }
 
     // Display confirmed participants
@@ -580,7 +761,11 @@ public class EventEntrantsFragment extends Fragment {
         }
         
         // Update entrant count display
-        binding.tvEntrantCount.setText(participants.size() + " confirmed participants");
+        String countText = participants.size() + " confirmed participants";
+        if (hasLotteryBeenDrawn) {
+            countText += " • Swipe here to switch lists";
+        }
+        binding.tvEntrantCount.setText(countText);
         
         if (participants.isEmpty()) {
             showEmptyState();
@@ -609,7 +794,11 @@ public class EventEntrantsFragment extends Fragment {
         }
 
         // Update count display
-        binding.tvEntrantCount.setText(cancelledIds.size() + " cancelled entrants");
+        String countText = cancelledIds.size() + " cancelled entrants";
+        if (hasLotteryBeenDrawn) {
+            countText += " • Swipe here to switch lists";
+        }
+        binding.tvEntrantCount.setText(countText);
 
         if (cancelledIds.isEmpty()) {
             showEmptyState();
@@ -791,6 +980,16 @@ public class EventEntrantsFragment extends Fragment {
 
     // Show notification composition dialog
     private void showNotificationDialog(NotificationType type) {
+        // Set default message based on notification type
+        String defaultTitle = null;
+        String defaultMessage = null;
+
+        if (type == NotificationType.WAITLIST) {
+            // Default message for waitlist notifications
+            defaultTitle = "Waitlist Update";
+            defaultMessage = "Thanks for joining the waitlist! Stay tuned for updates.";
+        }
+
         NotificationDialog.showNotificationDialog(requireContext(), new NotificationDialog.NotificationDialogCallback() {
             @Override
             public void onSendClicked(String title, String message) {
@@ -801,7 +1000,7 @@ public class EventEntrantsFragment extends Fragment {
             public void onCancelClicked() {
                 // User cancelled, no action needed
             }
-        });
+        }, defaultTitle, defaultMessage);
     }
 
     // Send notification based on type
@@ -930,6 +1129,102 @@ public class EventEntrantsFragment extends Fragment {
                 }
             }
         });
+    }
+
+    /**
+     * Handler for Cancel All Non-Responsive button
+     * Cancels all invited entrants who have not accepted their invitation
+     */
+    private void onCancelAllNonResponsiveClicked() {
+        if (currentEvent == null) {
+            android.widget.Toast.makeText(requireContext(),
+                    "Event data not loaded yet",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Find all non-responsive entrants (invited but not accepted)
+        List<Integer> invitedIds = currentEvent.getInvitedIds() != null ? currentEvent.getInvitedIds() : new ArrayList<>();
+        List<Integer> entrantIds = currentEvent.getEntrantIds() != null ? currentEvent.getEntrantIds() : new ArrayList<>();
+
+        List<Integer> nonResponsiveIds = new ArrayList<>();
+        for (Integer invitedId : invitedIds) {
+            if (!entrantIds.contains(invitedId)) {
+                nonResponsiveIds.add(invitedId);
+            }
+        }
+
+        if (nonResponsiveIds.isEmpty()) {
+            android.widget.Toast.makeText(requireContext(),
+                    "No non-responsive entrants to cancel.",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show confirmation dialog
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Cancel All Non-Responsive Entrants")
+                .setMessage("Are you sure you want to cancel " + nonResponsiveIds.size() +
+                           " non-responsive entrants? They will be notified that their invitation has expired.")
+                .setPositiveButton("Cancel Them", (dialog, which) -> {
+                    // Show loading indicator
+                    if (binding != null) {
+                        binding.progressBar.setVisibility(View.VISIBLE);
+                        binding.btnCancelAllNonResponsive.setEnabled(false);
+                    }
+
+                    // Call EventController.cancelMultipleEntrants()
+                    com.example.slices.controllers.EventController.cancelMultipleEntrants(
+                            currentEvent,
+                            nonResponsiveIds,
+                            new com.example.slices.interfaces.DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    if (getActivity() != null) {
+                                        getActivity().runOnUiThread(() -> {
+                                            // Hide loading indicator
+                                            if (binding != null) {
+                                                binding.progressBar.setVisibility(View.GONE);
+                                            }
+
+                                            // Show success message
+                                            android.widget.Toast.makeText(requireContext(),
+                                                    "Successfully cancelled " + nonResponsiveIds.size() + " non-responsive entrants.",
+                                                    android.widget.Toast.LENGTH_SHORT).show();
+
+                                            // Reload event data to refresh UI
+                                            loadEventData();
+                                        });
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    if (getActivity() != null) {
+                                        getActivity().runOnUiThread(() -> {
+                                            // Hide loading indicator
+                                            if (binding != null) {
+                                                binding.progressBar.setVisibility(View.GONE);
+                                                binding.btnCancelAllNonResponsive.setEnabled(true);
+                                            }
+
+                                            // Show error message
+                                            String errorMessage = "Failed to cancel entrants.";
+                                            if (e.getMessage() != null) {
+                                                errorMessage = "Failed to cancel entrants: " + e.getMessage();
+                                            }
+
+                                            android.widget.Toast.makeText(requireContext(),
+                                                    errorMessage,
+                                                    android.widget.Toast.LENGTH_LONG).show();
+                                        });
+                                    }
+                                }
+                            }
+                    );
+                })
+                .setNegativeButton("Keep Them", null)
+                .show();
     }
 
     /**
