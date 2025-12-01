@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -62,6 +63,29 @@ public class NotifFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         notificationAdapter = new NotificationAdapter(requireContext());
         recyclerView.setAdapter(notificationAdapter);
+
+        binding.clearNotificationsButton.setOnClickListener(v -> {
+            NotifFragmentBinding b = binding;
+            if (!isAdded() || b == null) return;
+            b.clearNotificationsButton.setEnabled(false);
+            NotificationManager.clearNotificationsForRecipient(vm.getUser().getId(), new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    if (!isAdded()) return;
+                    b.clearNotificationsButton.setEnabled(true);
+                    notificationAdapter.setNotifications(new ArrayList<>());
+                    b.noNotifText.setVisibility(View.VISIBLE);
+                    Toast.makeText(requireContext(), "Notifications cleared", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    if (!isAdded()) return;
+                    b.clearNotificationsButton.setEnabled(true);
+                    Toast.makeText(requireContext(), "Failed to clear notifications", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
 
         List<Notification> recyclerNotifications = new ArrayList<>();
 

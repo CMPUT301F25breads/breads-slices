@@ -4,6 +4,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="light_primary">#454545</color>
     <color name="button_purple">#673AB7</color>
+    <color name="map_purple">#7E57C2</color>
     <color name="red">#FF0000</color>
     <color name="dark_grey">#454545</color>
     <color name="nav_item_selector">#000000</color>

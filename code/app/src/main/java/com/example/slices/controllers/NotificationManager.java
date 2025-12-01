@@ -17,6 +17,7 @@ import com.example.slices.models.Invitation;
 import com.example.slices.models.NotSelected;
 import com.example.slices.models.Notification;
 import com.example.slices.models.NotificationType;
+import com.example.slices.models.Profile;
 
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
@@ -27,6 +28,7 @@ import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,6 +57,27 @@ public class NotificationManager {
      * Private constructor to prevent external instantiation
      */
     private NotificationManager() {
+    }
+
+    /**
+     * Check whether a recipient has opted in to notifications. Falls back to allowing delivery
+     * if profile cannot be fetched to avoid breaking critical flows.
+     */
+    private static void withRecipientOptIn(int recipientId, Consumer<Boolean> callback) {
+        EntrantController.getEntrant(recipientId, new EntrantCallback() {
+            @Override
+            public void onSuccess(Entrant entrant) {
+                Profile profile = entrant.getProfile();
+                boolean enabled = profile == null || profile.getSendNotifications();
+                callback.accept(enabled);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // If we cannot determine preference, default to sending to avoid silent drops
+                callback.accept(true);
+            }
+        });
     }
 
     /**
@@ -121,31 +144,39 @@ public class NotificationManager {
                                         int recipientId, int senderId, int eventId,
                                         DBWriteCallback callback) {
 
-        DocumentReference ref = notificationRef.document();
-        String id = ref.getId();
+        withRecipientOptIn(recipientId, enabled -> {
+            if (!enabled) {
+                Logger.logSystem("Skipped notification (opt-out) recipientId=" + recipientId, null);
+                callback.onSuccess();
+                return;
+            }
 
-        Notification notification = new Notification(title, body, id, recipientId, senderId);
-        notification.setType(NotificationType.NOTIFICATION);
-        notification.setEventId(eventId);
+            DocumentReference ref = notificationRef.document();
+            String id = ref.getId();
 
-        ref.set(notification)
-                .addOnSuccessListener(aVoid ->
-                        Logger.logNotification(title + " " + body, recipientId, senderId, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                Logger.logSystem("Notification sent successfully to recipientId=" + recipientId, null);
-                                callback.onSuccess();
-                            }
-                            @Override
-                            public void onFailure(Exception e) {
-                                Logger.logError("Failed to log notification for recipientId=" + recipientId, null);
-                                callback.onFailure(e);
-                            }
-                        }))
-                .addOnFailureListener(e -> {
-                    Logger.logError("Failed to send notification to recipientId=" + recipientId + " senderId=" + senderId, null);
-                    callback.onFailure(e);
-                });
+            Notification notification = new Notification(title, body, id, recipientId, senderId);
+            notification.setType(NotificationType.NOTIFICATION);
+            notification.setEventId(eventId);
+
+            ref.set(notification)
+                    .addOnSuccessListener(aVoid ->
+                            Logger.logNotification(title + " " + body, recipientId, senderId, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    Logger.logSystem("Notification sent successfully to recipientId=" + recipientId, null);
+                                    callback.onSuccess();
+                                }
+                                @Override
+                                public void onFailure(Exception e) {
+                                    Logger.logError("Failed to log notification for recipientId=" + recipientId, null);
+                                    callback.onFailure(e);
+                                }
+                            }))
+                    .addOnFailureListener(e -> {
+                        Logger.logError("Failed to send notification to recipientId=" + recipientId + " senderId=" + senderId, null);
+                        callback.onFailure(e);
+                    });
+        });
     }
 
     /**
@@ -203,29 +234,37 @@ public class NotificationManager {
     public static void sendNotSelected(String title, String body,
                                        int recipientId, int senderId, int eventId,
                                        DBWriteCallback callback) {
-        DocumentReference ref = notificationRef.document();
-        String id = ref.getId();
+        withRecipientOptIn(recipientId, enabled -> {
+            if (!enabled) {
+                Logger.logSystem("Skipped not-selected notification (opt-out) recipientId=" + recipientId, null);
+                callback.onSuccess();
+                return;
+            }
 
-        NotSelected notification = new NotSelected(title, body, id, recipientId, senderId, eventId);
+            DocumentReference ref = notificationRef.document();
+            String id = ref.getId();
 
-        ref.set(notification)
-                .addOnSuccessListener(aVoid ->
-                        Logger.logNotSelected(title + " " + body, recipientId, senderId, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                Logger.logSystem("NotSelected sent successfully to recipientId=" + recipientId, null);
-                                callback.onSuccess();
-                            }
-                            @Override
-                            public void onFailure(Exception e) {
-                                Logger.logError("Failed to log NotSelected for recipientId=" + recipientId, null);
-                                callback.onFailure(e);
-                            }
-                        }))
-                .addOnFailureListener(e -> {
-                    Logger.logError("Failed to send notification to recipientId=" + recipientId + " senderId=" + senderId, null);
-                    callback.onFailure(e);
-                });
+            NotSelected notification = new NotSelected(title, body, id, recipientId, senderId, eventId);
+
+            ref.set(notification)
+                    .addOnSuccessListener(aVoid ->
+                            Logger.logNotSelected(title + " " + body, recipientId, senderId, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    Logger.logSystem("NotSelected sent successfully to recipientId=" + recipientId, null);
+                                    callback.onSuccess();
+                                }
+                                @Override
+                                public void onFailure(Exception e) {
+                                    Logger.logError("Failed to log NotSelected for recipientId=" + recipientId, null);
+                                    callback.onFailure(e);
+                                }
+                            }))
+                    .addOnFailureListener(e -> {
+                        Logger.logError("Failed to send notification to recipientId=" + recipientId + " senderId=" + senderId, null);
+                        callback.onFailure(e);
+                    });
+        });
     }
 
     public static void sendBulkNotSelected(String title, String body, List<Integer> recipients,
@@ -346,34 +385,42 @@ public class NotificationManager {
                                       int eventId,
                                       DBWriteCallback callback) {
 
-        DocumentReference ref = notificationRef.document();
-        String id = ref.getId();
+        withRecipientOptIn(recipientId, enabled -> {
+            if (!enabled) {
+                Logger.logSystem("Skipped invitation (opt-out) recipientId=" + recipientId + " eventId=" + eventId, null);
+                callback.onSuccess();
+                return;
+            }
 
-        Invitation invitation = new Invitation(title, body, id, recipientId, senderId, eventId);
-        invitation.setType(NotificationType.INVITATION);
+            DocumentReference ref = notificationRef.document();
+            String id = ref.getId();
 
-        ref.set(invitation)
-                .addOnSuccessListener(aVoid ->
-                        Logger.logInvSent(eventId, recipientId, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                Logger.logSystem("Invitation sent successfully for eventId=" + eventId
-                                        + " to recipientId=" + recipientId, null);
-                                callback.onSuccess();
-                            }
+            Invitation invitation = new Invitation(title, body, id, recipientId, senderId, eventId);
+            invitation.setType(NotificationType.INVITATION);
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                Logger.logError("Failed to log invitation sent for eventId=" + eventId
-                                        + " recipientId=" + recipientId, null);
-                                callback.onFailure(e);
-                            }
-                        }))
-                .addOnFailureListener(e -> {
-                    Logger.logError("Failed to send invitation for eventId=" + eventId
-                            + " to recipientId=" + recipientId, null);
-                    callback.onFailure(e);
-                });
+            ref.set(invitation)
+                    .addOnSuccessListener(aVoid ->
+                            Logger.logInvSent(eventId, recipientId, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    Logger.logSystem("Invitation sent successfully for eventId=" + eventId
+                                            + " to recipientId=" + recipientId, null);
+                                    callback.onSuccess();
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    Logger.logError("Failed to log invitation sent for eventId=" + eventId
+                                            + " recipientId=" + recipientId, null);
+                                    callback.onFailure(e);
+                                }
+                            }))
+                    .addOnFailureListener(e -> {
+                        Logger.logError("Failed to send invitation for eventId=" + eventId
+                                + " to recipientId=" + recipientId, null);
+                        callback.onFailure(e);
+                    });
+        });
     }
 
 
@@ -420,6 +467,37 @@ public class NotificationManager {
                 .addOnFailureListener(e -> {
                     Logger.logError("Failed to get notifications in getAllNotifications: " + e.getMessage(), null);
                     callback.onFailure(new DBOpFailed("Failed to get notifications"));
+                });
+    }
+
+    /**
+     * Deletes all notifications (any type) for a given recipient.
+     * Used by both user and organizer flows for "clear all notifications".
+     */
+    public static void clearNotificationsForRecipient(int recipientId, DBWriteCallback callback) {
+        notificationRef.whereEqualTo("recipientId", recipientId)
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.isEmpty()) {
+                        Logger.logSystem("No notifications to clear for recipientId=" + recipientId, null);
+                        callback.onSuccess();
+                        return;
+                    }
+                    WriteBatch batch = db.batch();
+                    snapshot.getDocuments().forEach(doc -> batch.delete(doc.getReference()));
+                    batch.commit()
+                            .addOnSuccessListener(aVoid -> {
+                                Logger.logSystem("Cleared " + snapshot.size() + " notifications for recipientId=" + recipientId, null);
+                                callback.onSuccess();
+                            })
+                            .addOnFailureListener(e -> {
+                                Logger.logError("Failed to clear notifications for recipientId=" + recipientId, null);
+                                callback.onFailure(new DBOpFailed("Failed to clear notifications"));
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Logger.logError("Failed to fetch notifications for clear-all recipientId=" + recipientId, null);
+                    callback.onFailure(new DBOpFailed("Failed to clear notifications"));
                 });
     }
 
