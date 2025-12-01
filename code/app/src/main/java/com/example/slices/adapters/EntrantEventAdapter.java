@@ -173,11 +173,17 @@ public class EntrantEventAdapter extends RecyclerView.Adapter<EntrantEventAdapte
             details.setText(formatter.format(date));
             place.setText(eventInfo.getAddress());
 
-            // Load image
-            Glide.with(context)
-                    .load(eventInfo.getImageUrl())
-                    .placeholder(R.drawable.ic_image)
-                    .into(image);
+            // Load image with placeholder/error; skip glide on missing URL
+            String imageUrl = eventInfo.getImageUrl();
+            if (imageUrl == null || imageUrl.trim().isEmpty()) {
+                image.setImageResource(R.drawable.ic_image);
+            } else {
+                Glide.with(context)
+                        .load(imageUrl)
+                        .placeholder(R.drawable.ic_image)
+                        .error(R.drawable.ic_image)
+                        .into(image);
+            }
 
             // Item click navigates to EventDetailsFragment
             itemView.setOnClickListener(v -> {

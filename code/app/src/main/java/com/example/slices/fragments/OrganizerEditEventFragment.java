@@ -1170,8 +1170,10 @@ public class OrganizerEditEventFragment extends Fragment {
                 
                 if (isAdded() && getContext() != null) {
                     Toast.makeText(getContext(), "Lottery drawn successfully!", Toast.LENGTH_SHORT).show();
-                    buttonDrawLottery.setText("Draw Lottery");
-                    buttonDrawLottery.setEnabled(true);
+                    // Hide draw button after first successful draw to avoid repeats
+                    buttonDrawLottery.setVisibility(View.GONE);
+                    buttonDrawLottery.setEnabled(false);
+                    updateRedrawButtonVisibility();
                 }
             }
 
@@ -1194,6 +1196,16 @@ public class OrganizerEditEventFragment extends Fragment {
     private void updateLotteryButtonState() {
         if (currentEvent == null || buttonDrawLottery == null) {
             return;
+        }
+
+        // If lottery already run (invited list populated), hide the draw button
+        List<Integer> invitedIds = currentEvent.getInvitedIds();
+        if (invitedIds != null && !invitedIds.isEmpty()) {
+            buttonDrawLottery.setVisibility(View.GONE);
+            buttonDrawLottery.setEnabled(false);
+            return;
+        } else {
+            buttonDrawLottery.setVisibility(View.VISIBLE);
         }
 
         // Check if event is full
@@ -1306,20 +1318,10 @@ public class OrganizerEditEventFragment extends Fragment {
             return;
         }
 
-        // Check if event is full
         int maxEntrants = currentEvent.getEventInfo().getMaxEntrants();
         int currentEntrants = currentEvent.getEntrants() != null ? currentEvent.getEntrants().size() : 0;
-        boolean isFull = currentEntrants >= maxEntrants;
-
-        if (isFull) {
-            // Event is full, hide button
-            buttonRedrawLottery.setVisibility(View.GONE);
-            return;
-        }
-
-        // Show re-draw button if there are invited users (lottery has been run)
-        List<Integer> invitedIds = currentEvent.getInvitedIds();
-        if (invitedIds != null && !invitedIds.isEmpty()) {
+        // Show re-draw only when the participants list is exactly at capacity
+        if (currentEntrants == maxEntrants) {
             buttonRedrawLottery.setVisibility(View.VISIBLE);
         } else {
             buttonRedrawLottery.setVisibility(View.GONE);

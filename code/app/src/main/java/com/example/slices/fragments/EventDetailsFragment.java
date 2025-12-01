@@ -484,11 +484,17 @@ public class EventDetailsFragment extends Fragment {
         binding.eventDatetime.setText(whenText);
         binding.eventLocation.setText(e.getEventInfo().getAddress());
 
-        // Load image
-        Glide.with(this.getContext())
-                .load(eventInfo.getImageUrl())
-                .placeholder(R.drawable.ic_image)
-                .into(binding.eventImage);
+        // Load image with graceful fallback
+        String imageUrl = eventInfo.getImageUrl();
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            binding.eventImage.setImageResource(R.drawable.ic_image);
+        } else {
+            Glide.with(this.getContext())
+                    .load(imageUrl)
+                    .placeholder(R.drawable.ic_image)
+                    .error(R.drawable.ic_image)
+                    .into(binding.eventImage);
+        }
 
         // counts style reflecting the "Waitlist | Participants" from the xml style
         int wlCount = 0; //waitlist count

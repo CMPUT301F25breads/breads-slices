@@ -734,15 +734,18 @@ public class EventController {
      *      Event date
      */
     private static void verifyEventTimes(Timestamp regStart, Timestamp regEnd, Timestamp eventDate) {
-        if (eventDate.compareTo(regStart) < 0) {
-            throw new IllegalArgumentException("Event date must be after registration start");
-        }
-        if (eventDate.compareTo(regEnd) < 0) {
-            throw new IllegalArgumentException("Event date must be after registration end");
-        }
         if (regStart.compareTo(regEnd) > 0) {
             throw new IllegalArgumentException("Registration start must be before registration end");
         }
+        // Registration period must not extend past the event date
+        if (regEnd.compareTo(eventDate) > 0) {
+            throw new IllegalArgumentException("Registration end must be on or before the event date");
+        }
+        // Event must occur after registration opens
+        if (eventDate.compareTo(regStart) < 0) {
+            throw new IllegalArgumentException("Event date must be after registration start");
+        }
+
         Timestamp now = Timestamp.now();
         if (now.compareTo(regStart) > 0) {
             throw new IllegalArgumentException("Registration start must be in the future");
@@ -870,11 +873,23 @@ public class EventController {
             return;
         }
 
-
         try {
             boolean added = event.addEntrantToWaitlist(entrant);
             if (added) {
-                // Increment currentEntrants after successful add
+                // Remove from cancelled list if they were previously cancelled
+                List<Integer> cancelledIds = event.getCancelledIds();
+                if (cancelledIds != null && cancelledIds.contains(entrant.getId())) {
+                    cancelledIds.remove(Integer.valueOf(entrant.getId()));
+                    Logger.logSystem("Removed entrant from cancelled list on rejoin: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+                }
+                
+                // Remove from invited list if they were previously invited (fresh start)
+                List<Integer> invitedIds = event.getInvitedIds();
+                if (invitedIds != null && invitedIds.contains(entrant.getId())) {
+                    invitedIds.remove(Integer.valueOf(entrant.getId()));
+                    Logger.logSystem("Removed entrant from invited list on rejoin: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+                }
+                
                 Logger.logWaitlistModified("Added to waitlist", event.getId(), entrant.getId(), null);
                 updateEvent(event, callback);
             } else {
@@ -922,7 +937,20 @@ public class EventController {
             // Add entrant with location
             boolean added = event.addEntrantToWaitlist(entrant, loc);
             if (added) {
-                // Increment currentEntrants after successful add
+                // Remove from cancelled list if they were previously cancelled
+                List<Integer> cancelledIds = event.getCancelledIds();
+                if (cancelledIds != null && cancelledIds.contains(entrant.getId())) {
+                    cancelledIds.remove(Integer.valueOf(entrant.getId()));
+                    Logger.logSystem("Removed entrant from cancelled list on rejoin: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+                }
+                
+                // Remove from invited list if they were previously invited (fresh start)
+                List<Integer> invitedIds = event.getInvitedIds();
+                if (invitedIds != null && invitedIds.contains(entrant.getId())) {
+                    invitedIds.remove(Integer.valueOf(entrant.getId()));
+                    Logger.logSystem("Removed entrant from invited list on rejoin: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+                }
+                
                 Logger.logWaitlistModified("Added to waitlist with location", event.getId(), entrant.getId(), null);
                 updateEvent(event, callback);
             } else {
@@ -1721,7 +1749,7 @@ public class EventController {
 
         // Send notification with organizer as sender
         int senderId = event.getEventInfo().getOrganizerID();
-        NotificationManager.sendNotification(title, message, entrantId, senderId, new DBWriteCallback() {
+        NotificationManager.sendNotification(title, message, entrantId, senderId, event.getId(), new DBWriteCallback() {
             @Override
             public void onSuccess() {
                 Logger.logSystem("Cancellation notification sent to entrantId=" + entrantId + " for event=" + event.getEventInfo().getName(), null);
@@ -1854,7 +1882,7 @@ public class EventController {
                         eventName
                     );
 
-                    NotificationManager.sendNotification(title, message, entrantId, senderId, new DBWriteCallback() {
+                    NotificationManager.sendNotification(title, message, entrantId, senderId, event.getId(), new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
                             Logger.logSystem("Expiration notification sent to entrantId=" + entrantId + " for event=" + eventName, null);

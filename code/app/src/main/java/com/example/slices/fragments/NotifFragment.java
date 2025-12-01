@@ -88,6 +88,8 @@ public class NotifFragment extends Fragment {
                             // This is inside since we want invitations to come before notifications
                             @Override
                             public void onSuccess(List<Notification> notifications) {
+                                NotifFragmentBinding b = binding;
+                                if (!isAdded() || b == null) return; // view destroyed; ignore callback
                                 for (Notification notification : notifications) {
                                     if (!notification.getRead()) {
                                         recyclerNotifications.add(notification);
@@ -104,13 +106,14 @@ public class NotifFragment extends Fragment {
 
                                 notificationAdapter.setNotifications(recyclerNotifications);
                                 if (recyclerNotifications.isEmpty()) {
-                                    binding.noNotifText.setVisibility(View.VISIBLE);
+                                    b.noNotifText.setVisibility(View.VISIBLE);
                                 } else {
-                                    binding.noNotifText.setVisibility(View.GONE);
+                                    b.noNotifText.setVisibility(View.GONE);
                                 }
                             }
                             @Override
                             public void onFailure(Exception e) {
+                                if (!isAdded()) return;
                                 Log.e("NotifFragment", "Error fetching notifications", e);
                                 Toast.makeText(requireContext(), "Error: Couldn't load notifications", Toast.LENGTH_SHORT).show();
                             }
@@ -123,6 +126,7 @@ public class NotifFragment extends Fragment {
             }
             @Override
             public void onFailure(Exception e) {
+                if (!isAdded()) return;
                 Log.e("NotifFragment", "Error fetching invitations", e);
                 Toast.makeText(requireContext(), "Error: Couldn't load notifications", Toast.LENGTH_SHORT).show();
             }

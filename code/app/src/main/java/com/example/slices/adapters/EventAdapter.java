@@ -64,11 +64,17 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         holder.details.setText(formatter.format(date));
         holder.place.setText(eventInfo.getAddress());
 
-        // Load image
-        Glide.with(context)
-                .load(eventInfo.getImageUrl())
-                .placeholder(R.drawable.ic_image)
-                .into(holder.image);
+        // Load image with safe fallback when URL is missing/invalid
+        String imageUrl = eventInfo.getImageUrl();
+        if (imageUrl == null || imageUrl.trim().isEmpty()) {
+            holder.image.setImageResource(R.drawable.ic_image);
+        } else {
+            Glide.with(context)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.ic_image)
+                    .error(R.drawable.ic_image)
+                    .into(holder.image);
+        }
 
         // Click listener to navigate to EventDetailsFragment
         holder.itemView.setOnClickListener(v -> {
