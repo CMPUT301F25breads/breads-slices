@@ -1460,19 +1460,8 @@ public class EventController {
             recipients.add(e.getId());
         }
 
-        // Add winners to entrant list (fill spots immediately)
-        for (Entrant winner : winners) {
-            if (event.getEntrants() == null) {
-                event.setEntrants(new ArrayList<>());
-            }
-            if (!event.getEntrants().contains(winner)) {
-                try {
-                    event.addEntrant(winner);
-                } catch (Exception ignore) {
-                    // If addEntrant throws (duplicate/full), skip adding but still proceed with invites
-                }
-            }
-        }
+        // DO NOT add winners to entrants list yet - they must accept the invitation first
+        // Winners are only added to entrants when they call acceptInvitation()
 
         // Add winners to invitedIds list (tracking who was invited)
         List<Integer> invitedIds = event.getInvitedIds();
@@ -1486,17 +1475,8 @@ public class EventController {
             }
         }
 
-        // Remove winners from waitlist (both objects and id lists)
-        if (event.getWaitlist() != null) {
-            if (event.getWaitlist().getEntrants() != null) {
-                event.getWaitlist().getEntrants().removeIf(winners::contains);
-            }
-            if (event.getWaitlist().getEntrantIds() != null) {
-                for (Entrant winner : winners) {
-                    event.getWaitlist().getEntrantIds().remove(Integer.valueOf(winner.getId()));
-                }
-            }
-        }
+        // Keep winners in waitlist - they'll be removed when they accept the invitation
+        // This allows them to decline and stay on the waitlist if they want
 
         // Update event first, then send invitations
         updateEvent(event, new DBWriteCallback() {

@@ -431,9 +431,8 @@ public class EventEntrantsFragment extends Fragment {
 
         // Show download button only when viewing participants list
         if (currentListType == ListType.PARTICIPANTS) {
-            // Check if there are enrolled entrants
-            boolean hasParticipants = currentEvent.getEntrants() != null && 
-                                     !currentEvent.getEntrants().isEmpty();
+            // Check if there are enrolled entrants (confirmed participants)
+            boolean hasParticipants = currentEvent.getEntrants() != null && !currentEvent.getEntrants().isEmpty();
             if (hasParticipants) {
                 binding.fabDownloadCsv.setVisibility(View.VISIBLE);
                 binding.fabDownloadCsv.setEnabled(true);
@@ -635,13 +634,17 @@ public class EventEntrantsFragment extends Fragment {
     // Display confirmed participants
     private void displayParticipants() {
         if (binding == null || currentEvent == null) return;
-        
-        // Get confirmed participants
+
+        // Get confirmed participants - these are users in the entrants list
         List<Entrant> participants = new ArrayList<>();
         if (currentEvent.getEntrants() != null) {
-            participants = currentEvent.getEntrants();
+            participants = new ArrayList<>(currentEvent.getEntrants());
         }
-        
+
+        // Participants list should show all entrants who have accepted their invitations
+        // We don't need to filter by invitedIds anymore - the entrants list already contains
+        // only those who have accepted. The old logic was incorrectly removing accepted users.
+
         // Update entrant count display
         binding.tvEntrantCount.setText(participants.size() + " confirmed participants");
         

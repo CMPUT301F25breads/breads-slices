@@ -102,14 +102,29 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.ViewHold
             holder.emailTextView.setText(email);
         }
 
-        // Check if entrant has accepted invitation (in event.getEntrantIds())
-        boolean hasAccepted = event != null && event.getEntrantIds() != null &&
-                              event.getEntrantIds().contains(entrant.getId());
+        // Check if entrant has accepted invitation by checking:
+        // 1. They're in invitedIds (they were invited)
+        // 2. They're in entrantIds (they accepted and are now participants)
+        // This ensures we only show "Accepted" for users who were invited AND accepted
+        boolean hasAccepted = false;
+        if (event != null) {
+            List<Integer> invitedIds = event.getInvitedIds();
+            List<Integer> entrantIds = event.getEntrantIds();
+
+            boolean wasInvited = invitedIds != null && invitedIds.contains(entrant.getId());
+            boolean isParticipant = entrantIds != null && entrantIds.contains(entrant.getId());
+
+            // Only show as accepted if they were invited AND are now a participant
+            hasAccepted = wasInvited && isParticipant;
+
+            android.util.Log.d("EntrantAdapter", "Entrant " + entrant.getId() +
+                " - wasInvited: " + wasInvited + ", isParticipant: " + isParticipant + ", hasAccepted: " + hasAccepted);
+        }
 
         // Hide "Invited" label - invited users are shown in a separate list
         holder.invitedLabel.setVisibility(View.GONE);
 
-        // Show "Accepted" label if entrant has accepted their invitation
+        // Show "Accepted" label only if entrant has actually accepted (invited AND participant)
         if (hasAccepted) {
             holder.acceptedLabel.setVisibility(View.VISIBLE);
         } else {

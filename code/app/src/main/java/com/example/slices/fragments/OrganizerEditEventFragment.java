@@ -75,7 +75,7 @@ public class OrganizerEditEventFragment extends Fragment {
             editMaxWaiting, editMaxParticipants, editMaxDistance;
     private TextView textDescription, textGuidelines, textLocation, textEventTitle;
     private ImageView eventImage, qrCodeImageView;
-    private Button buttonShareQRCode, buttonDrawLottery, buttonRedrawLottery;
+    private Button buttonShareQRCode, buttonDrawLottery;
     private Button buttonViewWaitingList;
     private SwitchCompat switchEntrantLocation;
     private LinearLayout layoutMaxDistance;
@@ -143,7 +143,6 @@ public class OrganizerEditEventFragment extends Fragment {
         layoutMaxDistance = view.findViewById(R.id.layoutMaxDistance);
         buttonViewWaitingList = view.findViewById(R.id.buttonViewWaitingList);
         buttonDrawLottery = view.findViewById(R.id.buttonDrawLottery);
-        buttonRedrawLottery = view.findViewById(R.id.buttonRedrawLottery);
         ImageButton buttonEditDescription = view.findViewById(R.id.buttonEditDescription);
         ImageButton buttonEditGuidelines = view.findViewById(R.id.buttonEditGuidelines);
         ImageButton buttonEditLocation = view.findViewById(R.id.buttonEditLocation);
@@ -237,9 +236,6 @@ public class OrganizerEditEventFragment extends Fragment {
 
         // --- Draw Lottery button ---
         buttonDrawLottery.setOnClickListener(v -> handleDrawLottery());
-
-        // --- Re-draw Lottery button ---
-        buttonRedrawLottery.setOnClickListener(v -> handleRedrawLottery());
 
         // --- Share QR Code button ---
         buttonShareQRCode.setOnClickListener(v -> shareQRCode());
@@ -349,9 +345,6 @@ public class OrganizerEditEventFragment extends Fragment {
 
                 // Update lottery button state based on registration deadline
                 updateLotteryButtonState();
-                
-                // Update re-draw button visibility based on whether lottery has been run
-                updateRedrawButtonVisibility();
                 // Update view list button label based on lottery state
                 updateViewWaitingListLabel();
             }
@@ -1192,7 +1185,6 @@ public class OrganizerEditEventFragment extends Fragment {
                     // Hide draw button after first successful draw to avoid repeats
                     buttonDrawLottery.setVisibility(View.GONE);
                     buttonDrawLottery.setEnabled(false);
-                    updateRedrawButtonVisibility();
                     updateViewWaitingListLabel();
                 }
             }
@@ -1255,96 +1247,6 @@ public class OrganizerEditEventFragment extends Fragment {
             // Registration still open, disable button
             buttonDrawLottery.setEnabled(false);
             buttonDrawLottery.setAlpha(0.5f);
-        }
-    }
-
-    /**
-     * Handles the Re-draw Lottery button click.
-     * Draws replacement lottery for available spots, excluding cancelled and already invited users.
-     */
-    private void handleRedrawLottery() {
-        if (currentEvent == null) {
-            Toast.makeText(getContext(), "Event data not loaded yet", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Check if there are spots available
-        int maxEntrants = currentEvent.getEventInfo().getMaxEntrants();
-        int currentEntrants = currentEvent.getEntrants().size();
-        int availableSpots = maxEntrants - currentEntrants;
-
-        if (availableSpots <= 0) {
-            Toast.makeText(getContext(), "Event is already full", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Check if there are entrants in the waitlist
-        int waitlistSize = currentEvent.getWaitlist().getEntrants().size();
-        if (waitlistSize == 0) {
-            Toast.makeText(getContext(), "No entrants in waitlist", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Show confirmation dialog
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Re-draw Lottery")
-                .setMessage("Draw replacement lottery for " + availableSpots + " spot(s) from " + 
-                           waitlistSize + " entrant(s) in the waitlist?")
-                .setPositiveButton("Re-draw", (dialog, which) -> executeReplacementLottery())
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    /**
-     * Executes the replacement lottery draw.
-     * Shows progress indicator, calls EventController.doReplacementLottery, and refreshes event data.
-     */
-    private void executeReplacementLottery() {
-        // Disable button to prevent double-clicks
-        buttonRedrawLottery.setEnabled(false);
-        buttonRedrawLottery.setText("Drawing...");
-
-        EventController.doReplacementLottery(currentEvent, new DBWriteCallback() {
-            @Override
-            public void onSuccess() {
-                // Refresh event data to show updated counts
-                loadEventData(eventID);
-                
-                if (isAdded() && getContext() != null) {
-                    Toast.makeText(getContext(), "Replacement lottery drawn successfully!", Toast.LENGTH_SHORT).show();
-                    buttonRedrawLottery.setText("Re-draw Lottery");
-                    buttonRedrawLottery.setEnabled(true);
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                if (isAdded() && getContext() != null) {
-                    Toast.makeText(getContext(), "Failed to draw replacement lottery: " + e.getMessage(), 
-                                 Toast.LENGTH_LONG).show();
-                    buttonRedrawLottery.setText("Re-draw Lottery");
-                    buttonRedrawLottery.setEnabled(true);
-                }
-            }
-        });
-    }
-
-    /**
-     * Updates the Re-draw button visibility based on whether the initial lottery has been run.
-     * The button is visible only after at least one invitation has been sent and event is not full.
-     */
-    private void updateRedrawButtonVisibility() {
-        if (currentEvent == null || buttonRedrawLottery == null) {
-            return;
-        }
-
-        int maxEntrants = currentEvent.getEventInfo().getMaxEntrants();
-        int currentEntrants = currentEvent.getEntrants() != null ? currentEvent.getEntrants().size() : 0;
-        // Show re-draw only when the participants list is exactly at capacity
-        if (currentEntrants == maxEntrants) {
-            buttonRedrawLottery.setVisibility(View.VISIBLE);
-        } else {
-            buttonRedrawLottery.setVisibility(View.GONE);
         }
     }
 

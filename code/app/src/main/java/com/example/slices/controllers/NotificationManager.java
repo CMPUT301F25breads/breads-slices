@@ -1029,13 +1029,11 @@ public class NotificationManager {
                         if (event.getEntrantIds() != null && event.getEntrantIds().contains(entrant.getId())) {
                             invitation.setAccepted(true);
                             invitation.setDeclined(false);
-                            // Clean up waitlist/cancelled/invited state
+                            // Clean up cancelled state but keep them in invitedIds
                             if (event.getCancelledIds() != null) {
                                 event.getCancelledIds().remove(Integer.valueOf(entrant.getId()));
                             }
-                            if (event.getInvitedIds() != null && event.getInvitedIds().contains(entrant.getId())) {
-                                event.getInvitedIds().remove(Integer.valueOf(entrant.getId()));
-                            }
+                            // Keep them in invitedIds so they show in invited list with "Accepted" tag
                             updateInvitation(invitation, new DBWriteCallback() {
                                 @Override
                                 public void onSuccess() {
@@ -1070,12 +1068,27 @@ public class NotificationManager {
                                     @Override
                                     public void onSuccess() {
                                         Logger.logEntrantJoin(entrant.getId(), event.getId(), null);
+                                        // Keep them in invitedIds so they show in invited list with "Accepted" tag
+                                        // The EntrantAdapter will show the "Accepted" label for users in both invitedIds and entrantIds
+                                        
                                         // 5. Update invitation in DB
                                         updateInvitation(invitation, new DBWriteCallback() {
                                             @Override
                                             public void onSuccess() {
-                                                Logger.logSystem("Invitation accept pipeline completed successfully", null);
-                                                callback.onSuccess();
+                                                // Update event to persist the state
+                                                EventController.updateEvent(event, new DBWriteCallback() {
+                                                    @Override
+                                                    public void onSuccess() {
+                                                        Logger.logSystem("Invitation accept pipeline completed successfully", null);
+                                                        callback.onSuccess();
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(Exception e) {
+                                                        Logger.logError("Failed to update event after invitation accept", null);
+                                                        callback.onFailure(e);
+                                                    }
+                                                });
                                             }
 
                                             @Override
@@ -1119,6 +1132,62 @@ public class NotificationManager {
     }
 
     /**
+     * Helper method to complete the decline invitation process
+     * Called after waitlist removal (or if not in waitlist)
+     */
+    private static void proceedWithDecline(Event event, Entrant entrant, Invitation invitation, DBWriteCallback callback) {
+        // Add user to cancelledIds list
+        List<Integer> cancelledIds = event.getCancelledIds();
+        if (cancelledIds == null) {
+            cancelledIds = new ArrayList<>();
+            event.setCancelledIds(cancelledIds);
+        }
+        if (!cancelledIds.contains(entrant.getId())) {
+            cancelledIds.add(entrant.getId());
+            Logger.logSystem("Added entrant to cancelledIds: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+
+            // Send automatic cancellation notification
+            EventController.sendCancelledNotification(entrant.getId(), event.getEventInfo().getName());
+        }
+
+        // Ensure cancelled entrant is not shown as invited
+        List<Integer> invitedIds = event.getInvitedIds();
+        if (invitedIds != null && invitedIds.contains(entrant.getId())) {
+            invitedIds.remove(Integer.valueOf(entrant.getId()));
+            Logger.logSystem("Removed entrant from invitedIds after decline: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+        }
+
+        // Persist updated event to Firestore
+        EventController.updateEvent(event, new DBWriteCallback() {
+            @Override
+            public void onSuccess() {
+                Logger.logSystem("Event updated with cancelled user: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+
+                // Update invitation in DB
+                updateInvitation(invitation, new DBWriteCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Logger.logSystem("Invitation decline pipeline completed successfully", null);
+                        callback.onSuccess();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        Logger.logError("Invitation decline pipeline failed", null);
+                        callback.onFailure(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Logger.logError("Failed to update event with cancelled user during invitation decline pipeline", null);
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    /**
      * Declines an invitation to an event
      * @param invitation
      *      Invitation to decline
@@ -1143,69 +1212,33 @@ public class NotificationManager {
                     @Override
                     public void onSuccess(Entrant entrant) {
 
-                        // 3. Remove from waitlist only
-                        EventController.removeEntrantFromWaitlist(event, entrant, new DBWriteCallback() {
-                            @Override
-                            public void onSuccess() {
-                                Logger.logWaitlistModified("Removed from waitlist", event.getId(), entrant.getId(), null);
+                        // 3. Try to remove from waitlist if they're there
+                        // Check if entrant is actually in the waitlist before trying to remove
+                        boolean isInWaitlist = event.getWaitlist() != null &&
+                                             event.getWaitlist().getEntrantIds() != null &&
+                                             event.getWaitlist().getEntrantIds().contains(entrant.getId());
 
-                                // 4. Add user to cancelledIds list
-                                List<Integer> cancelledIds = event.getCancelledIds();
-                                if (cancelledIds == null) {
-                                    cancelledIds = new ArrayList<>();
-                                    event.setCancelledIds(cancelledIds);
-                                }
-                                if (!cancelledIds.contains(entrant.getId())) {
-                                    cancelledIds.add(entrant.getId());
-                                    Logger.logSystem("Added entrant to cancelledIds: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
-                                    
-                                    // Send automatic cancellation notification
-                                    EventController.sendCancelledNotification(entrant.getId(), event.getEventInfo().getName());
+                        if (isInWaitlist) {
+                            // Remove from waitlist if present
+                            EventController.removeEntrantFromWaitlist(event, entrant, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    Logger.logWaitlistModified("Removed from waitlist", event.getId(), entrant.getId(), null);
+                                    proceedWithDecline(event, entrant, invitation, callback);
                                 }
 
-                                // Ensure cancelled entrant is not shown as invited
-                                List<Integer> invitedIds = event.getInvitedIds();
-                                if (invitedIds != null && invitedIds.contains(entrant.getId())) {
-                                    invitedIds.remove(Integer.valueOf(entrant.getId()));
-                                    Logger.logSystem("Removed entrant from invitedIds after decline: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+                                @Override
+                                public void onFailure(Exception e) {
+                                    Logger.logError("Failed to remove entrant from waitlist during invitation decline pipeline", null);
+                                    // Continue with decline even if removal fails (entrant may have already been removed)
+                                    proceedWithDecline(event, entrant, invitation, callback);
                                 }
-
-                                // 5. Persist updated event to Firestore
-                                EventController.updateEvent(event, new DBWriteCallback() {
-                                    @Override
-                                    public void onSuccess() {
-                                        Logger.logSystem("Event updated with cancelled user: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
-
-                                        // 6. Update invitation in DB
-                                        updateInvitation(invitation, new DBWriteCallback() {
-                                            @Override
-                                            public void onSuccess() {
-                                                Logger.logSystem("Invitation decline pipeline completed successfully", null);
-                                                callback.onSuccess();
-                                            }
-
-                                            @Override
-                                            public void onFailure(Exception e) {
-                                                Logger.logError("Invitation decline pipeline failed", null);
-                                                callback.onFailure(e);
-                                            }
-                                        });
-                                    }
-
-                                    @Override
-                                    public void onFailure(Exception e) {
-                                        Logger.logError("Failed to update event with cancelled user during invitation decline pipeline", null);
-                                        callback.onFailure(e);
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onFailure(Exception e) {
-                                Logger.logError("Failed to remove entrant from waitlist during invitation decline pipeline", null);
-                                callback.onFailure(e);
-                            }
-                        });
+                            });
+                        } else {
+                            // Not in waitlist, proceed directly with decline
+                            Logger.logSystem("Entrant not in waitlist, proceeding with decline: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
+                            proceedWithDecline(event, entrant, invitation, callback);
+                        }
                     }
 
                     @Override

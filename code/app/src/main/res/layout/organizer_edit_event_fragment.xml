@@ -430,21 +430,6 @@
                 android:padding="10dp"
                 android:fontFamily="sans-serif-medium" />
 
-            <!-- Re-draw Lottery button -->
-            <Button
-                android:id="@+id/buttonRedrawLottery"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:text="Re-draw Lottery"
-                android:backgroundTint="#7E57C2"
-                android:textColor="#FFFFFF"
-                android:padding="10dp"
-                android:fontFamily="sans-serif-medium"
-                android:visibility="gone" />
-
         </LinearLayout>
     </ScrollView>
 
