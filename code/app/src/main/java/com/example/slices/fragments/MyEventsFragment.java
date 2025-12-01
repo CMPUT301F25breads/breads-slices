@@ -64,9 +64,14 @@ public class MyEventsFragment extends Fragment {
         EventController.getEventsForEntrant(sharedViewModel.getUser(), new EntrantEventCallback() {
             @Override
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
+                // Guard against view destruction - check if fragment is still added and binding exists
+                if (!isAdded() || binding == null) {
+                    return;
+                }
+
                 sharedViewModel.setEvents(events);
                 sharedViewModel.setWaitlistedEvents(waitEvents);
-                
+
                 // Populate waitlistedEventIds from the loaded waitlist events
                 // This ensures the browse screen shows correct button states
                 for (Event event : waitEvents) {
@@ -87,6 +92,10 @@ public class MyEventsFragment extends Fragment {
 
             @Override
             public void onFailure(Exception e) {
+                // Guard against view destruction
+                if (!isAdded()) {
+                    return;
+                }
                 Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
 
             }
@@ -95,6 +104,11 @@ public class MyEventsFragment extends Fragment {
         EventController.getPastEventsForEntrant(sharedViewModel.getUser(), new EntrantEventCallback() {
             @Override
             public void onSuccess(List<Event> events, List<Event> waitEvents) {
+                // Guard against view destruction - check if fragment is still added and binding exists
+                if (!isAdded() || binding == null) {
+                    return;
+                }
+
                 events.addAll(waitEvents);
                 sharedViewModel.setPastEvents(events);
 
@@ -106,6 +120,10 @@ public class MyEventsFragment extends Fragment {
 
             @Override
             public void onFailure(Exception e) {
+                // Guard against view destruction
+                if (!isAdded()) {
+                    return;
+                }
                 Toast.makeText(requireContext(), "Failed to load past events.", Toast.LENGTH_SHORT).show();
 
             }

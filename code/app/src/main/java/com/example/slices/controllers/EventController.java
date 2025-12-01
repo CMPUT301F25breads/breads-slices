@@ -478,8 +478,8 @@ public class EventController {
 
                 Logger.logSystem("Starting delete pipeline for event id=" + id, null);
 
-
-                if(event.getEventInfo().getImage() == null) {
+                // Delete event image if it exists
+                if(event.getEventInfo().getImage() != null) {
                     ImageController.deleteImage(event.getEventInfo().getImage().getPath(), new DBWriteCallback() {
                         @Override
                         public void onSuccess() {
@@ -489,7 +489,8 @@ public class EventController {
                         @Override
                         public void onFailure(Exception e) {
                             Logger.logError("Failed to delete image for event id: " + id, null);
-                            callback.onFailure(new DBOpFailed("Failed to delete image"));
+                            // Log error but don't fail the entire deletion - continue with event deletion
+                            Logger.logSystem("Continuing with event deletion despite image deletion failure", null);
                         }
                     });
                 }
