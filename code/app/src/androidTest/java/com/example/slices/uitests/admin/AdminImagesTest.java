@@ -2,7 +2,6 @@ package com.example.slices.uitests.admin;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
@@ -24,12 +23,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * UI test for AdminProfilesFragment.
- * Tests: load, filter, delete, back navigation.
+ * UI test for AdminImagesFragment
+ * Tests:
+ *  - fragment loads
+ *  - recycler displays events with images
+ *  - clicking an image opens EventDetailsFragment
+ *  - back button returns to AdminHome
  */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
-public class AdminProfilesTest {
+public class AdminImagesTest {
 
     @Rule
     public ActivityScenarioRule<MainActivity> scenario =
@@ -37,7 +40,7 @@ public class AdminProfilesTest {
 
     @Before
     public void setup() throws InterruptedException {
-
+        // Enter admin mode
         scenario.getScenario().onActivity(MainActivity::switchToAdmin);
 
         Thread.sleep(1200);
@@ -46,62 +49,42 @@ public class AdminProfilesTest {
                 isDescendantOfA(withId(R.id.bottom_nav_admin))))
                 .perform(click());
 
-        onView(withId(R.id.btn_browse_profiles)).perform(click());
+        onView(withId(R.id.btn_browse_images)).perform(click());
 
-        onView(withId(R.id.recyclerViewProfiles)).check(matches(isDisplayed()));
+        onView(withId(R.id.adminimg_recycler)).check(matches(isDisplayed()));
     }
 
     /**
-     * Confirms the Profiles fragment loads.
+     * Fragment loads and shows the image recycler.
      */
-    //Testing: US 03.05.01
+    //Testing: US 03.06.01
     @Test
-    public void testProfilesFragmentLoads() {
-        onView(withId(R.id.recyclerViewProfiles)).check(matches(isDisplayed()));
+    public void testImagesFragmentLoads() {
+        onView(withId(R.id.adminimg_recycler)).check(matches(isDisplayed()));
     }
 
     /**
-     * Types into search bar and ensures filtering still leaves at least 1 result.
+     * Clicking an image item opens EventDetailsFragment.
      */
     @Test
-    public void testSearchFiltersProfiles() throws InterruptedException {
-        onView(withId(R.id.searchBarProfiles)).perform(typeText("a"));
+    public void testOpenEventDetailsFromImage() throws InterruptedException {
         Thread.sleep(800);
 
-        onView(withId(R.id.recyclerViewProfiles))
+        onView(withId(R.id.adminimg_recycler))
                 .perform(RecyclerViewActions.actionOnItemAtPosition(0, click()));
 
-        onView(withId(R.id.profileName)).check(matches(isDisplayed()));
+        onView(withId(R.id.event_title)).check(matches(isDisplayed()));
     }
 
     /**
-     * Tests the back arrow returns to the Admin Home screen.
+     * Toolbar back arrow returns to AdminHome.
      */
     @Test
-    public void testBackButtonNavigatesToAdminHome() throws InterruptedException {
-        onView(withId(R.id.title_profiles)).perform(click());  // toolbar click
+    public void testToolbarBackButton() throws InterruptedException {
+        onView(withId(R.id.admin_img_toolbar)).perform(click());
 
         Thread.sleep(600);
 
         onView(withId(R.id.btn_browse_events)).check(matches(isDisplayed()));
     }
-
-    /**
-     *
-     * Tests delete button removes the profile.
-     */
-    // Testing: US 03.02.01
-    @Test
-    public void testDeleteButton() throws InterruptedException {
-        onView(withId(R.id.recyclerViewProfiles))
-                .perform(RecyclerViewActions.actionOnItemAtPosition(
-                        0, clickChildViewWithId(R.id.removeButton)
-                ));
-
-        Thread.sleep(1200);
-
-        onView(withId(R.id.recyclerViewProfiles)).check(matches(isDisplayed()));
-    }
-
-
 }
