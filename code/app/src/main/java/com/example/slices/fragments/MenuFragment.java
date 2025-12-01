@@ -230,6 +230,9 @@ public class  MenuFragment extends Fragment {
     }
     private void onUserClicked() { ((MainActivity) requireActivity()).switchToUser(); }
 
+    /**
+     * Creates a dialog to confirm the user wants to delete their profile
+     */
     private void onDeleteProfileClicked() {
         new MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
                 .setTitle("Are you sure you want to delete your profile?")

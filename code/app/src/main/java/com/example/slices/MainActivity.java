@@ -142,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
                                     sharedViewModel.setUser(ent);
                                     NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
                                     navController.navigate(R.id.action_to_MenuFragment);
+                                    enableNavigation();
                                 }
 
                                 @Override
