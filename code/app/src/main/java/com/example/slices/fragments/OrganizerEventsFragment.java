@@ -100,6 +100,11 @@ public class OrganizerEventsFragment extends Fragment {
         EventController.getEventsForOrganizer(vm.getUser().getId(), new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
+                // Guard against view destruction - check if fragment is still added and binding exists
+                if (!isAdded() || binding == null) {
+                    return;
+                }
+
                 // Clear old lists
                 upcomingEvents.clear();
                 inProgressEvents.clear();
@@ -132,6 +137,10 @@ public class OrganizerEventsFragment extends Fragment {
 
             @Override
             public void onFailure(Exception e) {
+                // Guard against view destruction
+                if (!isAdded()) {
+                    return;
+                }
                 Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
             }
         });

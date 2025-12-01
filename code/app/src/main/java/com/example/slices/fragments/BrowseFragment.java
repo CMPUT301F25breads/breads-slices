@@ -130,6 +130,11 @@ public class BrowseFragment extends Fragment {
         EventController.getEvent(eventId, new EventCallback() {
             @Override
             public void onSuccess(Event event) {
+                // Guard against view destruction
+                if (!isAdded()) {
+                    return;
+                }
+
                 // store selected event in viewmodel
                 vm.setSelectedEvent(event);
 
@@ -143,6 +148,10 @@ public class BrowseFragment extends Fragment {
 
             @Override
             public void onFailure(Exception e) {
+                // Guard against view destruction
+                if (!isAdded()) {
+                    return;
+                }
                 Toast.makeText(requireContext(),
                         "Event not found, try again", Toast.LENGTH_SHORT).show();
             }
@@ -169,6 +178,11 @@ public class BrowseFragment extends Fragment {
         EventController.queryEvents(search, new EventListCallback() {
             @Override
             public void onSuccess(List<Event> events) {
+                // Guard against view destruction
+                if (!isAdded()) {
+                    return;
+                }
+
                 try {
                     eventList.clear();
                     eventList.addAll(events);
@@ -182,6 +196,11 @@ public class BrowseFragment extends Fragment {
 
             @Override
             public void onFailure(Exception e) {
+                // Guard against view destruction
+                if (!isAdded()) {
+                    return;
+                }
+
                 Log.e("BrowseFragment", "Error fetching events", e);
                 Toast.makeText(requireContext(), "Failed to load events.", Toast.LENGTH_SHORT).show();
                 eventAdapter.notifyDataSetChanged();
