@@ -1502,7 +1502,7 @@ public class EventController {
     }
 
     /**
-     * Exports enrolled entrants to a CSV file in the Downloads folder
+     * Exports enrolled entrants to a text file in the Downloads folder
      * 
      * @param event Event containing entrants to export
      * @param context Android context for file operations
@@ -1513,77 +1513,83 @@ public class EventController {
             // Get enrolled entrants
             List<Entrant> entrants = event.getEntrants();
             if (entrants == null || entrants.isEmpty()) {
-                Logger.logError("CSV export failed: No enrolled entrants", null);
+                Logger.logError("Export failed: No enrolled entrants", null);
                 callback.onFailure(new Exception("No enrolled entrants to export"));
                 return;
             }
             
-            Logger.logSystem("Starting CSV export for event id=" + event.getId() + ", " + entrants.size() + " entrants", null);
+            Logger.logSystem("Starting entrants export for event id=" + event.getId() + ", " + entrants.size() + " entrants", null);
             
             // Get Downloads directory
             java.io.File downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
                 android.os.Environment.DIRECTORY_DOWNLOADS
             );
             
-            // Create filename with event name and timestamp
+            // Create filename with event name and timestamp - use .txt for easy viewing
             String eventName = event.getEventInfo().getName().replaceAll("[^a-zA-Z0-9]", "_");
             String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
                 .format(new java.util.Date());
-            String fileName = eventName + "_entrants_" + timestamp + ".csv";
+            String fileName = eventName + "_entrants_" + timestamp + ".txt";
             
-            java.io.File csvFile = new java.io.File(downloadsDir, fileName);
-            Logger.logSystem("CSV file path: " + csvFile.getAbsolutePath(), null);
+            java.io.File txtFile = new java.io.File(downloadsDir, fileName);
+            Logger.logSystem("Export file path: " + txtFile.getAbsolutePath(), null);
             
-            // Write CSV content
-            java.io.FileWriter writer = new java.io.FileWriter(csvFile);
+            // Write content in a readable format
+            java.io.FileWriter writer = new java.io.FileWriter(txtFile);
             
-            // Write header row
-            writer.append("ID,Name,Email,Phone\n");
+            // Write header
+            writer.append("Event: " + event.getEventInfo().getName() + "\n");
+            writer.append("Enrolled Participants: " + entrants.size() + "\n");
+            writer.append("Exported: " + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                .format(new java.util.Date()) + "\n");
+            writer.append("=" .repeat(60) + "\n\n");
             
             // Write data rows
             int rowCount = 0;
             for (Entrant entrant : entrants) {
-                writer.append(String.valueOf(entrant.getId())).append(",");
+                rowCount++;
                 
                 // Get profile data with null checks
-                String name = "";
-                String email = "";
-                String phone = "";
+                String name = "N/A";
+                String email = "N/A";
+                String phone = "N/A";
                 
                 if (entrant.getProfile() != null) {
-                    name = entrant.getProfile().getName() != null ? entrant.getProfile().getName() : "";
-                    email = entrant.getProfile().getEmail() != null ? entrant.getProfile().getEmail() : "";
-                    phone = entrant.getProfile().getPhoneNumber() != null ? entrant.getProfile().getPhoneNumber() : "";
+                    name = entrant.getProfile().getName() != null ? entrant.getProfile().getName() : "N/A";
+                    email = entrant.getProfile().getEmail() != null ? entrant.getProfile().getEmail() : "N/A";
+                    phone = entrant.getProfile().getPhoneNumber() != null ? entrant.getProfile().getPhoneNumber() : "N/A";
                 } else {
                     Logger.logSystem("Warning: Entrant " + entrant.getId() + " has null profile", null);
                 }
                 
-                // Escape CSV special characters
-                writer.append(escapeCsv(name)).append(",");
-                writer.append(escapeCsv(email)).append(",");
-                writer.append(escapeCsv(phone)).append("\n");
-                rowCount++;
+                // Write in readable format
+                writer.append("Participant #" + rowCount + "\n");
+                writer.append("  ID: " + entrant.getId() + "\n");
+                writer.append("  Name: " + name + "\n");
+                writer.append("  Email: " + email + "\n");
+                writer.append("  Phone: " + phone + "\n");
+                writer.append("\n");
             }
             
             writer.flush();
             writer.close();
             
-            Logger.logSystem("CSV file written successfully: " + rowCount + " rows", null);
-            Logger.logSystem("File exists: " + csvFile.exists() + ", size: " + csvFile.length() + " bytes", null);
+            Logger.logSystem("Export file written successfully: " + rowCount + " participants", null);
+            Logger.logSystem("File exists: " + txtFile.exists() + ", size: " + txtFile.length() + " bytes", null);
             
             // Notify media scanner so file appears in Downloads immediately
             android.media.MediaScannerConnection.scanFile(
                 context,
-                new String[]{csvFile.getAbsolutePath()},
-                new String[]{"text/csv"},
+                new String[]{txtFile.getAbsolutePath()},
+                new String[]{"text/plain"},
                 null
             );
             
-            Logger.logSystem("CSV export successful for event id=" + event.getId(), null);
-            callback.onSuccess(csvFile.getAbsolutePath());
+            Logger.logSystem("Export successful for event id=" + event.getId(), null);
+            callback.onSuccess(txtFile.getAbsolutePath());
             
         } catch (Exception e) {
-            Logger.logError("CSV export failed for event id=" + event.getId() + ": " + e.getMessage(), null);
+            Logger.logError("Export failed for event id=" + event.getId() + ": " + e.getMessage(), null);
             e.printStackTrace();
             callback.onFailure(e);
         }
@@ -1683,19 +1689,15 @@ public class EventController {
         // Check if entrant has accepted (in enrolled list)
         boolean hasAccepted = entrantIds.contains(entrantId);
 
+        // If already accepted, do not cancel
+        if (hasAccepted) {
+            Logger.logError("Cannot cancel entrant: already accepted, entrantId=" + entrantId + ", eventId=" + event.getId(), null);
+            callback.onFailure(new Exception("Entrant already accepted"));
+            return;
+        }
+
         // Remove from invitedIds
         invitedIds.remove(Integer.valueOf(entrantId));
-
-        // Remove from enrolled entrants if they accepted
-        if (hasAccepted) {
-            // Remove from entrantIds list
-            entrantIds.remove(Integer.valueOf(entrantId));
-
-            // Remove from Entrants list
-            if (event.getEntrants() != null) {
-                event.getEntrants().removeIf(e -> e.getId() == entrantId);
-            }
-        }
 
         // Remove from waitlist if present
         if (event.getWaitlist() != null && event.getWaitlist().getEntrants() != null) {
@@ -1711,7 +1713,7 @@ public class EventController {
         }
 
         // Create and send cancellation notification
-        String title = "Invitation Cancelled";
+        String title = "Invitation Expired";
         String message = String.format(
             "Your invitation to %s has been cancelled by the organizer. Thank you for your interest.",
             event.getEventInfo().getName()
@@ -1846,7 +1848,7 @@ public class EventController {
 
             for (Integer entrantId : successfullyCancelled) {
                 operations.add(opCallback -> {
-                    String title = "Invitation Cancelled";
+                    String title = "Invitation Expired";
                     String message = String.format(
                         "Your invitation to %s has been cancelled by the organizer. Thank you for your interest.",
                         eventName

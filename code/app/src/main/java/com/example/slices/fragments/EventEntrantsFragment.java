@@ -1153,14 +1153,63 @@ public class EventEntrantsFragment extends Fragment {
     }
 
     /**
-     * Shows a success message after CSV is saved
+     * Shows a dialog to open the downloaded file
      * 
-     * @param filePath Path where the CSV file was saved
+     * @param filePath Path where the file was saved
      */
     private void showCSVDownloadSuccess(String filePath) {
+        // Show success toast
         android.widget.Toast.makeText(requireContext(),
-                "CSV downloaded to: " + filePath,
-                android.widget.Toast.LENGTH_LONG).show();
+                "Participant list downloaded successfully!",
+                android.widget.Toast.LENGTH_SHORT).show();
+        
+        // Show dialog to open the file
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Download Complete")
+                .setMessage("The participant list has been saved to Downloads. Would you like to open it?")
+                .setPositiveButton("Open", (dialog, which) -> {
+                    openCSVFile(filePath);
+                })
+                .setNegativeButton("Close", null)
+                .show();
+    }
+    
+    /**
+     * Opens the text file with an appropriate app
+     * 
+     * @param filePath Path to the file
+     */
+    private void openCSVFile(String filePath) {
+        try {
+            java.io.File file = new java.io.File(filePath);
+            
+            // Get URI using FileProvider
+            android.net.Uri fileUri = androidx.core.content.FileProvider.getUriForFile(
+                requireContext(),
+                requireContext().getPackageName() + ".fileprovider",
+                file
+            );
+            
+            // Create intent to view the file as plain text
+            android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            intent.setDataAndType(fileUri, "text/plain");
+            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            
+            // Try to open with an app
+            try {
+                startActivity(android.content.Intent.createChooser(intent, "Open with"));
+            } catch (android.content.ActivityNotFoundException e) {
+                // No app can handle text files (very unlikely)
+                android.widget.Toast.makeText(requireContext(),
+                        "No app found to open text files. File saved to: " + filePath,
+                        android.widget.Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            android.util.Log.e("EventEntrantsFragment", "Error opening file", e);
+            android.widget.Toast.makeText(requireContext(),
+                    "Error opening file. File saved to: " + filePath,
+                    android.widget.Toast.LENGTH_LONG).show();
+        }
     }
 
     /**

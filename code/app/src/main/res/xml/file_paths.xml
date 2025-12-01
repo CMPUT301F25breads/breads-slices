@@ -4,4 +4,6 @@
     <cache-path name="shared_images" path="images/" />
     <!-- Cache directory root for CSV exports -->
     <cache-path name="shared_files" path="." />
+    <!-- External storage (Downloads) for CSV files -->
+    <external-path name="downloads" path="Download/" />
 </paths>
