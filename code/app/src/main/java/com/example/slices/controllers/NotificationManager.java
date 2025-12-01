@@ -751,6 +751,11 @@ public class NotificationManager {
                 });
     }
 
+    /**
+     * Gets all NotSelected Notifications for a single recipient from the database asynchronously
+     * @param recipientId
+     * @param callback
+     */
     public static void getNotSelectedByRecipientId ( int recipientId, NotificationListCallback callback){
         notificationRef.whereEqualTo("recipientId", recipientId)
                 .whereEqualTo("type", NotificationType.NOT_SELECTED)
@@ -775,6 +780,11 @@ public class NotificationManager {
                 });
     }
 
+    /**
+     * Accepts a NotSelected notification
+     * @param notSelected
+     * @param callback
+     */
     public static void acceptNotSelected(NotSelected notSelected, DBWriteCallback callback) {
         notSelected.setDeclined(false);
         notSelected.setStayed(true);
@@ -792,6 +802,11 @@ public class NotificationManager {
         });
     }
 
+    /**
+     * Declines a NotSelected notification
+     * @param notSelected
+     * @param callback
+     */
     public static void declineNotSelected(NotSelected notSelected, DBWriteCallback callback) {
         notSelected.setDeclined(true);
         notSelected.setStayed(false);
@@ -841,6 +856,11 @@ public class NotificationManager {
         });
     }
 
+    /**
+     * Updates a NotSelected Notification in the database
+     * @param notSelected
+     * @param callback
+     */
     public static void updateNotSelected(NotSelected notSelected, DBWriteCallback callback) {
         notificationRef.document(String.valueOf(notSelected.getId()))
                 .set(notSelected)

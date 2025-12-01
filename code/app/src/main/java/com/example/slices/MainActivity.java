@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         // Start in User mode
         appMode = "User";
 
+        disableNavigation();
         initializeUser();
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
@@ -120,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
                 //Toast.makeText(MainActivity.this, String.format("Hello %s", entrant.getProfile().getName()), Toast.LENGTH_SHORT).show();
                 NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
                 navController.navigate(R.id.MyEventsFragment);
+                enableNavigation();
             }
 
             @Override
@@ -137,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
                                     sharedViewModel.setUser(ent);
                                     NavController navController = Navigation.findNavController(MainActivity.this, R.id.nav_host_fragment_content_main);
                                     navController.navigate(R.id.action_to_MenuFragment);
+                                    enableNavigation();
                                 }
 
                                 @Override
