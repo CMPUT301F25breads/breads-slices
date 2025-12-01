@@ -277,13 +277,23 @@ public class EventDetailsFragment extends Fragment {
         boolean isAdmin = getArguments() != null &&
                 getArguments().getBoolean("adminMode", false);
 
-
         final String entrantId = String.valueOf(vm.getUser().getId());
         int eventId = e.getId(); // reserved for future join/leave event call usage
 
         // initial waitlist state based on event data
         isWaitlisted = vm.isWaitlisted(String.valueOf(eventId));
         isParticipating = vm.isParticipating(String.valueOf(eventId));
+
+        // Hide join/waitlist control after registration closes only for users who are NOT already in the event or waitlist.
+        // Keep it visible for participants so they can still leave.
+        boolean regClosed = e.getEventInfo() != null
+                && e.getEventInfo().getRegEnd() != null
+                && com.google.firebase.Timestamp.now().compareTo(e.getEventInfo().getRegEnd()) > 0;
+        if (regClosed && !isParticipating && !isWaitlisted) {
+            binding.btnJoinWaitlist.setVisibility(View.GONE);
+        } else {
+            binding.btnJoinWaitlist.setVisibility(View.VISIBLE);
+        }
 
         // update initial button appearance based on waitlist status
         updateWaitlistButton(isWaitlisted);

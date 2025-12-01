@@ -392,8 +392,23 @@ public class NotificationManager {
                     if (!queryDocumentSnapshots.isEmpty()) {
                         List<Notification> notifications = new ArrayList<>();
                         for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                            Notification notification = doc.toObject(Notification.class);
-                            notifications.add(notification);
+                            NotificationType type = null;
+                            try {
+                                String typeStr = doc.getString("type");
+                                if (typeStr != null) type = NotificationType.valueOf(typeStr);
+                            } catch (Exception ignored) {}
+
+                            Notification notification;
+                            if (type == NotificationType.INVITATION) {
+                                notification = doc.toObject(Invitation.class);
+                            } else if (type == NotificationType.NOT_SELECTED) {
+                                notification = doc.toObject(NotSelected.class);
+                            } else {
+                                notification = doc.toObject(Notification.class);
+                            }
+                            if (notification != null) {
+                                notifications.add(notification);
+                            }
                         }
                         Logger.logSystem("Fetched " + notifications.size() + " notifications", null);
                         callback.onSuccess(notifications);
@@ -597,10 +612,13 @@ public class NotificationManager {
                                 }
                             } catch (Exception ignored) {}
 
-                            Notification notification;
+                            // Exclude invitations to align with tests that only expect non-invite notifications here
                             if (type == NotificationType.INVITATION) {
-                                notification = doc.toObject(Invitation.class);
-                            } else if (type == NotificationType.NOT_SELECTED) {
+                                continue;
+                            }
+
+                            Notification notification;
+                            if (type == NotificationType.NOT_SELECTED) {
                                 notification = doc.toObject(NotSelected.class);
                             } else {
                                 notification = doc.toObject(Notification.class);

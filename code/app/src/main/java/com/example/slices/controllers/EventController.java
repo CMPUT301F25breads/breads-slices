@@ -1258,7 +1258,8 @@ public class EventController {
      */
     public static void doLottery(Event event, DBWriteCallback callback) {
 
-        int spots = event.getEventInfo().getMaxEntrants() - event.getEntrants().size();
+        int currentEntrants = getCurrentEntrantCount(event);
+        int spots = event.getEventInfo().getMaxEntrants() - currentEntrants;
         if (spots <= 0) {
             Logger.logError("Lottery failed: no spots available event id=" + event.getId(), null);
             callback.onFailure(new Exception("No spots available"));
@@ -1344,7 +1345,8 @@ public class EventController {
      */
     public static void doReplacementLottery(Event event, DBWriteCallback callback) {
         // Calculate available spots
-        int spots = event.getEventInfo().getMaxEntrants() - event.getEntrants().size();
+        int currentEntrants = getCurrentEntrantCount(event);
+        int spots = event.getEventInfo().getMaxEntrants() - currentEntrants;
         if (spots <= 0) {
             Logger.logError("Replacement lottery failed: no spots available event id=" + event.getId(), null);
             callback.onFailure(new Exception("No spots available"));
@@ -1435,6 +1437,18 @@ public class EventController {
                 callback.onFailure(e);
             }
         });
+    }
+
+    /**
+     * Safely derive the current entrant count using the in-memory list when available,
+     * otherwise fall back to the persisted counter in EventInfo. This keeps behavior
+     * consistent in tests that manipulate the entrant list directly.
+     */
+    private static int getCurrentEntrantCount(Event event) {
+        if (event.getEntrants() != null && !event.getEntrants().isEmpty()) {
+            return event.getEntrants().size();
+        }
+        return event.getEventInfo().getCurrentEntrants();
     }
 
     private static void notifyWinners(List<Entrant> winners, Event event, DBWriteCallback callback) {
