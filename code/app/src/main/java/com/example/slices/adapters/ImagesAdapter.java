@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.slices.R;
 import com.example.slices.models.Event;
+import com.example.slices.interfaces.DBWriteCallback;
+import com.example.slices.controllers.ImageController;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
@@ -63,11 +65,24 @@ public class ImagesAdapter extends RecyclerView.Adapter<ImagesAdapter.VH> {
         h.details.setOnClickListener(v -> detailsCallback.onClick(e));
 
         //
-        h.remove.setOnClickListener(v ->
-                Toast.makeText(context,
-                        "Remove image not implemented yet",
-                        Toast.LENGTH_SHORT).show()
-        );
+        h.remove.setOnClickListener(v -> {
+            ImageController.deleteEventImage(String.valueOf(e.getId()), new DBWriteCallback() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(context, "Image deleted", Toast.LENGTH_SHORT).show();
+                    int pos = h.getBindingAdapterPosition();
+                    if (pos != RecyclerView.NO_POSITION) {
+                        events.remove(pos);
+                        notifyItemRemoved(pos);
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Toast.makeText(context, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
     }
 
     @Override

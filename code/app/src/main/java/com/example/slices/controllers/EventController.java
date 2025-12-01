@@ -15,6 +15,7 @@ import com.example.slices.interfaces.EventCallback;
 import com.example.slices.interfaces.EventIDCallback;
 import com.example.slices.interfaces.EventListCallback;
 import com.example.slices.interfaces.StringListCallback;
+import com.example.slices.controllers.ImageController;
 import com.example.slices.models.AsyncBatchExecutor;
 import com.example.slices.models.Entrant;
 import com.example.slices.models.Event;
