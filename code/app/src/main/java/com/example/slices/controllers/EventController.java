@@ -861,6 +861,15 @@ public class EventController {
      *      Callback to call when the operation is complete
      */
     public static void addEntrantToWaitlist(Event event, Entrant entrant, DBWriteCallback callback) {
+        // Disallow join if registration period has ended
+        if (event.getEventInfo() != null && event.getEventInfo().getRegEnd() != null) {
+            if (Timestamp.now().compareTo(event.getEventInfo().getRegEnd()) > 0) {
+                Logger.logError("Attempt to join waitlist after registration closed event id=" + event.getId(), null);
+                callback.onFailure(new Exception("Registration period has ended"));
+                return;
+            }
+        }
+
         if (event.getEntrants() != null && event.getEntrants().contains(entrant)) {
             Logger.logError("Attempted to add entrant already in event to waitlist event id=" + event.getId(), null);
             callback.onFailure(new Exception("Entrant already in event"));
@@ -914,6 +923,15 @@ public class EventController {
      *      Callback to call when the operation is complete
      */
     public static void addEntrantToWaitlist(Event event, Entrant entrant, Location loc, DBWriteCallback callback ) {
+        // Disallow join if registration period has ended
+        if (event.getEventInfo() != null && event.getEventInfo().getRegEnd() != null) {
+            if (Timestamp.now().compareTo(event.getEventInfo().getRegEnd()) > 0) {
+                Logger.logError("Attempt to join waitlist after registration closed event id=" + event.getId(), null);
+                callback.onFailure(new Exception("Registration period has ended"));
+                return;
+            }
+        }
+
         //Run a check for the locations
         if (!checkLocs(event, loc)) {
             Logger.logError("Location not in event id=" + event.getId(), null);
@@ -1428,17 +1446,41 @@ public class EventController {
             recipients.add(e.getId());
         }
 
-        // Add winners to invitedIds list
+        // Add winners to entrant list (fill spots immediately)
+        for (Entrant winner : winners) {
+            if (event.getEntrants() == null) {
+                event.setEntrants(new ArrayList<>());
+            }
+            if (!event.getEntrants().contains(winner)) {
+                try {
+                    event.addEntrant(winner);
+                } catch (Exception ignore) {
+                    // If addEntrant throws (duplicate/full), skip adding but still proceed with invites
+                }
+            }
+        }
+
+        // Add winners to invitedIds list (tracking who was invited)
         List<Integer> invitedIds = event.getInvitedIds();
         if (invitedIds == null) {
             invitedIds = new ArrayList<>();
             event.setInvitedIds(invitedIds);
         }
-
-        // Add each winner to invitedIds if not already present
         for (Integer winnerId : recipients) {
             if (!invitedIds.contains(winnerId)) {
                 invitedIds.add(winnerId);
+            }
+        }
+
+        // Remove winners from waitlist (both objects and id lists)
+        if (event.getWaitlist() != null) {
+            if (event.getWaitlist().getEntrants() != null) {
+                event.getWaitlist().getEntrants().removeIf(winners::contains);
+            }
+            if (event.getWaitlist().getEntrantIds() != null) {
+                for (Entrant winner : winners) {
+                    event.getWaitlist().getEntrantIds().remove(Integer.valueOf(winner.getId()));
+                }
             }
         }
 
@@ -1739,6 +1781,10 @@ public class EventController {
         if (!cancelledIds.contains(entrantId)) {
             cancelledIds.add(entrantId);
         }
+        // Remove from invitedIds to ensure cancelled entrants are not listed as invited
+        if (invitedIds.contains(entrantId)) {
+            invitedIds.remove(Integer.valueOf(entrantId));
+        }
 
         // Create and send cancellation notification
         String title = "Invitation Expired";
@@ -1836,19 +1882,14 @@ public class EventController {
             // Check if entrant has accepted (in enrolled list)
             boolean hasAccepted = enrolledIds.contains(entrantId);
 
+            // Skip accepted entrants entirely
+            if (hasAccepted) {
+                Logger.logSystem("Skipping cancellation for accepted entrantId=" + entrantId + ", eventId=" + event.getId(), null);
+                continue;
+            }
+
             // Remove from invitedIds
             invitedIds.remove(Integer.valueOf(entrantId));
-
-            // Remove from enrolled entrants if they accepted
-            if (hasAccepted) {
-                // Remove from entrantIds list
-                enrolledIds.remove(Integer.valueOf(entrantId));
-
-                // Remove from Entrants list
-                if (event.getEntrants() != null) {
-                    event.getEntrants().removeIf(e -> e.getId() == entrantId);
-                }
-            }
 
             // Remove from waitlist if present
             if (event.getWaitlist() != null && event.getWaitlist().getEntrants() != null) {
@@ -1861,6 +1902,10 @@ public class EventController {
             // Add to cancelledIds
             if (!cancelledIds.contains(entrantId)) {
                 cancelledIds.add(entrantId);
+            }
+            // Remove from invitedIds to ensure cancelled entrants are not listed as invited
+            if (invitedIds.contains(entrantId)) {
+                invitedIds.remove(Integer.valueOf(entrantId));
             }
 
             successfullyCancelled.add(entrantId);

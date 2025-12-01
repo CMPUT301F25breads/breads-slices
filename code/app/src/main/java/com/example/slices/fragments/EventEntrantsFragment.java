@@ -36,6 +36,7 @@ public class EventEntrantsFragment extends Fragment {
     private static final String ARG_EVENT_ID = "event_id";
     private static final String ARG_EVENT_NAME = "event_name";
     private static final String ARG_SENDER_ID = "sender_id";
+    private static final String ARG_INITIAL_LIST_TYPE = "initial_list_type";
 
     private EventEntrantsFragmentBinding binding;
     private int eventId;
@@ -68,6 +69,20 @@ public class EventEntrantsFragment extends Fragment {
         return newInstance(eventId, eventName, -1);
     }
 
+    /**
+     * Convenience to open with a specific initial list type.
+     */
+    public static EventEntrantsFragment newInstance(int eventId, String eventName, int senderId, ListType initialType) {
+        EventEntrantsFragment fragment = new EventEntrantsFragment();
+        Bundle args = new Bundle();
+        args.putInt(ARG_EVENT_ID, eventId);
+        args.putString(ARG_EVENT_NAME, eventName);
+        args.putInt(ARG_SENDER_ID, senderId);
+        args.putInt(ARG_INITIAL_LIST_TYPE, initialType != null ? initialType.ordinal() : ListType.WAITLIST.ordinal());
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +92,10 @@ public class EventEntrantsFragment extends Fragment {
             eventId = getArguments().getInt(ARG_EVENT_ID, -1);
             eventName = getArguments().getString(ARG_EVENT_NAME, "Unknown Event");
             senderId = getArguments().getInt(ARG_SENDER_ID, -1);
+            int initialListOrdinal = getArguments().getInt(ARG_INITIAL_LIST_TYPE, ListType.WAITLIST.ordinal());
+            if (initialListOrdinal >= 0 && initialListOrdinal < ListType.values().length) {
+                currentListType = ListType.values()[initialListOrdinal];
+            }
         }
     }
 
@@ -166,7 +185,15 @@ public class EventEntrantsFragment extends Fragment {
         binding.dropdownListType.setAdapter(adapter);
 
         // Set default selection
-        binding.dropdownListType.setText(getString(R.string.waiting_list), false);
+        if (currentListType == ListType.INVITED) {
+            binding.dropdownListType.setText(getString(R.string.invited_list), false);
+        } else if (currentListType == ListType.PARTICIPANTS) {
+            binding.dropdownListType.setText(getString(R.string.participants_list), false);
+        } else if (currentListType == ListType.CANCELLED) {
+            binding.dropdownListType.setText(getString(R.string.cancelled_list), false);
+        } else {
+            binding.dropdownListType.setText(getString(R.string.waiting_list), false);
+        }
 
         // Handle dropdown selection
         binding.dropdownListType.setOnItemClickListener((parent, view, position, id) -> {
@@ -436,8 +463,8 @@ public class EventEntrantsFragment extends Fragment {
     private void updateDrawReplacementButtonVisibility() {
         if (binding == null || currentEvent == null) return;
 
-        // Only show on waitlist or invited views
-        if (currentListType != ListType.WAITLIST && currentListType != ListType.INVITED) {
+        // Only show on invited view (hide on waitlist/others)
+        if (currentListType != ListType.INVITED) {
             binding.btnDrawReplacement.setVisibility(View.GONE);
             return;
         }
@@ -902,7 +929,7 @@ public class EventEntrantsFragment extends Fragment {
     }
 
     // Enum for list types
-    private enum ListType {
+    public enum ListType {
         WAITLIST,
         INVITED,
         PARTICIPANTS,

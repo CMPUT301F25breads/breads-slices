@@ -76,6 +76,7 @@ public class OrganizerEditEventFragment extends Fragment {
     private TextView textDescription, textGuidelines, textLocation, textEventTitle;
     private ImageView eventImage, qrCodeImageView;
     private Button buttonShareQRCode, buttonDrawLottery, buttonRedrawLottery;
+    private Button buttonViewWaitingList;
     private SwitchCompat switchEntrantLocation;
     private LinearLayout layoutMaxDistance;
 
@@ -140,7 +141,7 @@ public class OrganizerEditEventFragment extends Fragment {
         buttonShareQRCode = view.findViewById(R.id.buttonShareQRCode);
         switchEntrantLocation = view.findViewById(R.id.switchEntrantLocation);
         layoutMaxDistance = view.findViewById(R.id.layoutMaxDistance);
-        Button buttonViewWaitingList = view.findViewById(R.id.buttonViewWaitingList);
+        buttonViewWaitingList = view.findViewById(R.id.buttonViewWaitingList);
         buttonDrawLottery = view.findViewById(R.id.buttonDrawLottery);
         buttonRedrawLottery = view.findViewById(R.id.buttonRedrawLottery);
         ImageButton buttonEditDescription = view.findViewById(R.id.buttonEditDescription);
@@ -226,6 +227,11 @@ public class OrganizerEditEventFragment extends Fragment {
             bundle.putInt("event_id", currentEvent.getId());
             bundle.putString("event_name", currentEvent.getEventInfo().getName());
             bundle.putInt("sender_id", currentEvent.getEventInfo().getOrganizerID());
+            // Open directly to invited list if lottery already run
+            List<Integer> invitedIds = currentEvent.getInvitedIds();
+            boolean hasInvited = invitedIds != null && !invitedIds.isEmpty();
+            bundle.putInt("initial_list_type", hasInvited ? com.example.slices.fragments.EventEntrantsFragment.ListType.INVITED.ordinal()
+                                                          : com.example.slices.fragments.EventEntrantsFragment.ListType.WAITLIST.ordinal());
             navigateToEntrantsFragment(bundle);
         });
 
@@ -346,6 +352,8 @@ public class OrganizerEditEventFragment extends Fragment {
                 
                 // Update re-draw button visibility based on whether lottery has been run
                 updateRedrawButtonVisibility();
+                // Update view list button label based on lottery state
+                updateViewWaitingListLabel();
             }
 
             @Override
@@ -353,6 +361,17 @@ public class OrganizerEditEventFragment extends Fragment {
                 Toast.makeText(getContext(), "Failed to load event data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /**
+     * Sets the "View Waiting List" button label based on whether a lottery has run.
+     * Shows "View Invited Entrants" once invitations exist.
+     */
+    private void updateViewWaitingListLabel() {
+        if (buttonViewWaitingList == null || currentEvent == null || currentEvent.getEventInfo() == null) return;
+        List<Integer> invitedIds = currentEvent.getInvitedIds();
+        boolean hasInvited = invitedIds != null && !invitedIds.isEmpty();
+        buttonViewWaitingList.setText(hasInvited ? "View Invited Entrants" : "View Waiting List");
     }
 
     // --- Helper for Date Picker ---
@@ -1174,6 +1193,7 @@ public class OrganizerEditEventFragment extends Fragment {
                     buttonDrawLottery.setVisibility(View.GONE);
                     buttonDrawLottery.setEnabled(false);
                     updateRedrawButtonVisibility();
+                    updateViewWaitingListLabel();
                 }
             }
 

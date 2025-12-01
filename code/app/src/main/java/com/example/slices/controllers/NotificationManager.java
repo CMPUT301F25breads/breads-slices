@@ -420,10 +420,24 @@ public class NotificationManager {
                     List<Notification> notifications = new ArrayList<>();
                     if (!queryDocumentSnapshots.isEmpty()) {
                         for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                            Notification notification = doc.toObject(Notification.class);
-                            if (notification != null) {
-                                notifications.add(notification);
+                            // Map to specific subclass based on type for correct fields
+                            NotificationType type = null;
+                            try {
+                                String typeStr = doc.getString("type");
+                                if (typeStr != null) {
+                                    type = NotificationType.valueOf(typeStr);
+                                }
+                            } catch (Exception ignored) {}
+
+                            Notification notification = null;
+                            if (type == NotificationType.INVITATION) {
+                                notification = doc.toObject(Invitation.class);
+                            } else if (type == NotificationType.NOT_SELECTED) {
+                                notification = doc.toObject(NotSelected.class);
+                            } else {
+                                notification = doc.toObject(Notification.class);
                             }
+                            if (notification != null) notifications.add(notification);
                         }
                     }
                     Logger.logSystem("Fetched " + notifications.size() + " notifications for recipientId=" + recipientId, null);
@@ -569,21 +583,31 @@ public class NotificationManager {
      */
     public static void getNotificationsByRecipientId ( int recipientId, NotificationListCallback
             callback){
-        notificationRef.get().addOnSuccessListener(querySnapshot -> {
-            for (DocumentSnapshot doc : querySnapshot) {
-                System.out.println(doc.getData());
-            }
-        });
-
         notificationRef.whereEqualTo("recipientId", recipientId)
-                .whereEqualTo("type", NotificationType.NOTIFICATION)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
                         List<Notification> notifications = new ArrayList<>();
                         for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
-                            Notification notification = doc.toObject(Notification.class);
-                            notifications.add(notification);
+                            NotificationType type = null;
+                            try {
+                                String typeStr = doc.getString("type");
+                                if (typeStr != null) {
+                                    type = NotificationType.valueOf(typeStr);
+                                }
+                            } catch (Exception ignored) {}
+
+                            Notification notification;
+                            if (type == NotificationType.INVITATION) {
+                                notification = doc.toObject(Invitation.class);
+                            } else if (type == NotificationType.NOT_SELECTED) {
+                                notification = doc.toObject(NotSelected.class);
+                            } else {
+                                notification = doc.toObject(Notification.class);
+                            }
+                            if (notification != null) {
+                                notifications.add(notification);
+                            }
                         }
                         Logger.logSystem("Found " + notifications.size() + " notifications by recipientID " + recipientId, null);
                         callback.onSuccess(notifications);
@@ -905,6 +929,41 @@ public class NotificationManager {
                     @Override
                     public void onSuccess(Entrant entrant) {
 
+                        // If entrant already in event, just mark invitation accepted and persist
+                        if (event.getEntrantIds() != null && event.getEntrantIds().contains(entrant.getId())) {
+                            invitation.setAccepted(true);
+                            invitation.setDeclined(false);
+                            // Clean up waitlist/cancelled/invited state
+                            if (event.getCancelledIds() != null) {
+                                event.getCancelledIds().remove(Integer.valueOf(entrant.getId()));
+                            }
+                            if (event.getInvitedIds() != null && event.getInvitedIds().contains(entrant.getId())) {
+                                event.getInvitedIds().remove(Integer.valueOf(entrant.getId()));
+                            }
+                            updateInvitation(invitation, new DBWriteCallback() {
+                                @Override
+                                public void onSuccess() {
+                                    EventController.updateEvent(event, new DBWriteCallback() {
+                                        @Override
+                                        public void onSuccess() {
+                                            callback.onSuccess();
+                                        }
+
+                                        @Override
+                                        public void onFailure(Exception e) {
+                                            callback.onFailure(e);
+                                        }
+                                    });
+                                }
+
+                                @Override
+                                public void onFailure(Exception e) {
+                                    callback.onFailure(e);
+                                }
+                            });
+                            return;
+                        }
+
                         // 3. Remove from waitlist
                         EventController.removeEntrantFromWaitlist(event, entrant, new DBWriteCallback() {
                             @Override
@@ -1006,6 +1065,13 @@ public class NotificationManager {
                                     
                                     // Send automatic cancellation notification
                                     EventController.sendCancelledNotification(entrant.getId(), event.getEventInfo().getName());
+                                }
+
+                                // Ensure cancelled entrant is not shown as invited
+                                List<Integer> invitedIds = event.getInvitedIds();
+                                if (invitedIds != null && invitedIds.contains(entrant.getId())) {
+                                    invitedIds.remove(Integer.valueOf(entrant.getId()));
+                                    Logger.logSystem("Removed entrant from invitedIds after decline: entrantId=" + entrant.getId() + ", eventId=" + event.getId(), null);
                                 }
 
                                 // 5. Persist updated event to Firestore
