@@ -107,44 +107,65 @@ public class NotifFragment extends Fragment {
                                 recyclerNotifications.add(notSelectedNotification);
                             }
                         }
-                        NotificationManager.getNotificationsByRecipientId(vm.getUser().getId(), new NotificationListCallback() {
-                            // Adds the notifications to the recycler view,
-                            // This is inside since we want invitations to come before notifications
-                            @Override
-                            public void onSuccess(List<Notification> notifications) {
-                                NotifFragmentBinding b = binding;
-                                if (!isAdded() || b == null) return; // view destroyed; ignore callback
-                                for (Notification notification : notifications) {
-                                    if (!notification.getRead()) {
-                                        recyclerNotifications.add(notification);
+                        if (vm.getUser().getProfile().getSendNotifications()) {
+                            NotificationManager.getNotificationsByRecipientId(vm.getUser().getId(), new NotificationListCallback() {
+                                // Adds the notifications to the recycler view,
+                                @Override
+                                public void onSuccess(List<Notification> notifications) {
+                                    NotifFragmentBinding b = binding;
+                                    if (!isAdded() || b == null) return; // view destroyed; ignore callback
+                                    for (Notification notification : notifications) {
+                                        if (!notification.getRead()) {
+                                            recyclerNotifications.add(notification);
+                                        }
+                                    }
+
+                                    // Sort by timestamp in descending order (most recent first)
+                                    recyclerNotifications.sort((n1, n2) -> {
+                                        if (n1.getTimestamp() == null && n2.getTimestamp() == null) return 0;
+                                        if (n1.getTimestamp() == null) return 1;
+                                        if (n2.getTimestamp() == null) return -1;
+                                        return n2.getTimestamp().compareTo(n1.getTimestamp());
+                                    });
+
+                                    notificationAdapter.setNotifications(recyclerNotifications);
+                                    if (recyclerNotifications.isEmpty()) {
+                                        b.noNotifText.setVisibility(View.VISIBLE);
+                                    } else {
+                                        b.noNotifText.setVisibility(View.GONE);
                                     }
                                 }
-
-                                // Sort by timestamp in descending order (most recent first)
-                                recyclerNotifications.sort((n1, n2) -> {
-                                    if (n1.getTimestamp() == null && n2.getTimestamp() == null) return 0;
-                                    if (n1.getTimestamp() == null) return 1;
-                                    if (n2.getTimestamp() == null) return -1;
-                                    return n2.getTimestamp().compareTo(n1.getTimestamp());
-                                });
-
-                                notificationAdapter.setNotifications(recyclerNotifications);
-                                if (recyclerNotifications.isEmpty()) {
-                                    b.noNotifText.setVisibility(View.VISIBLE);
-                                } else {
-                                    b.noNotifText.setVisibility(View.GONE);
+                                @Override
+                                public void onFailure(Exception e) {
+                                    if (!isAdded()) return;
+                                    Log.e("NotifFragment", "Error fetching notifications", e);
+                                    Toast.makeText(requireContext(), "Error: Couldn't load notifications", Toast.LENGTH_SHORT).show();
                                 }
+                            });
+                        } else {
+                            NotifFragmentBinding b = binding;
+                            if (!isAdded() || b == null) return;
+                            recyclerNotifications.sort((n1, n2) -> {
+                                if (n1.getTimestamp() == null && n2.getTimestamp() == null) return 0;
+                                if (n1.getTimestamp() == null) return 1;
+                                if (n2.getTimestamp() == null) return -1;
+                                return n2.getTimestamp().compareTo(n1.getTimestamp());
+                            });
+
+                            notificationAdapter.setNotifications(recyclerNotifications);
+                            if (recyclerNotifications.isEmpty()) {
+                                b.noNotifText.setVisibility(View.VISIBLE);
+                            } else {
+                                b.noNotifText.setVisibility(View.GONE);
                             }
-                            @Override
-                            public void onFailure(Exception e) {
-                                if (!isAdded()) return;
-                                Log.e("NotifFragment", "Error fetching notifications", e);
-                                Toast.makeText(requireContext(), "Error: Couldn't load notifications", Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                        }
+
                     }
                     @Override
                     public void onFailure(Exception e) {
+                        if (!isAdded()) return;
+                        Log.e("NotifFragment", "Error fetching NotSelected", e);
+                        Toast.makeText(requireContext(), "Error: Couldn't load notifications", Toast.LENGTH_SHORT).show();
                     }
                 });
             }

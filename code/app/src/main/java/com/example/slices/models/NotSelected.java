@@ -10,6 +10,7 @@ import com.google.firebase.Timestamp;
 
 /**
  * Class representing a not selected notification
+ * @author Bhupinder
  */
 public class NotSelected extends Notification {
     /**
@@ -57,21 +58,36 @@ public class NotSelected extends Notification {
     }
 
 
-
+    /**
+     * Getter for whether the entrant stayed in the waitlist
+     * @return stayed
+     *      True if the entrant stayed, false otherwise
+     */
     public boolean isStayed() {
         return stayed;
     }
 
-
+    /**
+     * Setter for whether the entrant stayed in the waitlist
+     * @param stayed
+     */
     public void setStayed(boolean stayed) {
         this.stayed = stayed;
     }
 
-
+    /**
+     * Getter for whether the entrant declined
+     * @return declined
+     *      True if the entrant declined, false otherwise
+     */
     public boolean isDeclined() {
         return declined;
     }
 
+    /**
+     * Setter for whether the entrant declined
+     * @param declined
+     */
     public void setDeclined(boolean declined) {
         this.declined = declined;
     }
